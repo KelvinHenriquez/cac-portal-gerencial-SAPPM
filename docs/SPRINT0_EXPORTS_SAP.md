@@ -8,9 +8,9 @@ de depender del RFC.
 
 - **Familias:** 2 o 3 representativas (sugerido: Tractores y Vagones; si se puede, una chica como
   Cosechadoras).
-- **Período:** uno ya cerrado, de 4 a 8 semanas, **posterior al arranque de SAP PM** y, si es
-  posible, que también tenga el reporte de disponibilidad de Oracle Forms (para tener contra qué
-  comparar). Incluir órdenes abiertas a la fecha del export: una orden que empezó en el período y
+- **Período:** **julio a septiembre de 2026** (SAP PM salió en vivo el 01/06/2026 y se estabilizó
+  en julio). Si el Sistema de Órdenes de Trabajo de Oracle sigue registrando en paralelo, ese mismo
+  período sirve para comparar contra sus reportes. Incluir órdenes abiertas a la fecha del export: una orden que empezó en el período y
   sigue abierta también cuenta.
 - **Formato:** Excel (.xlsx) tal como lo baja SAP, con la fila de encabezados. No hace falta
   renombrar columnas ni quitar las que sobren.
@@ -32,7 +32,9 @@ Columnas del layout:
 | Puesto de trabajo responsable | VAPLZ | contexto |
 | Status del sistema | STTXT | estado de la orden |
 | Status de usuario | USTXT | estado de la orden ("En Proceso" suele ser de usuario) |
-| Fecha de creación | ERDAT | contexto |
+| Fecha y hora de creación | ERDAT / ERFZEIT | **inicio de la indisponibilidad** (la orden creada ya deja el equipo fuera) |
+| Clase de actividad PM | ILART | separar planificada / preventiva / correctiva |
+| Aviso | QMNUM | enlace con el aviso |
 | Fecha de inicio extrema / básica | GSTRP | plan |
 | Fecha de fin extrema / básica | GLTRP | plan |
 | Fecha de inicio real | GSTRI | **inicio de la indisponibilidad** |
@@ -64,6 +66,17 @@ Mismas órdenes del punto 1.
 | Trabajo | ARBEI | horas planificadas |
 | Trabajo real | ISMNW | horas confirmadas |
 | Unidad de trabajo | ARBEH | verificar que todo esté en horas |
+
+## 3b. Avisos — IW29 (Visualizar avisos)
+
+Avisos de los mismos equipos y período: Aviso (QMNUM), Clase (QMART), Texto (QMTXT), Equipo,
+Orden, Fecha/hora del aviso, **Parada (MSAUS)**, **Inicio y fin de la avería (AUSVN/AUZTV,
+AUSBS/AUZTB)**, Duración de la parada, Status.
+
+## 3c. Confirmaciones — IW47 (Visualizar confirmaciones)
+
+Mismas órdenes: Orden, Operación, Trabajo real, Fecha de contabilización, Fecha de captura,
+Confirmación final, Anulada. Sirve para saber en qué semana se terminó cada actividad.
 
 ## 4. (Opcional, muy valioso) Historial de estados — tabla JCDS
 

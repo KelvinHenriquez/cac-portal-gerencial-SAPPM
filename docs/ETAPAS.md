@@ -13,11 +13,11 @@ montando todos los reportes y tableros gerenciales, incluida el área industrial
 | 3 | SAP simulado + Background Service de extracción y recálculo + bitácora + equipos sin clasificar | **Hecha** |
 | 4 | Pantalla Disponibilidad de Maquinaria | **Hecha** |
 | 5 | Pantalla Avance de Reparación | **Hecha** |
-| 5b | Alinear Avance con el reporte de Oracle (capturas del 30/09/2026) | Pendiente de respuestas |
+| 7 | **Alinear ambos reportes con los de Oracle** (capturas y respuestas del 01/10/2026): estructura por período/reporte/asignación, disponibilidad por hora, avance semanal con Prog. Cierre / Pend. Ant. / T. Pend. R., drill-downs como Oracle | Siguiente |
 | 6 | Frescura de datos, monitoreo, alerta > 24 h, pruebas del cálculo | **Hecha** |
-| 7 | Integración real: DDL en Oracle de CAC, vistas reales, cliente RFC con NCo | Bloqueada por pendientes externos |
+| 8 | Integración real: DDL en Oracle de CAC, vistas reales, cliente RFC con NCo ([Anexo A v2](ANEXO_A_V2_ABAP.md)) | Bloqueada por pendientes externos |
 | 0 | Sprint 0: validar el cálculo con exports reales de SAP ([lista de exports](SPRINT0_EXPORTS_SAP.md)) | Esperando los exports |
-| 8 | Despliegue en el servidor Docker | Después de la 7 |
+| 9 | Despliegue en el servidor Docker | Después de la 8 |
 
 ## Decisiones tomadas (30/09/2026)
 
@@ -160,6 +160,44 @@ Verificado contra los números de las capturas:
   (Semanal); Ref. Plan. (Real Programado / Real No Programado / Real Ejecutado); Porcentaje o
   Actividad.
 
+## Respuestas del 01/10/2026 y lo que cambian (Etapa 7)
+
+**Disponibilidad** (capturas "Disponibilidad de Equipos" y "Configuración Reporte de Disponibilidad"):
+- Cada reporte (p. ej. "Equipos De Riegos - Gerencial") tiene: umbrales Comp. 1 (rojo, menor a)
+  y Comp. 2 (naranja, menor a); su propio calendario de semanas generado de un rango de fechas
+  (Sem. 1, 2, ... no semanas ISO); las horas del día en que se mide; y sus **asignaciones** (las
+  filas), cada una con su lista de equipos (por grupo o equipos directos), Cant. Asig., Cant. Req.,
+  **Disp. Comp. %** (meta configurada, no una fórmula: resuelve ese pendiente), Negrita y Grupo.
+- Se mide **por hora**: en cada hora activa se cuentan los equipos disponibles; el día es el
+  promedio de sus horas y la semana el de sus días.
+- **Potencial % = disponibles / requeridos, sin tope** (la fila Todas muestra 101 %). Mi pantalla
+  lo calculaba sobre el total de equipos: se corrige. Disponibilidad % sigue topada en 100.
+- Colores como Oracle: texto rojo bajo Comp. 1, naranja bajo Comp. 2, negro desde ahí.
+- Detalle por asignación y semana: por día Disp. Real %, Disp. Comp. %, Hrs al día, Hrs OT
+  Planificada / Preventivo / Correctiva, Hrs Real Efec. (= Hrs al día − Correctiva, según los
+  números), resumen de la semana, disponibilidad hora por hora y las órdenes con su observación.
+- **Fuera de servicio desde que la orden se crea** (no desde el inicio real) hasta su cierre.
+  Para correctivas, tener en cuenta el **aviso** (en SAP el aviso indica si hay parada del equipo).
+
+**Avance** (capturas "Avance de Órdenes de Trabajo" y "Configuración Reporte Avance"):
+- **Período de reparación** (p. ej. "30: 2025-2026") → varios **reportes** (Programa de
+  Reparación 2026, ... Producción, Cosecha, Varios, Nivelación, Preparación, Maq. Pesada), cada
+  uno con su calendario, sus familias y su plan semanal por familia en **actividades y días**.
+- Columnas semanales con el % **de cada semana** y, a pedido, un modo **acumulado a la fecha** para
+  comparar.
+- Actividad = operación de la orden; terminada cuando tiene horas reales; cuenta en la semana en
+  que se confirman; sus días salen de las fechas plan inicio/fin. Ref. Plan: Real Programado
+  (actividades del plan original) + Real No Programado (agregadas en la reparación) = Real
+  Ejecutado.
+- **Cómo medir el real:** el área prefiere el % por **órdenes** (lo que cuenta en la práctica es
+  cuándo se cierran); por actividades puede esconder ineficiencias. Se ofrecerán los dos, con
+  órdenes por defecto.
+- Colores como Oracle: sin rojo/naranja; se resalta la semana actual.
+
+**Otros:** SAP PM en vivo desde el 01/06/2026, estable desde julio (`SAP.FECHA_CARGA_INICIAL` =
+2026-06-01; Sprint 0 con julio a septiembre). El correo de alertas queda configurable y apagado
+en producción hasta que se decida (sin destinatarios no envía nada, solo registra).
+
 ## Datos reales de SAP
 
 Para desarrollar (etapas 3 a 6) **no hacen falta exports de SAP**: el cliente SAP simulado genera
@@ -186,7 +224,7 @@ Responsable: **Kelvin (DBA)**
 - [ ] Fórmulas de "Disponibilidad Comp. %" y "Total Ejec. %" (idealmente el PL/SQL original).
 - [ ] Set exacto de estados SAP que cuentan como "fuera de servicio" (hoy: `Liberado,En Proceso`
       en `PARAMETRO_PGPM`).
-- [ ] Fecha de arranque de SAP PM (para elegir el período del Sprint 0 y `SAP.FECHA_CARGA_INICIAL`).
+- [x] Fecha de arranque de SAP PM: 01/06/2026, estable desde julio.
 - [ ] Criterio numérico de aceptación del Sprint 0.
 - [x] Fila "Todas (Promedio)": total disponible / total requerido (30/09/2026).
 - [x] Avance: "Prog. Cierre" y opciones de "Ref. Plan." — resuelto con las capturas (ver arriba).
