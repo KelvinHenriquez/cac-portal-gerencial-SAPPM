@@ -21,8 +21,18 @@ Requisito: Docker Desktop. Nada más — Oracle corre en un contenedor.
 docker compose -f docker-compose.dev.yml up -d
 ```
 
-La primera vez descarga la imagen de Oracle Free (~1.5 GB) y crea los usuarios de
-[db/oracle/init/01_usuarios.sql](db/oracle/init/01_usuarios.sql).
+La primera vez descarga la imagen de Oracle Free (~1.5 GB) y corre los scripts de
+[db/oracle/init/](db/oracle/init/): usuarios, el esquema `SISTEMA_OT` que simula las tablas de
+configuración de Oracle Forms (familias, curva planeada, equipos requeridos, umbrales y equipos del
+Programa de Reparación 2026) y las vistas `VW_*_PGPM` encima. Las tablas `_pgpm` del portal las
+crea la API al arrancar (migraciones de EF).
+
+Los scripts de init solo corren cuando el volumen de Oracle es nuevo. Si se agrega o cambia uno,
+o se reinicia la base (`down -v`, abajo), o se corre a mano:
+
+```bash
+docker exec portalgerencial-oracle-dev bash -c "echo exit | sqlplus -s / as sysdba @/container-entrypoint-initdb.d/02_sistema_ot.sql"
+```
 
 | Servicio | URL / conexión |
 |---|---|

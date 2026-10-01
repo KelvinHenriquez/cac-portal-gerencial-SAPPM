@@ -48,6 +48,7 @@ namespace PortalGerencialBackEnd.Infrastructure.DependencyInjection
 
             services.AddScoped<ITokenService, TokenService>();
             services.AddScoped<IOracleCredentialValidator, OracleCredentialValidator>();
+            services.AddScoped<IStructureSource, OracleStructureSource>();
             services.AddSingleton<LoginAttemptLimiter>();
 
             services.Configure<JwtSettings>(configuration.GetSection("Jwt"));
