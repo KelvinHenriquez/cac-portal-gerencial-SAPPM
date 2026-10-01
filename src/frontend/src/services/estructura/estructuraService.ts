@@ -1,15 +1,16 @@
 import axiosInstance from "@/services/axios";
-import { ProgramaDto, TipoReporteDto } from "@/types";
+import { PeriodoDto, ReporteResumenDto } from "@/types";
 
 export const estructuraService = {
-  getTiposReporte: async (): Promise<TipoReporteDto[]> => {
-    const { data } = await axiosInstance.get<TipoReporteDto[]>("/estructura/tipos-reporte");
+  /** Reportes de disponibilidad activos, en el orden configurado en Oracle. */
+  getReportesDisponibilidad: async (): Promise<ReporteResumenDto[]> => {
+    const { data } = await axiosInstance.get<ReporteResumenDto[]>("/estructura/disponibilidad/reportes");
     return data;
   },
 
-  /** Programas de reparación, del más reciente al más viejo. */
-  getProgramas: async (): Promise<ProgramaDto[]> => {
-    const { data } = await axiosInstance.get<ProgramaDto[]>("/estructura/programas");
+  /** Períodos de reparación con sus reportes de avance, del más reciente al más viejo. */
+  getPeriodos: async (): Promise<PeriodoDto[]> => {
+    const { data } = await axiosInstance.get<PeriodoDto[]>("/estructura/avance/periodos");
     return data;
   },
 };

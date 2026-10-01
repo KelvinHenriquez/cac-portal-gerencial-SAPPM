@@ -1,10 +1,9 @@
 "use client";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Alert,
   Box,
   Button,
-  Chip,
   FormControl,
   InputLabel,
   MenuItem,
@@ -23,106 +22,113 @@ import {
 import { estructuraService } from "@/services/estructura/estructuraService";
 import { disponibilidadService } from "@/services/disponibilidad/disponibilidadService";
 import { useGlobalLoading } from "@/store/LoadingContext";
-import { ApiError, CeldaSemanaDto, FilaDisponibilidadDto, ReporteDisponibilidadDto, TipoReporteDto } from "@/types";
-import { fechaCorta, fechaLarga, porcentaje } from "@/utils/formato";
-import { CeldaPorcentaje, COLORES_SEMAFORO } from "@/components/disponibilidad/semaforo";
-import DialogoEquiposFamilia from "@/components/disponibilidad/DialogoEquiposFamilia";
-import DialogoDetalleSemana, { SemanaSeleccionada } from "@/components/disponibilidad/DialogoDetalleSemana";
+import { ApiError, CeldaSemanaDto, FilaDisponibilidadDto, ReporteDisponibilidadDto, ReporteResumenDto, SemanaColumnaDto } from "@/types";
+import { fechaCorta, fechaHora, porcentaje } from "@/utils/formato";
+import { celdaFija, COLOR_TEXTO, FONDO_SEMANA_ACTUAL, num, Pct } from "@/components/reportes/comunes";
+import DialogoDisponibilidadSemanal, { SeleccionSemana } from "@/components/reportes/DialogoDisponibilidadSemanal";
+import DialogoEquiposAsignacion from "@/components/reportes/DialogoEquiposAsignacion";
 
-const OPCIONES_SEMANAS = [4, 8, 13, 26];
 const CLAVE_PREFERENCIAS = "portalgerencial_disponibilidad";
 
-// Preferencias del usuario en este navegador (tipo de reporte y semanas). Si el almacenamiento no
-// está disponible, la pantalla funciona igual con los valores por defecto.
-function leerPreferencias(): { tipoReporte?: string; semanas?: number } {
+function leerReporteGuardado(): number | null {
   try {
-    return JSON.parse(localStorage.getItem(CLAVE_PREFERENCIAS) || "{}");
+    return Number(localStorage.getItem(CLAVE_PREFERENCIAS)) || null;
   } catch {
-    return {};
+    return null;
   }
 }
 
-function guardarPreferencias(p: { tipoReporte: string; semanas: number }) {
+function guardarReporte(id: number) {
   try {
-    localStorage.setItem(CLAVE_PREFERENCIAS, JSON.stringify(p));
+    localStorage.setItem(CLAVE_PREFERENCIAS, String(id));
   } catch {
     /* sin almacenamiento: no pasa nada */
   }
 }
 
-// Primera columna fija al hacer scroll horizontal (muchas semanas o pantalla chica).
-const celdaFija = {
-  position: "sticky" as const,
-  left: 0,
-  zIndex: 1,
-  bgcolor: "background.paper",
-  minWidth: { xs: 130, sm: 190 },
-  borderRight: 1,
-  borderColor: "divider",
-};
+function Leyenda({ rojo, naranja }: { rojo: number; naranja: number }) {
+  const items = [
+    { color: COLOR_TEXTO.ROJO, texto: `Menor a ${rojo}` },
+    { color: COLOR_TEXTO.NARANJA, texto: `Mayor o igual a ${rojo} y menor a ${naranja}` },
+    { color: "#212121", texto: `Mayor o igual a ${naranja}` },
+  ];
+  return (
+    <Stack direction={{ xs: "column", sm: "row" }} spacing={{ xs: 0.5, sm: 2 }}>
+      {items.map((i) => (
+        <Stack key={i.texto} direction="row" spacing={0.75} alignItems="center">
+          <Box sx={{ width: 12, height: 12, bgcolor: i.color, borderRadius: "2px", flexShrink: 0 }} />
+          <Typography variant="caption">{i.texto}</Typography>
+        </Stack>
+      ))}
+    </Stack>
+  );
+}
 
 export default function DisponibilidadPage() {
   const { showLoading, hideLoading } = useGlobalLoading();
-  const [tipos, setTipos] = useState<TipoReporteDto[]>([]);
-  const [tipoReporte, setTipoReporte] = useState<string>("");
-  const [semanas, setSemanas] = useState<number>(8);
+  const [reportes, setReportes] = useState<ReporteResumenDto[]>([]);
+  const [reporteId, setReporteId] = useState<number | "">("");
   const [reporte, setReporte] = useState<ReporteDisponibilidadDto | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [familiaAbierta, setFamiliaAbierta] = useState<string | null>(null);
-  const [semanaAbierta, setSemanaAbierta] = useState<SemanaSeleccionada | null>(null);
+  const [semanaAbierta, setSemanaAbierta] = useState<SeleccionSemana | null>(null);
+  const [asignacionAbierta, setAsignacionAbierta] = useState<number | null>(null);
+  const tablaRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const pref = leerPreferencias();
-    if (pref.semanas && OPCIONES_SEMANAS.includes(pref.semanas)) setSemanas(pref.semanas);
     estructuraService
-      .getTiposReporte()
-      .then((t) => {
-        setTipos(t);
-        const inicial = t.find((x) => x.tipoReporte === pref.tipoReporte) ?? t[0];
-        if (inicial) setTipoReporte(inicial.tipoReporte);
+      .getReportesDisponibilidad()
+      .then((r) => {
+        setReportes(r);
+        const guardado = leerReporteGuardado();
+        const inicial = r.find((x) => x.reporteId === guardado) ?? r[0];
+        if (inicial) setReporteId(inicial.reporteId);
       })
-      .catch((e: ApiError) => setError(e?.errorMessage || "No se pudieron cargar los tipos de reporte."));
+      .catch((e: ApiError) => setError(e?.errorMessage || "No se pudieron cargar los reportes."));
   }, []);
 
   const cargar = useCallback(async () => {
-    if (!tipoReporte) return;
+    if (reporteId === "") return;
     setError(null);
     showLoading("Cargando disponibilidad...");
     try {
-      setReporte(await disponibilidadService.getReporte(tipoReporte, semanas));
-      guardarPreferencias({ tipoReporte, semanas });
+      setReporte(await disponibilidadService.getReporte(reporteId));
+      guardarReporte(reporteId);
     } catch (e) {
       setError((e as ApiError)?.errorMessage || "No se pudo cargar el reporte.");
     } finally {
       hideLoading();
     }
-  }, [tipoReporte, semanas, showLoading, hideLoading]);
+  }, [reporteId, showLoading, hideLoading]);
 
   useEffect(() => {
     cargar();
   }, [cargar]);
 
-  const celdaSemana = (fila: FilaDisponibilidadDto, celda: CeldaSemanaDto, esPromedio: boolean) => {
-    const columna = reporte!.semanas.find((s) => s.anioIso === celda.anioIso && s.semanaIso === celda.semanaIso)!;
-    const contenido = <CeldaPorcentaje valor={celda.dispRealPct} color={celda.semaforo} negrita={esPromedio} />;
-    if (celda.dispRealPct == null) return contenido;
+  // El calendario del reporte puede tener ~30 semanas: se abre en la semana actual.
+  useEffect(() => {
+    const contenedor = tablaRef.current;
+    const actual = contenedor?.querySelector<HTMLElement>("[data-semana-actual]");
+    if (contenedor && actual) contenedor.scrollLeft = Math.max(0, actual.offsetLeft - contenedor.clientWidth / 2);
+  }, [reporte]);
 
+  const celda = (fila: FilaDisponibilidadDto, c: CeldaSemanaDto, s: SemanaColumnaDto, esTodas: boolean) => {
+    const contenido = <Pct valor={c.dispRealPct} color={c.semaforo} negrita={esTodas || fila.negrita} />;
+    if (c.dispRealPct == null) return contenido;
     const detalle =
-      `Semana ${celda.semanaIso} (${fechaCorta(columna.fechaInicio)} al ${fechaCorta(columna.fechaFin)}): ` +
-      `promedio ${porcentaje(celda.dispRealPct)}` +
-      (celda.dispRealMinPct != null ? `, peor día ${porcentaje(celda.dispRealMinPct)}` : "") +
-      (celda.diasCalculados < 7 ? ` · ${celda.diasCalculados} de 7 días` : "") +
-      (esPromedio ? "" : " · clic para ver el detalle diario");
-
+      `Sem. ${s.noSemana} (${fechaCorta(s.fechaInicio)} al ${fechaCorta(s.fechaFin)}): disponibilidad ${porcentaje(c.dispRealPct)}` +
+      (c.potencialPct != null ? `, potencial ${porcentaje(c.potencialPct)}` : "") +
+      (c.dispRealMinPct != null ? `, peor día ${porcentaje(c.dispRealMinPct)}` : "") +
+      (c.diasCalculados < 7 ? ` · ${c.diasCalculados} de 7 días` : "") +
+      (esTodas ? "" : " · clic para el detalle");
     return (
       <Tooltip title={detalle} arrow>
-        {esPromedio ? (
+        {esTodas ? (
           <span>{contenido}</span>
         ) : (
           <Box
             component="button"
-            onClick={() => setSemanaAbierta({ familiaCodigo: fila.familiaCodigo, anioIso: celda.anioIso, semanaIso: celda.semanaIso })}
-            sx={{ all: "unset", cursor: "pointer", borderRadius: "6px", "&:focus-visible": { outline: "2px solid", outlineColor: "primary.main" } }}
+            onClick={() => setSemanaAbierta({ asignacionId: fila.asignacionId, noSemana: c.noSemana })}
+            sx={{ all: "unset", cursor: "pointer", "&:focus-visible": { outline: "2px solid", outlineColor: "primary.main" } }}
             aria-label={detalle}
           >
             {contenido}
@@ -132,38 +138,45 @@ export default function DisponibilidadPage() {
     );
   };
 
-  const fila = (f: FilaDisponibilidadDto, esPromedio = false) => (
+  const fila = (f: FilaDisponibilidadDto, esTodas = false) => (
     <TableRow
-      key={f.familiaCodigo}
-      hover={!esPromedio}
-      sx={esPromedio ? { "& td": { fontWeight: 700, bgcolor: "grey.100", borderTop: 2, borderColor: "divider" } } : undefined}
+      key={esTodas ? "todas" : f.asignacionId}
+      hover={!esTodas}
+      sx={{
+        "& td": { fontWeight: esTodas || f.negrita ? 700 : undefined },
+        ...(esTodas ? { "& td": { fontWeight: 700, bgcolor: "#FFF9DB", borderBottom: 2, borderColor: "divider" } } : {}),
+      }}
     >
-      <TableCell sx={{ ...celdaFija, ...(esPromedio ? { bgcolor: "grey.100" } : {}) }}>
-        {esPromedio ? (
-          f.familiaNombre
+      <TableCell sx={{ ...celdaFija, ...(esTodas ? { bgcolor: "#FFF9DB" } : {}) }}>
+        {esTodas ? (
+          f.asignacion
         ) : (
           <Button
             variant="text"
             size="small"
-            onClick={() => setFamiliaAbierta(f.familiaCodigo)}
-            sx={{ p: 0, minWidth: 0, textAlign: "left", fontWeight: 600, justifyContent: "flex-start" }}
+            onClick={() => setAsignacionAbierta(f.asignacionId)}
+            sx={{ p: 0, minWidth: 0, textAlign: "left", fontWeight: f.negrita ? 700 : 600, justifyContent: "flex-start" }}
           >
-            {f.familiaNombre}
+            {f.asignacion}
           </Button>
         )}
       </TableCell>
       <TableCell align="right">{f.cantEquipo}</TableCell>
       <TableCell align="right">{f.eqRequerido}</TableCell>
       <TableCell align="right">{f.eqDisponible}</TableCell>
-      <TableCell align="center">
-        <CeldaPorcentaje valor={f.dispRealPct} color={f.semaforo} negrita />
+      <TableCell align="right">
+        <Pct valor={f.dispRealPct} color={f.semaforo} negrita />
       </TableCell>
-      <TableCell align="right" sx={{ color: "text.secondary", fontVariantNumeric: "tabular-nums" }}>
-        {porcentaje(f.dispPotencialPct)}
+      <TableCell align="right" sx={{ fontVariantNumeric: "tabular-nums" }}>
+        {num(f.potencialPct)}
       </TableCell>
-      {f.semanas.map((c) => (
-        <TableCell key={`${c.anioIso}-${c.semanaIso}`} align="center" sx={{ px: 0.75 }}>
-          {celdaSemana(f, c, esPromedio)}
+      {reporte!.semanas.map((s, i) => (
+        <TableCell
+          key={s.noSemana}
+          align="right"
+          sx={{ px: 1, borderLeft: 1, borderColor: "divider", bgcolor: s.momento === "ACTUAL" ? FONDO_SEMANA_ACTUAL : undefined }}
+        >
+          {celda(f, f.semanas[i], s, esTodas)}
         </TableCell>
       ))}
     </TableRow>
@@ -173,55 +186,22 @@ export default function DisponibilidadPage() {
     <Stack spacing={2}>
       <Paper variant="outlined" sx={{ p: 2 }}>
         <Stack direction={{ xs: "column", md: "row" }} spacing={2} alignItems={{ md: "center" }}>
-          <FormControl size="small" sx={{ minWidth: 260 }}>
-            <InputLabel id="tipo-reporte">Tipo de reporte</InputLabel>
-            <Select
-              labelId="tipo-reporte"
-              label="Tipo de reporte"
-              value={tipoReporte}
-              onChange={(e) => setTipoReporte(e.target.value)}
-            >
-              {tipos.map((t) => (
-                <MenuItem key={t.tipoReporte} value={t.tipoReporte}>
-                  {t.descripcion}
+          <FormControl size="small" sx={{ minWidth: 300 }}>
+            <InputLabel id="reporte">Reporte</InputLabel>
+            <Select labelId="reporte" label="Reporte" value={reporteId} onChange={(e) => setReporteId(Number(e.target.value))}>
+              {reportes.map((r) => (
+                <MenuItem key={r.reporteId} value={r.reporteId}>
+                  {r.descripcion}
                 </MenuItem>
               ))}
             </Select>
           </FormControl>
-          <FormControl size="small" sx={{ minWidth: 140 }}>
-            <InputLabel id="semanas">Semanas</InputLabel>
-            <Select labelId="semanas" label="Semanas" value={semanas} onChange={(e) => setSemanas(Number(e.target.value))}>
-              {OPCIONES_SEMANAS.map((n) => (
-                <MenuItem key={n} value={n}>
-                  Últimas {n}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+          {reporte && <Leyenda rojo={reporte.umbralRojo} naranja={reporte.umbralNaranja} />}
           <Box flexGrow={1} />
-          {reporte && (
-            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap alignItems="center">
-              <Typography variant="caption" color="text.secondary">
-                Semáforo:
-              </Typography>
-              {[
-                { color: "ROJO" as const, texto: `menos de ${reporte.umbralRojo}%` },
-                { color: "NARANJA" as const, texto: `${reporte.umbralRojo}% a ${reporte.umbralNaranja}%` },
-                { color: "VERDE" as const, texto: `${reporte.umbralNaranja}% o más` },
-              ].map((l) => (
-                <Chip
-                  key={l.color}
-                  size="small"
-                  label={l.texto}
-                  sx={{
-                    bgcolor: COLORES_SEMAFORO[l.color].fondo,
-                    color: COLORES_SEMAFORO[l.color].texto,
-                    border: `1px solid ${COLORES_SEMAFORO[l.color].borde}`,
-                    fontWeight: 600,
-                  }}
-                />
-              ))}
-            </Stack>
+          {reporte?.fechaCorte && (
+            <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: "nowrap" }}>
+              Foto de las {fechaHora(reporte.fechaCorte)}
+            </Typography>
           )}
         </Stack>
       </Paper>
@@ -229,62 +209,69 @@ export default function DisponibilidadPage() {
       {error && <Alert severity="error">{error}</Alert>}
 
       {reporte && !reporte.fechaCorte && (
-        <Alert severity="info">
-          Todavía no hay disponibilidad calculada para {reporte.descripcion}. Se calcula en la próxima actualización de
-          datos.
-        </Alert>
+        <Alert severity="info">Todavía no hay disponibilidad calculada. Se calcula en la próxima actualización de datos.</Alert>
       )}
 
       {reporte?.fechaCorte && (
         <Paper variant="outlined">
-          <Box sx={{ px: 2, pt: 2, pb: 1 }}>
-            <Typography variant="subtitle1" fontWeight={700}>
-              {reporte.descripcion}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Valores actuales al {fechaLarga(reporte.fechaCorte)}. Toque una familia para ver sus equipos, o una semana
-              para ver el detalle por día.
-            </Typography>
-          </Box>
-          <TableContainer sx={{ maxHeight: "calc(100vh - 290px)" }}>
+          <TableContainer ref={tablaRef} sx={{ maxHeight: "calc(100vh - 260px)" }}>
             <Table size="small" stickyHeader>
               <TableHead>
                 <TableRow>
-                  <TableCell sx={{ ...celdaFija, zIndex: 3 }}>Familia</TableCell>
+                  <TableCell sx={{ ...celdaFija, zIndex: 3 }}>Asignación</TableCell>
                   <TableCell align="right">Cant. Equipo</TableCell>
                   <TableCell align="right">Eq. Requerido</TableCell>
                   <TableCell align="right">Eq. Disponible</TableCell>
-                  <TableCell align="center">Disponibilidad %</TableCell>
+                  <TableCell align="right">Disponibilidad %</TableCell>
                   <TableCell align="right">Potencial %</TableCell>
                   {reporte.semanas.map((s) => (
-                    <TableCell key={`${s.anioIso}-${s.semanaIso}`} align="center" sx={{ whiteSpace: "nowrap", px: 0.75 }}>
-                      Sem {s.semanaIso}
-                      <Typography variant="caption" display="block" color="text.secondary">
-                        {fechaCorta(s.fechaInicio)}
-                      </Typography>
+                    <TableCell
+                      key={s.noSemana}
+                      align="center"
+                      data-semana-actual={s.momento === "ACTUAL" ? "" : undefined}
+                      sx={{
+                        whiteSpace: "nowrap",
+                        px: 1,
+                        borderLeft: 1,
+                        borderColor: "divider",
+                        ...(s.momento === "ACTUAL" ? { bgcolor: FONDO_SEMANA_ACTUAL } : {}),
+                      }}
+                    >
+                      <Tooltip title={`Del ${fechaCorta(s.fechaInicio)} al ${fechaCorta(s.fechaFin)}`} arrow>
+                        <span>
+                          Sem. {s.noSemana}
+                          <Typography variant="caption" display="block" color="text.secondary">
+                            {fechaCorta(s.fechaInicio)}
+                          </Typography>
+                        </span>
+                      </Tooltip>
                     </TableCell>
                   ))}
                 </TableRow>
               </TableHead>
               <TableBody>
-                {reporte.familias.map((f) => fila(f))}
-                {reporte.promedio && fila(reporte.promedio, true)}
+                {reporte.todas && fila(reporte.todas, true)}
+                {reporte.filas.map((f) => fila(f))}
               </TableBody>
             </Table>
           </TableContainer>
           <Box sx={{ px: 2, py: 1.5, borderTop: 1, borderColor: "divider" }}>
             <Typography variant="caption" color="text.secondary" component="p">
-              Disponibilidad % = equipos disponibles / equipos requeridos (máximo 100%). Potencial % = equipos disponibles /
-              total de equipos de la familia. Cada semana muestra el promedio de sus días. La fila &quot;Todas&quot; es el total
-              disponible / total requerido, contando de cada familia como máximo sus requeridos (lo que sobra en una no
-              compensa lo que falta en otra).
+              Se mide cada hora configurada en el reporte: un equipo está fuera de servicio desde que se crea su orden hasta su
+              cierre técnico (las correctivas, según el aviso de parada). Disponibilidad % = disponibles / requeridos, máximo
+              100. Potencial % = disponibles / requeridos, sin tope. Cada semana es el promedio de sus días. &quot;Todas&quot;
+              = total disponible / total requerido, sin que lo que sobra en una asignación compense lo que falta en otra.
             </Typography>
           </Box>
         </Paper>
       )}
 
-      <DialogoEquiposFamilia tipoReporte={tipoReporte} familiaCodigo={familiaAbierta} onClose={() => setFamiliaAbierta(null)} />
-      <DialogoDetalleSemana tipoReporte={tipoReporte} seleccion={semanaAbierta} onClose={() => setSemanaAbierta(null)} />
+      {reporteId !== "" && (
+        <>
+          <DialogoDisponibilidadSemanal reporteId={reporteId} seleccion={semanaAbierta} onClose={() => setSemanaAbierta(null)} />
+          <DialogoEquiposAsignacion reporteId={reporteId} asignacionId={asignacionAbierta} onClose={() => setAsignacionAbierta(null)} />
+        </>
+      )}
     </Stack>
   );
 }

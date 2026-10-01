@@ -24,39 +24,38 @@ import {
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { disponibilidadService } from "@/services/disponibilidad/disponibilidadService";
-import { ApiError, EquiposFamiliaDetalleDto, EstadoEquipo } from "@/types";
-import { fechaLarga } from "@/utils/formato";
-import { ChipEstadoEquipo, etiquetaEstadoEquipo } from "./semaforo";
-import ListaOrdenes from "./ListaOrdenes";
+import { ApiError, EquiposAsignacionDto, EstadoEquipo } from "@/types";
+import { fechaHora } from "@/utils/formato";
+import { ChipEstadoEquipo, etiquetaEstadoEquipo, TIPO_ORDEN } from "./comunes";
 
 const ORDEN_ESTADOS: EstadoEquipo[] = ["FUERA_SERVICIO", "SIN_SAP", "DISPONIBLE", "INACTIVO"];
 
-/** Drill-down por familia (sección 8.2): equipos individuales y su estado a la fecha de corte. */
-export default function DialogoEquiposFamilia({
-  tipoReporte,
-  familiaCodigo,
+/** Equipos de una asignación y su estado en la última foto. */
+export default function DialogoEquiposAsignacion({
+  reporteId,
+  asignacionId,
   onClose,
 }: {
-  tipoReporte: string;
-  familiaCodigo: string | null;
+  reporteId: number;
+  asignacionId: number | null;
   onClose: () => void;
 }) {
   const theme = useTheme();
   const pantallaChica = useMediaQuery(theme.breakpoints.down("md"));
-  const [datos, setDatos] = useState<EquiposFamiliaDetalleDto | null>(null);
+  const [datos, setDatos] = useState<EquiposAsignacionDto | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [soloFuera, setSoloFuera] = useState(false);
 
   useEffect(() => {
-    if (!familiaCodigo) return;
+    if (asignacionId == null) return;
     setDatos(null);
     setError(null);
     setSoloFuera(false);
     disponibilidadService
-      .getEquiposFamilia(tipoReporte, familiaCodigo)
+      .getEquipos(reporteId, asignacionId)
       .then(setDatos)
       .catch((e: ApiError) => setError(e?.errorMessage || "No se pudo cargar el detalle."));
-  }, [tipoReporte, familiaCodigo]);
+  }, [reporteId, asignacionId]);
 
   const conteo = useMemo(() => {
     const c: Partial<Record<EstadoEquipo, number>> = {};
@@ -67,12 +66,12 @@ export default function DialogoEquiposFamilia({
   const equipos = datos?.equipos.filter((e) => !soloFuera || e.estado === "FUERA_SERVICIO") ?? [];
 
   return (
-    <Dialog open={!!familiaCodigo} onClose={onClose} fullWidth maxWidth="lg" fullScreen={pantallaChica}>
+    <Dialog open={asignacionId != null} onClose={onClose} fullWidth maxWidth="lg" fullScreen={pantallaChica}>
       <DialogTitle>
-        {datos ? datos.familiaNombre : "Equipos"}
+        {datos ? datos.asignacion : "Equipos"}
         {datos && (
           <Typography variant="body2" color="text.secondary">
-            Estado de los equipos al {fechaLarga(datos.fecha)}
+            Estado de los equipos a las {fechaHora(datos.fecha)} · {datos.cantRequerida} requeridos
           </Typography>
         )}
       </DialogTitle>
@@ -85,46 +84,22 @@ export default function DialogoEquiposFamilia({
         )}
         {datos && (
           <Stack spacing={2}>
-            <Stack direction={{ xs: "column", sm: "row" }} spacing={2} justifyContent="space-between">
-              <Box>
-                <Typography variant="caption" color="text.secondary" fontWeight={700} textTransform="uppercase">
-                  Requeridos por asignación
-                </Typography>
-                <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mt: 0.5 }}>
-                  {datos.requeridos.map((r) => (
-                    <Chip
-                      key={r.asignacion}
-                      size="small"
-                      variant="outlined"
-                      label={`${r.asignacion}: ${r.cantRequerida} requeridos (${r.cantAsignada} asignados)`}
-                    />
-                  ))}
-                </Stack>
-              </Box>
-              <Box>
-                <Typography variant="caption" color="text.secondary" fontWeight={700} textTransform="uppercase">
-                  Equipos
-                </Typography>
-                <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mt: 0.5 }}>
-                  {ORDEN_ESTADOS.filter((e) => conteo[e]).map((e) => (
-                    <Chip key={e} size="small" label={`${etiquetaEstadoEquipo(e)}: ${conteo[e]}`} />
-                  ))}
-                </Stack>
-              </Box>
+            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap alignItems="center">
+              {ORDEN_ESTADOS.filter((e) => conteo[e]).map((e) => (
+                <Chip key={e} size="small" label={`${etiquetaEstadoEquipo(e)}: ${conteo[e]}`} />
+              ))}
+              <Box flexGrow={1} />
+              <FormControlLabel
+                control={<Switch checked={soloFuera} onChange={(e) => setSoloFuera(e.target.checked)} />}
+                label="Solo fuera de servicio"
+              />
             </Stack>
-
             {(conteo.SIN_SAP ?? 0) > 0 && (
               <Alert severity="warning" variant="outlined">
-                {conteo.SIN_SAP} equipo(s) existen en Oracle pero no se encontraron en SAP por su código legado: se cuentan como
+                {conteo.SIN_SAP} equipo(s) están en Oracle pero no se encontraron en SAP por su código legado: cuentan como
                 disponibles porque no tienen órdenes.
               </Alert>
             )}
-
-            <FormControlLabel
-              control={<Switch checked={soloFuera} onChange={(e) => setSoloFuera(e.target.checked)} />}
-              label="Solo fuera de servicio"
-            />
-
             <TableContainer>
               <Table size="small" stickyHeader>
                 <TableHead>
@@ -138,15 +113,26 @@ export default function DialogoEquiposFamilia({
                 </TableHead>
                 <TableBody>
                   {equipos.map((e) => (
-                    <TableRow key={e.codigoLegado} hover>
-                      <TableCell sx={{ fontWeight: 600, whiteSpace: "nowrap" }}>{e.codigoLegado}</TableCell>
+                    <TableRow key={e.ficha} hover>
+                      <TableCell sx={{ fontWeight: 600, whiteSpace: "nowrap" }}>{e.ficha}</TableCell>
                       <TableCell sx={{ fontVariantNumeric: "tabular-nums" }}>{e.equipoSapId ?? "—"}</TableCell>
                       <TableCell>{e.descripcion}</TableCell>
                       <TableCell>
                         <ChipEstadoEquipo estado={e.estado} />
                       </TableCell>
                       <TableCell>
-                        <ListaOrdenes ordenes={e.ordenes} />
+                        {e.ordenes.length === 0
+                          ? "—"
+                          : e.ordenes.map((o) => (
+                              <Box key={o.ordenSapId} sx={{ fontSize: "0.8125rem" }}>
+                                <b>{o.ordenSapId}</b> {TIPO_ORDEN[o.tipo] ?? o.tipo} · {o.estadoActual} · desde {fechaHora(o.desde)}
+                                {o.observacion && (
+                                  <Box component="span" sx={{ display: "block", color: "text.secondary" }}>
+                                    {o.observacion}
+                                  </Box>
+                                )}
+                              </Box>
+                            ))}
                       </TableCell>
                     </TableRow>
                   ))}

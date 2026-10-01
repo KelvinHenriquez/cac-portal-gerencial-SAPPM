@@ -9,32 +9,26 @@ const ALTO = 280;
 const M = { izq: 44, der: 16, arriba: 16, abajo: 36 };
 
 /**
- * Curva en "S" de una familia: programado acumulado (punteado) vs. real ejecutado (sólido) por
- * semana, con una marca en la semana actual. SVG simple, sin librería de gráficos.
+ * Curva en "S" de una familia: programado acumulado (punteado) vs. real acumulado (sólido), con
+ * una marca en la semana actual. SVG simple, sin librería de gráficos.
  */
 export default function CurvaAvance({ familia, semanas }: { familia: FilaAvanceDto; semanas: SemanaAvanceDto[] }) {
   const theme = useTheme();
-  const puntos = semanas
-    .map((s, i) => ({ semana: s, celda: familia.semanas[i] }))
-    .filter((p) => p.celda.enVentana);
-
+  const puntos = semanas.map((s, i) => ({ semana: s, celda: familia.semanas[i] })).filter((p) => p.celda.enPlan);
   if (puntos.length === 0) return null;
 
+  const tope = Math.max(100, ...puntos.map((p) => Math.max(p.celda.progAcumPct ?? 0, p.celda.realAcumPct ?? 0)));
   const anchoUtil = ANCHO - M.izq - M.der;
   const altoUtil = ALTO - M.arriba - M.abajo;
   const x = (i: number) => M.izq + (puntos.length === 1 ? anchoUtil / 2 : (i * anchoUtil) / (puntos.length - 1));
-  const y = (pct: number) => M.arriba + altoUtil - (pct / 100) * altoUtil;
-
+  const y = (pct: number) => M.arriba + altoUtil - (pct / tope) * altoUtil;
   const linea = (valores: (number | null)[]) =>
     valores
       .map((v, i) => (v == null ? null : `${x(i).toFixed(1)},${y(v).toFixed(1)}`))
       .filter(Boolean)
       .join(" ");
 
-  const prog = puntos.map((p) => p.celda.progPct);
-  const real = puntos.map((p) => p.celda.realPct);
   const iActual = puntos.findIndex((p) => p.semana.momento === "ACTUAL");
-  // Etiquetas del eje X: cada ~4 semanas para que no se encimen.
   const paso = Math.max(1, Math.ceil(puntos.length / 7));
   const colorProg = theme.palette.grey[500];
   const colorReal = theme.palette.primary.main;
@@ -42,15 +36,15 @@ export default function CurvaAvance({ familia, semanas }: { familia: FilaAvanceD
   return (
     <Box>
       <Stack direction="row" spacing={3} sx={{ mb: 1 }} flexWrap="wrap" useFlexGap>
-        <Leyenda color={colorProg} punteado texto="Programado (acumulado)" />
-        <Leyenda color={colorReal} texto="Real ejecutado" />
+        <Leyenda color={colorProg} punteado texto="Programado acumulado" />
+        <Leyenda color={colorReal} texto="Real acumulado" />
         {iActual >= 0 && <Leyenda color={theme.palette.warning.main} texto="Semana actual" vertical />}
       </Stack>
       <Box
         component="svg"
         viewBox={`0 0 ${ANCHO} ${ALTO}`}
         role="img"
-        aria-label={`Curva de avance de ${familia.familiaNombre}: programado ${porcentaje(familia.totalProgramadoPct)}, ejecutado ${porcentaje(familia.totalEjecutadoPct)}`}
+        aria-label={`Curva de avance de ${familia.familiaNombre}: programado a la fecha ${porcentaje(familia.progCierre + familia.progAct)}, ejecutado ${porcentaje(familia.totalEjec)}`}
         sx={{ width: "100%", height: "auto", display: "block" }}
       >
         {[0, 25, 50, 75, 100].map((v) => (
@@ -61,43 +55,28 @@ export default function CurvaAvance({ familia, semanas }: { familia: FilaAvanceD
             </text>
           </g>
         ))}
-
         {puntos.map(
           (p, i) =>
             i % paso === 0 && (
-              <text key={p.semana.lunes} x={x(i)} y={ALTO - 12} fontSize={11} textAnchor="middle" fill={theme.palette.text.secondary}>
-                {fechaCorta(p.semana.lunes)}
+              <text key={p.semana.noSemana} x={x(i)} y={ALTO - 12} fontSize={11} textAnchor="middle" fill={theme.palette.text.secondary}>
+                {fechaCorta(p.semana.fechaInicio)}
               </text>
             )
         )}
-
         {iActual >= 0 && (
-          <line
-            x1={x(iActual)}
-            x2={x(iActual)}
-            y1={M.arriba}
-            y2={M.arriba + altoUtil}
-            stroke={theme.palette.warning.main}
-            strokeWidth={1.5}
-            strokeDasharray="4 3"
-          />
+          <line x1={x(iActual)} x2={x(iActual)} y1={M.arriba} y2={M.arriba + altoUtil} stroke={theme.palette.warning.main} strokeWidth={1.5} strokeDasharray="4 3" />
         )}
-
-        <polyline points={linea(prog)} fill="none" stroke={colorProg} strokeWidth={2} strokeDasharray="6 4" />
-        <polyline points={linea(real)} fill="none" stroke={colorReal} strokeWidth={2.5} />
-
-        {puntos.map((p, i) => (
-          <g key={`pt-${p.semana.lunes}`}>
-            {p.celda.realPct != null && (
-              <circle cx={x(i)} cy={y(p.celda.realPct)} r={3.5} fill={colorReal}>
-                <title>
-                  Semana del {fechaCorta(p.semana.lunes)}: real {porcentaje(p.celda.realPct)}
-                  {p.celda.progPct != null ? `, programado ${porcentaje(p.celda.progPct)}` : ""}
-                </title>
-              </circle>
-            )}
-          </g>
-        ))}
+        <polyline points={linea(puntos.map((p) => p.celda.progAcumPct))} fill="none" stroke={colorProg} strokeWidth={2} strokeDasharray="6 4" />
+        <polyline points={linea(puntos.map((p) => p.celda.realAcumPct))} fill="none" stroke={colorReal} strokeWidth={2.5} />
+        {puntos.map((p, i) =>
+          p.celda.realAcumPct != null ? (
+            <circle key={`pt-${p.semana.noSemana}`} cx={x(i)} cy={y(p.celda.realAcumPct)} r={3.5} fill={colorReal}>
+              <title>
+                Semana #{p.semana.noSemana}: real {porcentaje(p.celda.realAcumPct)}, programado {porcentaje(p.celda.progAcumPct ?? 0)}
+              </title>
+            </circle>
+          ) : null
+        )}
       </Box>
     </Box>
   );

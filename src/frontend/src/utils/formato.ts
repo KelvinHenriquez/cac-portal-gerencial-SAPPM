@@ -24,5 +24,17 @@ export const fechaLarga = (valor: string) => fmtLarga.format(aFecha(valor));
 export const fechaConDia = (valor: string) =>
   `${fmtDiaSemana.format(aFecha(valor)).replace(".", "")} ${fechaCorta(valor)}`;
 
+const fmtFechaHora = new Intl.DateTimeFormat("es-DO", {
+  day: "2-digit",
+  month: "2-digit",
+  year: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: false,
+});
+
+/** 01/10/2026, 18:00 (para fechas con hora, que sí traen la hora del backend). */
+export const fechaHora = (valor: string) => fmtFechaHora.format(new Date(valor));
+
 /** 80.6% */
 export const porcentaje = (valor: number) => `${fmtPct.format(valor)}%`;

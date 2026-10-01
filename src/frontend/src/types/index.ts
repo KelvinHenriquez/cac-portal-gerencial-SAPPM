@@ -68,134 +68,152 @@ export interface AlertaDto {
   error: string | null;
 }
 
-// ---- Estructura (Oracle)
+// ---- Estructura (Oracle Forms)
 
-export interface TipoReporteDto {
-  tipoReporte: string;
+export interface ReporteResumenDto {
+  reporteId: number;
   descripcion: string;
 }
 
-// ---- Disponibilidad de Maquinaria (sección 8.2)
+export interface PeriodoDto {
+  periodoId: number;
+  descripcion: string;
+  reportes: ReporteResumenDto[];
+}
+
+export type MomentoSemana = "PASADA" | "ACTUAL" | "FUTURA";
+
+// ---- Disponibilidad de Equipos
 
 export type ColorSemaforo = "ROJO" | "NARANJA" | "VERDE";
 
 export interface SemanaColumnaDto {
-  anioIso: number;
-  semanaIso: number;
+  noSemana: number;
   fechaInicio: string;
   fechaFin: string;
+  momento: MomentoSemana;
 }
 
 export interface CeldaSemanaDto {
-  anioIso: number;
-  semanaIso: number;
+  noSemana: number;
   dispRealPct: number | null;
   dispRealMinPct: number | null;
-  eqDisponibleProm: number | null;
-  eqRequerido: number;
+  potencialPct: number | null;
   diasCalculados: number;
   semaforo: ColorSemaforo | null;
 }
 
 export interface FilaDisponibilidadDto {
-  familiaCodigo: string;
-  familiaNombre: string;
+  asignacionId: number;
+  asignacion: string;
+  negrita: boolean;
+  grupo: boolean;
   cantEquipo: number;
   eqRequerido: number;
   eqDisponible: number;
-  eqFueraServicio: number;
   dispRealPct: number;
-  dispPotencialPct: number;
+  potencialPct: number;
+  dispCompPct: number;
   semaforo: ColorSemaforo;
   semanas: CeldaSemanaDto[];
 }
 
 export interface ReporteDisponibilidadDto {
-  tipoReporte: string;
+  reporteId: number;
   descripcion: string;
   umbralRojo: number;
   umbralNaranja: number;
   fechaCorte: string | null;
   semanas: SemanaColumnaDto[];
-  familias: FilaDisponibilidadDto[];
-  promedio: FilaDisponibilidadDto | null;
+  todas: FilaDisponibilidadDto | null;
+  filas: FilaDisponibilidadDto[];
 }
 
-export interface OrdenResumenDto {
+export interface DiaDetalleDto {
+  fecha: string | null;
+  dias: number;
+  dispRealPct: number;
+  dispCompPct: number;
+  hrsDia: number;
+  hrsOtPlanificada: number;
+  hrsOtPreventivo: number;
+  hrsOtCorrectiva: number;
+  hrsRealEfec: number;
+  hrsDiaDispComp: number;
+  semaforo: ColorSemaforo;
+}
+
+export interface OrdenDetalleDto {
   ordenSapId: string;
   claseOrden: string;
-  estadoOrden: string;
-  descripcion: string | null;
-  codigoLegado: string;
+  tipo: "PLANIFICADA" | "PREVENTIVO" | "CORRECTIVA";
+  ficha: string;
   equipoDescripcion: string | null;
-  fechaInicioReal: string | null;
-  fechaFinReal: string | null;
+  desde: string;
+  hasta: string | null;
+  estadoActual: string;
+  observacion: string | null;
+}
+
+export interface DetalleSemanaDto {
+  reporteId: number;
+  asignacionId: number;
+  asignacion: string;
+  noSemana: number;
+  fechaInicio: string;
+  fechaFin: string;
+  umbralRojo: number;
+  umbralNaranja: number;
+  dias: DiaDetalleDto[];
+  resumen: DiaDetalleDto | null;
+  ordenes: OrdenDetalleDto[];
+}
+
+export interface HoraDisponibilidadDto {
+  hora: number;
+  cantEquipo: number;
+  eqRequerido: number;
+  eqDisponible: number;
+  dispPct: number;
+  potencialPct: number;
 }
 
 export type EstadoEquipo = "DISPONIBLE" | "FUERA_SERVICIO" | "INACTIVO" | "SIN_SAP";
 
 export interface EquipoDetalleDto {
-  codigoLegado: string;
+  ficha: string;
   descripcion: string;
   equipoSapId: string | null;
-  activo: boolean;
   estado: EstadoEquipo;
-  ordenes: OrdenResumenDto[];
+  ordenes: OrdenDetalleDto[];
 }
 
-export interface EquiposFamiliaDetalleDto {
-  familiaCodigo: string;
-  familiaNombre: string;
+export interface EquiposAsignacionDto {
+  asignacion: string;
   fecha: string;
-  requeridos: { asignacion: string; cantAsignada: number; cantRequerida: number }[];
+  cantRequerida: number;
   equipos: EquipoDetalleDto[];
 }
 
-export interface DiaDisponibilidadDto {
-  fecha: string;
-  cantEquipo: number;
-  eqRequerido: number;
-  eqFueraServicio: number;
-  eqDisponible: number;
-  dispRealPct: number;
-  semaforo: ColorSemaforo;
-  ordenes: OrdenResumenDto[];
-}
+// ---- Avance de Órdenes de Trabajo
 
-export interface DetalleSemanaDto {
-  tipoReporte: string;
-  familiaCodigo: string;
-  familiaNombre: string;
-  anioIso: number;
-  semanaIso: number;
-  fechaInicio: string;
-  fechaFin: string;
-  dias: DiaDisponibilidadDto[];
-}
-
-// ---- Avance de Reparación (sección 8.3)
-
-export interface ProgramaDto {
-  anioPrograma: string;
-  fechaInicio: string;
-  fechaFin: string;
-  cantFamilias: number;
-}
-
-export type MomentoSemana = "PASADA" | "ACTUAL" | "FUTURA";
+export type MedidaAvance = "ORDENES" | "ACTIVIDADES";
+export type RefPlan = "EJECUTADO" | "PROGRAMADO" | "NO_PROGRAMADO";
 
 export interface SemanaAvanceDto {
-  lunes: string;
-  domingo: string;
-  semanaIso: number;
+  noSemana: number;
+  fechaInicio: string;
+  fechaFin: string;
   momento: MomentoSemana;
 }
 
 export interface CeldaAvanceDto {
-  enVentana: boolean;
-  noSemana: number | null;
+  noSemana: number;
+  enPlan: boolean;
   progPct: number | null;
   realPct: number | null;
+  progAcumPct: number | null;
+  realAcumPct: number | null;
 }
 
 export interface FilaAvanceDto {
@@ -204,24 +222,86 @@ export interface FilaAvanceDto {
   cantEquipo: number;
   fechaEstInicio: string;
   fechaEstFin: string;
-  totalProgramadoPct: number;
-  totalEjecutadoPct: number;
-  diferenciaPct: number;
-  totalOrdenes: number;
+  tProg: number;
+  progCierre: number;
+  totalEjec: number;
+  progAct: number;
+  pendAnt: number;
+  tPendR: number;
+  ordenesTotal: number;
   ordenesCerradas: number;
-  hhPlan: number;
-  hhReal: number;
+  actTotal: number;
+  actTerminadas: number;
   semanas: CeldaAvanceDto[];
 }
 
 export interface ReporteAvanceDto {
-  anioPrograma: string;
+  reporteId: number;
+  nombre: string;
+  periodoId: number;
+  periodoDescripcion: string;
   fechaInicio: string;
   fechaFin: string;
   fechaCorte: string | null;
-  formulaReal: string;
+  medida: MedidaAvance;
+  refPlan: RefPlan;
+  basePlan: "ACTIVIDADES" | "DIAS";
   semanas: SemanaAvanceDto[];
   familias: FilaAvanceDto[];
+}
+
+export interface ActividadDto {
+  ordenSapId: string;
+  operacion: string;
+  ficha: string;
+  texto: string | null;
+  sistema: string | null;
+  subsistema: string | null;
+  componente: string | null;
+  programada: boolean;
+  fechaTerminada: string | null;
+  dias: number;
+}
+
+export interface DetalleSemanaAvanceDto {
+  familiaCodigo: string;
+  familiaNombre: string;
+  noSemana: number;
+  fechaInicio: string;
+  fechaFin: string;
+  programado: number;
+  realEjProg: number;
+  realEjNoProg: number;
+  realEjecutado: number;
+  realOrdenes: number;
+  dias: { fecha: string; actTerminadas: number; ordenesCerradas: number }[];
+  actividades: ActividadDto[];
+  ordenesCerradas: { ordenSapId: string; ficha: string; descripcion: string | null; fechaCierre: string }[];
+}
+
+export interface AnalisisFilaDto {
+  nombre: string;
+  actTotal: number;
+  actTerminadas: number;
+  diasActProg: number;
+  diasActTerm: number;
+  avancePct: number;
+}
+
+export interface AnalisisEquipoDto extends AnalisisFilaDto {
+  ficha: string;
+  ordenSapId: string;
+  estado: string;
+  fechaRealInicio: string | null;
+  fechaRealFin: string | null;
+}
+
+export interface AnalisisAvanceDto {
+  familiaCodigo: string;
+  familiaNombre: string;
+  total: AnalisisFilaDto;
+  equipos: AnalisisEquipoDto[];
+  sistemas: AnalisisFilaDto[];
 }
 
 export interface ApiError {

@@ -23,14 +23,14 @@ const AREAS: Area[] = [
     nombre: "Centro de Servicios (Taller)",
     tableros: [
       {
-        titulo: "Disponibilidad de Maquinaria",
-        descripcion: "Equipos disponibles vs. requeridos por familia, con semáforo de umbrales.",
+        titulo: "Disponibilidad de Equipos",
+        descripcion: "Equipos disponibles vs. requeridos por asignación, hora a hora, con semáforo de umbrales.",
         href: "/dashboard/taller/disponibilidad",
         icon: IconTractor,
       },
       {
-        titulo: "Avance de Reparación",
-        descripcion: "Avance planificado vs. real del programa de reparación, semana a semana.",
+        titulo: "Avance de Órdenes de Trabajo",
+        descripcion: "Programado vs. ejecutado de los programas de reparación, semana a semana, con pendientes.",
         href: "/dashboard/taller/avance",
         icon: IconProgressCheck,
       },

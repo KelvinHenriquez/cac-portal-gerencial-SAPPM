@@ -22,14 +22,14 @@ export const MENU_ITEMS: MenuItem[] = [
   { id: "inicio", title: "Inicio", icon: IconHome, href: "/dashboard", exact: true },
   {
     id: "disponibilidad",
-    title: "Disponibilidad de Maquinaria",
+    title: "Disponibilidad de Equipos",
     icon: IconTractor,
     href: "/dashboard/taller/disponibilidad",
     subheader: "Centro de Servicios",
   },
   {
     id: "avance",
-    title: "Avance de Reparación",
+    title: "Avance de Órdenes de Trabajo",
     icon: IconProgressCheck,
     href: "/dashboard/taller/avance",
   },

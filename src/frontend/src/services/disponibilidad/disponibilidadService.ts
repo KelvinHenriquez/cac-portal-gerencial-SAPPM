@@ -1,30 +1,29 @@
 import axiosInstance from "@/services/axios";
-import { DetalleSemanaDto, EquiposFamiliaDetalleDto, ReporteDisponibilidadDto } from "@/types";
+import { DetalleSemanaDto, EquiposAsignacionDto, HoraDisponibilidadDto, ReporteDisponibilidadDto } from "@/types";
 
-const base = (tipoReporte: string) => `/disponibilidad/${encodeURIComponent(tipoReporte)}`;
+const base = (reporteId: number) => `/disponibilidad/${reporteId}`;
 
 export const disponibilidadService = {
-  getReporte: async (tipoReporte: string, semanas: number): Promise<ReporteDisponibilidadDto> => {
-    const { data } = await axiosInstance.get<ReporteDisponibilidadDto>(base(tipoReporte), { params: { semanas } });
+  getReporte: async (reporteId: number): Promise<ReporteDisponibilidadDto> => {
+    const { data } = await axiosInstance.get<ReporteDisponibilidadDto>(base(reporteId));
     return data;
   },
 
-  getEquiposFamilia: async (tipoReporte: string, familiaCodigo: string): Promise<EquiposFamiliaDetalleDto> => {
-    const { data } = await axiosInstance.get<EquiposFamiliaDetalleDto>(
-      `${base(tipoReporte)}/familias/${encodeURIComponent(familiaCodigo)}/equipos`
+  getDetalleSemana: async (reporteId: number, asignacionId: number, noSemana: number): Promise<DetalleSemanaDto> => {
+    const { data } = await axiosInstance.get<DetalleSemanaDto>(`${base(reporteId)}/asignaciones/${asignacionId}/semanas/${noSemana}`);
+    return data;
+  },
+
+  /** fecha en formato yyyy-MM-dd */
+  getHoras: async (reporteId: number, asignacionId: number, fecha: string): Promise<HoraDisponibilidadDto[]> => {
+    const { data } = await axiosInstance.get<HoraDisponibilidadDto[]>(
+      `${base(reporteId)}/asignaciones/${asignacionId}/dias/${fecha.slice(0, 10)}/horas`
     );
     return data;
   },
 
-  getDetalleSemana: async (
-    tipoReporte: string,
-    familiaCodigo: string,
-    anioIso: number,
-    semanaIso: number
-  ): Promise<DetalleSemanaDto> => {
-    const { data } = await axiosInstance.get<DetalleSemanaDto>(
-      `${base(tipoReporte)}/familias/${encodeURIComponent(familiaCodigo)}/semanas/${anioIso}/${semanaIso}`
-    );
+  getEquipos: async (reporteId: number, asignacionId: number): Promise<EquiposAsignacionDto> => {
+    const { data } = await axiosInstance.get<EquiposAsignacionDto>(`${base(reporteId)}/asignaciones/${asignacionId}/equipos`);
     return data;
   },
 };

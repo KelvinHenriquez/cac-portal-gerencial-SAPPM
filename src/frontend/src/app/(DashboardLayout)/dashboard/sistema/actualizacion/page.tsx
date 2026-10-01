@@ -36,8 +36,9 @@ const fechaHora = (v: string) => fmtFechaHora.format(new Date(v));
 const NOMBRE_PASO: Record<string, string> = {
   SAP_EQUIPOS: "Equipos de SAP",
   SAP_ORDENES: "Órdenes de SAP",
+  SAP_OPERACIONES: "Operaciones (actividades) de SAP",
+  SAP_AVISOS: "Avisos de SAP",
   SAP_HISTORIAL: "Historial de estados de SAP",
-  SAP_HORAS: "Horas por operación de SAP",
   CALC_SIN_CLASIFICAR: "Equipos sin clasificar",
   CALC_DISPONIBILIDAD: "Cálculo de disponibilidad",
   CALC_AVANCE: "Cálculo de avance",

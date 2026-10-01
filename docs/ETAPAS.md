@@ -13,7 +13,7 @@ montando todos los reportes y tableros gerenciales, incluida el área industrial
 | 3 | SAP simulado + Background Service de extracción y recálculo + bitácora + equipos sin clasificar | **Hecha** |
 | 4 | Pantalla Disponibilidad de Maquinaria | **Hecha** |
 | 5 | Pantalla Avance de Reparación | **Hecha** |
-| 7 | **Alinear ambos reportes con los de Oracle** (capturas y respuestas del 01/10/2026): estructura por período/reporte/asignación, disponibilidad por hora, avance semanal con Prog. Cierre / Pend. Ant. / T. Pend. R., drill-downs como Oracle | Siguiente |
+| 7 | **Alinear ambos reportes con los de Oracle** (capturas y respuestas del 01/10/2026): estructura por período/reporte/asignación, disponibilidad por hora, avance semanal con Prog. Cierre / Pend. Ant. / T. Pend. R., drill-downs como Oracle | **Hecha** |
 | 6 | Frescura de datos, monitoreo, alerta > 24 h, pruebas del cálculo | **Hecha** |
 | 8 | Integración real: DDL en Oracle de CAC, vistas reales, cliente RFC con NCo ([Anexo A v2](ANEXO_A_V2_ABAP.md)) | Bloqueada por pendientes externos |
 | 0 | Sprint 0: validar el cálculo con exports reales de SAP ([lista de exports](SPRINT0_EXPORTS_SAP.md)) | Esperando los exports |
@@ -197,6 +197,31 @@ Verificado contra los números de las capturas:
 **Otros:** SAP PM en vivo desde el 01/06/2026, estable desde julio (`SAP.FECHA_CARGA_INICIAL` =
 2026-06-01; Sprint 0 con julio a septiembre). El correo de alertas queda configurable y apagado
 en producción hasta que se decida (sin destinatarios no envía nada, solo registra).
+
+## Qué quedó en la Etapa 7
+
+- **Estructura (Oracle Forms):** 10 vistas con la forma real de las pantallas de configuración
+  (plantilla para producción en [oracle/vistas_produccion.sql](oracle/vistas_produccion.sql)).
+  Disponibilidad: reporte → semanas, horas y asignaciones → equipos. Avance: período → reportes →
+  familias → plan semanal (actividades y días).
+- **Staging SAP según el Anexo A v2:** órdenes con hora de creación y de cierre técnico, clase de
+  actividad y aviso; operaciones (actividades) con fechas plan, fecha de confirmación,
+  sistema/sub-sistema/componente y programada/no programada; avisos con parada e inicio/fin de
+  avería. El simulador local genera además preventivos (ZC02) y correctivos (ZC01) con aviso.
+- **Disponibilidad:** una foto por cada hora activa del reporte; un equipo cuenta fuera desde la
+  creación de su orden hasta el cierre técnico (las correctivas con aviso, solo si el aviso indica
+  parada y desde/hasta la avería). Horas por tipo de orden con prioridad correctiva > preventiva >
+  planificada; Hrs Real Efec. = Hrs al día − correctiva. Potencial sin tope. Colores como Oracle
+  (rojo / naranja / negro). Las columnas actuales son la foto de la última hora medida antes de la
+  última actualización. Drill-downs: "Disponibilidad Semanal" (matriz por día, resumen, hora por
+  hora, órdenes con observación) y equipos de la asignación.
+- **Avance:** % de cada semana (no acumulado) y vista Acumulado; real por órdenes (por defecto) o
+  por actividades con Ref. Plan.; T. Prog., Prog. Cierre, Total Ejec., Prog. Act., Pend. Ant. y
+  T. Pend. R. (pruebas con los números de las capturas); semana actual resaltada, sin colores de
+  atraso. Drill-downs: "Avance Semanal" (resumen, días, actividades terminadas por sistema,
+  órdenes cerradas) y "Análisis de Avance" por equipo y por sistema.
+- Todo probado en local contra Oracle 11g XE: corrida completa (~14 s), 40 pruebas automáticas,
+  pantallas verificadas en el navegador (escritorio y teléfono).
 
 ## Datos reales de SAP
 
