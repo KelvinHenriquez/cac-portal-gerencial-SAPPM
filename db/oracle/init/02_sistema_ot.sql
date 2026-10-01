@@ -95,7 +95,16 @@ BEGIN
                     WHEN 'RETROEXCAVADORAS' THEN 'RE-'
                     WHEN 'BULLDOZERS'       THEN 'BD-'
                 END || LPAD(i, 3, '0'),
-                RTRIM(f.FAMILIA_NOMBRE, 's') || ' #' || i,
+                CASE f.FAMILIA_CODIGO
+                    WHEN 'TRACTORES'        THEN 'Tractor agrícola'
+                    WHEN 'VAGONES'          THEN 'Vagón cañero'
+                    WHEN 'CAMIONES'         THEN 'Camión de tiro'
+                    WHEN 'COSECHADORAS'     THEN 'Cosechadora de caña'
+                    WHEN 'ALZADORAS'        THEN 'Alzadora de caña'
+                    WHEN 'MOTONIVELADORAS'  THEN 'Motoniveladora'
+                    WHEN 'RETROEXCAVADORAS' THEN 'Retroexcavadora'
+                    WHEN 'BULLDOZERS'       THEN 'Tractor de oruga'
+                END || ' #' || i,
                 f.FAMILIA_CODIGO,
                 'S');
         END LOOP;

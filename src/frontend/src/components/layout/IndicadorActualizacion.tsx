@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Chip, Tooltip, CircularProgress } from "@mui/material";
+import { Chip, Tooltip, CircularProgress, useMediaQuery } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import { IconAlertTriangle, IconCircleCheck } from "@tabler/icons-react";
 import { sistemaService } from "@/services/sistema/sistemaService";
 import { EstadoActualizacionDto } from "@/types";
@@ -21,6 +22,9 @@ const formatoFecha = new Intl.DateTimeFormat("es-DO", {
 // dato bueno, pero el usuario tiene que saber que no es de hoy (sección 10).
 export default function IndicadorActualizacion() {
   const [estado, setEstado] = useState<EstadoActualizacionDto | null>(null);
+  const theme = useTheme();
+  // En el teléfono la etiqueta completa se come el título de la página.
+  const compacto = useMediaQuery(theme.breakpoints.down("sm"));
 
   useEffect(() => {
     let activo = true;
@@ -46,7 +50,7 @@ export default function IndicadorActualizacion() {
         variant="outlined"
         color="info"
         icon={<CircularProgress size={12} sx={{ ml: 1 }} />}
-        label="Actualizando datos…"
+        label={compacto ? "Actualizando…" : "Actualizando datos…"}
       />
     );
   }
@@ -82,7 +86,7 @@ export default function IndicadorActualizacion() {
         variant="outlined"
         color={conProblema ? "warning" : "success"}
         icon={conProblema ? <IconAlertTriangle size={16} /> : <IconCircleCheck size={16} />}
-        label={`Última actualización: ${fecha}`}
+        label={compacto ? fecha.slice(0, 5) + fecha.slice(10) : `Última actualización: ${fecha}`}
       />
     </Tooltip>
   );

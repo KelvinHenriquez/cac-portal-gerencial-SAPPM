@@ -68,6 +68,9 @@ namespace PortalGerencialBackEnd.Infrastructure.DependencyInjection
             services.AddScoped<ISistemaService, SistemaService>();
             services.AddScoped<IProcesoActualizacionService, ProcesoActualizacionService>();
             services.AddHostedService<ActualizacionProgramadaService>();
+
+            // Reportes (solo leen resultados calculados y staging).
+            services.AddScoped<IReporteDisponibilidadService, ReporteDisponibilidadService>();
             services.AddSingleton<LoginAttemptLimiter>();
 
             services.Configure<JwtSettings>(configuration.GetSection("Jwt"));

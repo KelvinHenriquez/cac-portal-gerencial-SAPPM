@@ -11,7 +11,7 @@ montando todos los reportes y tableros gerenciales, incluida el área industrial
 | 1 | Esqueleto: copia de Pago en Efectivo sin su dominio, Oracle Free local, login contra Oracle, shell del portal | **Hecha** |
 | 2 | Modelo de datos `_pgpm` + estructura de Oracle Forms simulada (familias, curva, requeridos, umbrales, equipos) | **Hecha** |
 | 3 | SAP simulado + Background Service de extracción y recálculo + bitácora + equipos sin clasificar | **Hecha** |
-| 4 | Pantalla Disponibilidad de Maquinaria | Pendiente |
+| 4 | Pantalla Disponibilidad de Maquinaria | **Hecha** |
 | 5 | Pantalla Avance de Reparación | Pendiente |
 | 6 | Frescura de datos, monitoreo, alerta > 24 h, pruebas del cálculo | Pendiente |
 | 7 | Integración real: DDL en Oracle de CAC, vistas reales, cliente RFC con NCo | Bloqueada por pendientes externos |
@@ -89,6 +89,22 @@ Vistas de producción con los huecos a llenar: [oracle/vistas_produccion.sql](or
   días. Incluye brechas reales: ~5 % de reparaciones terminadas sin cierre técnico y ~15 % de
   órdenes sin horas confirmadas, más 3 equipos que solo existen en SAP.
 
+## Pantalla Disponibilidad de Maquinaria (Etapa 4)
+
+- Selector de tipo de reporte (de `VW_UMBRALES_SEMAFORO_PGPM`) y de semanas (4, 8, 13 o 26);
+  ambos se recuerdan en el navegador.
+- Columnas actuales (Cant. Equipo, Eq. Requerido, Eq. Disponible, Disponibilidad %, Potencial %)
+  = último día calculado. Columnas semanales = promedio de los días de la semana ISO, con el peor
+  día y los días calculados en el tooltip. Semáforo coloreado al leer, con los umbrales vigentes.
+- **Fila "Todas (Promedio)"**: cantidades sumadas y porcentajes como promedio simple de las
+  familias (así se lee la etiqueta del reporte de Oracle). Si en Oracle es un promedio ponderado
+  (disponibles totales / requeridos totales), se cambia en `ReporteDisponibilidadService`.
+- Drill-down por familia: equipos con su estado (fuera de servicio con las órdenes que lo detienen,
+  disponible, inactivo, o "no está en SAP" cuando el código legado de Oracle no aparece en SAP),
+  más los requeridos por asignación.
+- Drill-down por semana: los 7 días con sus números y las órdenes de cada día.
+- Funciona en teléfono: la tabla se desplaza dentro de su marco con la columna Familia fija.
+
 ## Datos reales de SAP
 
 Para desarrollar (etapas 3 a 6) **no hacen falta exports de SAP**: el cliente SAP simulado genera
@@ -117,6 +133,8 @@ Responsable: **Kelvin (DBA)**
       en `PARAMETRO_PGPM`).
 - [ ] Fecha de arranque de SAP PM (para elegir el período del Sprint 0 y `SAP.FECHA_CARGA_INICIAL`).
 - [ ] Criterio numérico de aceptación del Sprint 0.
+- [ ] La fila "Todas (Promedio)" del reporte de Oracle, ¿es promedio simple de las familias o
+      disponibles totales / requeridos totales?
 
 Responsable: **ABAP** (en curso, ~2 días desde el 30/09)
 - [ ] Módulos RFC del Anexo A, campo real del código legado, retención de JCDS.
