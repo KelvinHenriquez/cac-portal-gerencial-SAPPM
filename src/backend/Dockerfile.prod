@@ -1,0 +1,19 @@
+# Backend producción (.NET 8) — imagen publicada, sin dotnet watch ni SDK en runtime.
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /src
+COPY PortalGerencialBackEnd.Core/PortalGerencialBackEnd.Core.csproj PortalGerencialBackEnd.Core/
+COPY PortalGerencialBackEnd.Infrastructure/PortalGerencialBackEnd.Infrastructure.csproj PortalGerencialBackEnd.Infrastructure/
+COPY PortalGerencialBackEnd.API/PortalGerencialBackEnd.API.csproj PortalGerencialBackEnd.API/
+RUN dotnet restore PortalGerencialBackEnd.API/PortalGerencialBackEnd.API.csproj
+COPY PortalGerencialBackEnd.Core PortalGerencialBackEnd.Core
+COPY PortalGerencialBackEnd.Infrastructure PortalGerencialBackEnd.Infrastructure
+COPY PortalGerencialBackEnd.API PortalGerencialBackEnd.API
+RUN dotnet publish PortalGerencialBackEnd.API/PortalGerencialBackEnd.API.csproj -c Release -o /app/publish --no-restore
+
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
+WORKDIR /app
+COPY --from=build /app/publish .
+ENV ASPNETCORE_ENVIRONMENT=Production
+ENV ASPNETCORE_URLS=http://+:8080
+EXPOSE 8080
+ENTRYPOINT ["dotnet", "PortalGerencialBackEnd.API.dll"]

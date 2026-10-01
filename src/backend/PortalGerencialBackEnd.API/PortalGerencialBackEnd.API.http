@@ -1,0 +1,10 @@
+@api = http://localhost:5402
+
+### Login con un usuario nombrado de Oracle (en local: ver db/oracle/init/01_usuarios.sql)
+POST {{api}}/api/auth/login
+Content-Type: application/json
+
+{
+  "usuario": "gerente1",
+  "password": "Gerente2026"
+}

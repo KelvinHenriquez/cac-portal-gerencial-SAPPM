@@ -1,0 +1,26 @@
+# Backend Development Dockerfile
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS development
+
+WORKDIR /app
+
+# Copy csproj files and restore dependencies first (mejor cacheo de capas)
+COPY PortalGerencialBackEnd.Core/PortalGerencialBackEnd.Core.csproj ./PortalGerencialBackEnd.Core/
+COPY PortalGerencialBackEnd.Infrastructure/PortalGerencialBackEnd.Infrastructure.csproj ./PortalGerencialBackEnd.Infrastructure/
+COPY PortalGerencialBackEnd.API/PortalGerencialBackEnd.API.csproj ./PortalGerencialBackEnd.API/
+COPY PortalGerencialBackEnd.Tests/PortalGerencialBackEnd.Tests.csproj ./PortalGerencialBackEnd.Tests/
+COPY PortalGerencialBackEnd.sln ./
+
+RUN dotnet restore
+
+# Copy source code
+COPY . .
+
+EXPOSE 5218
+
+ENV ASPNETCORE_ENVIRONMENT=Docker
+ENV ASPNETCORE_URLS=http://0.0.0.0:5218
+ENV ASPNETCORE_HTTPS_PORT=""
+ENV DOTNET_RUNNING_IN_CONTAINER=true
+ENV DOTNET_WATCH_RESTART_ON_RUDE_EDIT=true
+
+CMD ["dotnet", "watch", "run", "--non-interactive", "--no-launch-profile", "--project", "PortalGerencialBackEnd.API", "--urls", "http://0.0.0.0:5218"]

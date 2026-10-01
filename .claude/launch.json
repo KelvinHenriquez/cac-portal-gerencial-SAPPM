@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "stack-local",
+      "runtimeExecutable": "docker",
+      "runtimeArgs": ["compose", "-f", "docker-compose.dev.yml", "up"],
+      "port": 3002,
+      "url": "http://localhost:3002"
+    }
+  ]
+}

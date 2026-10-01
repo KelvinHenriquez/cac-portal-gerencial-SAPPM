@@ -1,0 +1,30 @@
+# .NET
+bin/
+obj/
+*.user
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+npm-debug.log*
+
+# Env
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vs/
+.vscode/
+*.suo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker volumes (no aplica, pero por si acaso)
+docker-data/
+.env.prod
+deploy/certs/*.pem
+deploy/certs/*.key

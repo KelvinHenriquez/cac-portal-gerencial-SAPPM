@@ -1,0 +1,5 @@
+# Los scripts se montan en contenedores Linux (Oracle, API, web): siempre LF.
+* text=auto eol=lf
+*.docx binary
+*.xlsx binary
+*.ico binary

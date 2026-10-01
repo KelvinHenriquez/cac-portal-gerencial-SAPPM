@@ -1,0 +1,46 @@
+html,
+body {
+  padding: 0;
+  margin: 0;
+  height: 100%;
+  background: #f4f6f8;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* Boleta térmica (80 mm): fuera de impresión no existe; al imprimir es lo único que se ve. */
+.boleta-root {
+  display: none;
+}
+
+@media print {
+  @page {
+    size: 80mm auto;
+    margin: 0;
+  }
+  html,
+  body {
+    background: #fff !important;
+  }
+  body > *:not(.boleta-root) {
+    display: none !important;
+  }
+  .boleta-root {
+    display: block !important;
+    width: 72mm;
+    margin: 0 auto;
+    padding: 4mm 0;
+    color: #000;
+    background: #fff;
+    font-family: "Courier New", Courier, monospace;
+    font-size: 12px;
+    line-height: 1.35;
+  }
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
