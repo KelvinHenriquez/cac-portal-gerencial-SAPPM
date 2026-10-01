@@ -1,38 +1,17 @@
 -- =====================================================================================
 -- SOLO LOCAL. Simula las tablas de configuración del módulo "Sistema de Órdenes de Trabajo"
--- de Oracle Forms (sección 4.1). Los nombres OT_* son inventados: los reales están pendientes
--- (sección 13). Lo que importa es que las vistas VW_*_PGPM (03_vistas_pgpm.sql) exponen
--- exactamente las columnas que el portal espera; en producción esas mismas vistas se apuntan a
--- las tablas reales (docs/oracle/vistas_produccion.sql) y el código del portal no cambia.
---
--- Datos de prueba: Programa de Reparación 2026 (interzafra), del 1/6/2026 al 10/12/2026.
+-- de Oracle Forms, con la forma de sus pantallas (capturas del 01/10/2026):
+--   MA_CONFIGURACION_DISP -> reportes de disponibilidad, sus semanas, horas y asignaciones.
+--   MA_CONFIG_AVANCE      -> períodos, reportes de avance, familias y plan semanal.
+-- Los nombres OT_* son inventados: los reales están pendientes. Lo que importa es que las
+-- vistas VW_*_PGPM (03_vistas_pgpm.sql) exponen las columnas que el portal espera; en
+-- producción esas vistas se apuntan a las tablas reales (docs/oracle/vistas_produccion.sql).
+-- Compatible con Oracle 11g.
 -- =====================================================================================
 ALTER SESSION SET CURRENT_SCHEMA = SISTEMA_OT;
 
--- Tipos de reporte de disponibilidad + umbrales de semáforo (Paso 1 de "Configuración
--- Reporte Disponibilidad"). Disponibilidad < UMBRAL_ROJO = rojo; < UMBRAL_NARANJA = naranja;
--- si no, verde.
-CREATE TABLE OT_TIPO_REPORTE (
-    TIPO_REPORTE    VARCHAR2(60)  PRIMARY KEY,
-    DESCRIPCION     VARCHAR2(200) NOT NULL,
-    UMBRAL_ROJO     NUMBER(5,2)   NOT NULL,
-    UMBRAL_NARANJA  NUMBER(5,2)   NOT NULL
-);
-
--- Familias de equipos y su ventana de reparación por programa (Paso 3 de "Configuración
--- Reporte Avance OT").
-CREATE TABLE OT_FAMILIA_DEFINIDA (
-    ANIO_PROGRAMA     VARCHAR2(20)  NOT NULL,
-    FAMILIA_CODIGO    VARCHAR2(60)  NOT NULL,
-    FAMILIA_NOMBRE    VARCHAR2(200) NOT NULL,
-    FECHA_EST_INICIO  DATE          NOT NULL,
-    FECHA_EST_FIN     DATE          NOT NULL,
-    CANT_EQUIPO       NUMBER(10)    NOT NULL,
-    PRIMARY KEY (ANIO_PROGRAMA, FAMILIA_CODIGO)
-);
-
--- Maestro de equipos (Objeto Técnico / Ficha) con su familia. CODIGO_LEGADO es el código
--- viejo que SAP también trae cargado: es la llave de cruce SAP <-> Oracle (sección 3).
+-- ------------------------------------------------------------------ equipos (Ficha)
+-- CODIGO_LEGADO es el código viejo que SAP también trae cargado: la llave de cruce.
 CREATE TABLE OT_EQUIPO (
     CODIGO_LEGADO   VARCHAR2(30)  PRIMARY KEY,
     DESCRIPCION     VARCHAR2(200) NOT NULL,
@@ -40,131 +19,245 @@ CREATE TABLE OT_EQUIPO (
     ACTIVO          CHAR(1)       DEFAULT 'S' NOT NULL
 );
 
--- Equipos requeridos por familia y asignación/proceso productivo (Paso 4 de "Configuración
--- Reporte Disponibilidad").
-CREATE TABLE OT_EQUIPOS_REQUERIDOS (
-    TIPO_REPORTE    VARCHAR2(60) NOT NULL,
+-- ------------------------------------------------------------------ disponibilidad
+-- Paso 1: tipo de reporte con sus dos umbrales (rojo si < COMP1, naranja si < COMP2).
+CREATE TABLE OT_DISP_REPORTE (
+    REPORTE_ID   NUMBER(10)    PRIMARY KEY,
+    ORDEN        NUMBER(10)    NOT NULL,
+    DESCRIPCION  VARCHAR2(200) NOT NULL,
+    COMP1        NUMBER(5,2)   NOT NULL,
+    COMP2        NUMBER(5,2)   NOT NULL,
+    ESTADO       VARCHAR2(10)  DEFAULT 'Activo' NOT NULL
+);
+
+-- Paso 2: semanas del reporte, generadas a partir de un rango de fechas.
+CREATE TABLE OT_DISP_SEMANA (
+    REPORTE_ID    NUMBER(10) NOT NULL,
+    NO_SEMANA     NUMBER(3)  NOT NULL,
+    MES           NUMBER(2)  NOT NULL,
+    FECHA_INICIO  DATE       NOT NULL,
+    FECHA_FIN     DATE       NOT NULL,
+    PRIMARY KEY (REPORTE_ID, NO_SEMANA)
+);
+
+-- Paso 3: horas del día en que corre el proceso (en que se toma la foto de disponibilidad).
+CREATE TABLE OT_DISP_HORA (
+    REPORTE_ID  NUMBER(10)   NOT NULL,
+    HORA        NUMBER(2)    NOT NULL,
+    ESTADO      VARCHAR2(10) DEFAULT 'Activo' NOT NULL,
+    PRIMARY KEY (REPORTE_ID, HORA)
+);
+
+-- Paso 4: asignaciones (filas del reporte) con sus requeridos y su meta.
+CREATE TABLE OT_DISP_ASIGNACION (
+    REPORTE_ID      NUMBER(10)    NOT NULL,
+    ASIGNACION_ID   NUMBER(10)    NOT NULL,
+    ORDEN           NUMBER(10)    NOT NULL,
+    ASIGNACION      VARCHAR2(200) NOT NULL,
+    CANT_ASIG       NUMBER(10)    NOT NULL,
+    CANT_REQ        NUMBER(10)    NOT NULL,
+    DISP_COMP       NUMBER(5,2)   NOT NULL,
+    NEGRITA         VARCHAR2(2)   DEFAULT 'No' NOT NULL,
+    GRUPO           VARCHAR2(2)   DEFAULT 'No' NOT NULL,
+    PRIMARY KEY (REPORTE_ID, ASIGNACION_ID)
+);
+
+-- Botón "..." de Cant. Asig.: los equipos de cada asignación (por grupo o directos; aquí ya
+-- resueltos a equipos individuales).
+CREATE TABLE OT_DISP_ASIG_EQUIPO (
+    REPORTE_ID     NUMBER(10)   NOT NULL,
+    ASIGNACION_ID  NUMBER(10)   NOT NULL,
+    CODIGO_LEGADO  VARCHAR2(30) NOT NULL,
+    PRIMARY KEY (REPORTE_ID, ASIGNACION_ID, CODIGO_LEGADO)
+);
+
+-- ------------------------------------------------------------------ avance
+CREATE TABLE OT_PERIODO (
+    PERIODO_ID   NUMBER(10)    PRIMARY KEY,
+    DESCRIPCION  VARCHAR2(100) NOT NULL
+);
+
+-- Paso 1 de "Configuración Reporte Avance": cada reporte pertenece a un período.
+CREATE TABLE OT_AVANCE_REPORTE (
+    REPORTE_ID    NUMBER(10)    PRIMARY KEY,
+    PERIODO_ID    NUMBER(10)    NOT NULL,
+    TIPO_OT       VARCHAR2(60)  NOT NULL,
+    FECHA_REF     VARCHAR2(30)  NOT NULL,
+    NOMBRE        VARCHAR2(200) NOT NULL,
+    FECHA_INICIO  DATE          NOT NULL,
+    FECHA_FIN     DATE          NOT NULL
+);
+
+-- Paso 3: familias del reporte.
+CREATE TABLE OT_AVANCE_FAMILIA (
+    REPORTE_ID        NUMBER(10)    NOT NULL,
+    ORDEN             NUMBER(10)    NOT NULL,
+    FAMILIA_CODIGO    VARCHAR2(60)  NOT NULL,
+    FAMILIA_NOMBRE    VARCHAR2(200) NOT NULL,
+    FECHA_EST_INICIO  DATE          NOT NULL,
+    FECHA_EST_FIN     DATE          NOT NULL,
+    CANT_EQUIPO       NUMBER(10)    NOT NULL,
+    PRIMARY KEY (REPORTE_ID, FAMILIA_CODIGO)
+);
+
+-- "Semana Definida Por Familia": actividades y días planificados por semana.
+CREATE TABLE OT_AVANCE_SEMANA (
+    REPORTE_ID      NUMBER(10)   NOT NULL,
     FAMILIA_CODIGO  VARCHAR2(60) NOT NULL,
-    ASIGNACION      VARCHAR2(60) NOT NULL,
-    CANT_ASIGNADA   NUMBER(10)   NOT NULL,
-    CANT_REQUERIDA  NUMBER(10)   NOT NULL,
-    PRIMARY KEY (TIPO_REPORTE, FAMILIA_CODIGO, ASIGNACION)
+    NO_SEMANA       NUMBER(3)    NOT NULL,
+    MES             NUMBER(2)    NOT NULL,
+    FECHA_INICIO    DATE         NOT NULL,
+    FECHA_FIN       DATE         NOT NULL,
+    ACTIVIDAD       NUMBER(10,2) NOT NULL,
+    DIAS            NUMBER(10,2) NOT NULL,
+    PRIMARY KEY (REPORTE_ID, FAMILIA_CODIGO, NO_SEMANA)
 );
 
--- Curva de avance planeado: % de la actividad total que se programa en cada semana, por
--- familia ("Semana Definida Por Familia", Paso 3).
-CREATE TABLE OT_SEMANA_FAMILIA (
-    ANIO_PROGRAMA        VARCHAR2(20) NOT NULL,
-    FAMILIA_CODIGO       VARCHAR2(60) NOT NULL,
-    NO_SEMANA            NUMBER(3)    NOT NULL,
-    MES                  NUMBER(2)    NOT NULL,
-    FECHA_INICIO_SEMANA  DATE         NOT NULL,
-    FECHA_FIN_SEMANA     DATE         NOT NULL,
-    ACTIVIDAD_PCT        NUMBER(5,2)  NOT NULL,
-    DIAS                 NUMBER(2)    NOT NULL,
-    PRIMARY KEY (ANIO_PROGRAMA, FAMILIA_CODIGO, NO_SEMANA)
-);
+-- ================================================================== datos de prueba
 
-INSERT INTO OT_TIPO_REPORTE VALUES ('CS-P30',     'Centro de Servicios - P30',    70, 85);
-INSERT INTO OT_TIPO_REPORTE VALUES ('NIVELACION', 'Maquinaria de Nivelación',     60, 80);
-
-INSERT INTO OT_FAMILIA_DEFINIDA VALUES ('2026', 'TRACTORES',       'Tractores agrícolas',       DATE '2026-06-01', DATE '2026-11-27',  45);
-INSERT INTO OT_FAMILIA_DEFINIDA VALUES ('2026', 'VAGONES',         'Vagones cañeros',           DATE '2026-06-15', DATE '2026-12-10', 120);
-INSERT INTO OT_FAMILIA_DEFINIDA VALUES ('2026', 'CAMIONES',        'Camiones de tiro',          DATE '2026-06-08', DATE '2026-12-04',  30);
-INSERT INTO OT_FAMILIA_DEFINIDA VALUES ('2026', 'COSECHADORAS',    'Cosechadoras de caña',      DATE '2026-06-01', DATE '2026-11-20',  12);
-INSERT INTO OT_FAMILIA_DEFINIDA VALUES ('2026', 'ALZADORAS',       'Alzadoras de caña',         DATE '2026-06-22', DATE '2026-12-10',  18);
-INSERT INTO OT_FAMILIA_DEFINIDA VALUES ('2026', 'MOTONIVELADORAS', 'Motoniveladoras',           DATE '2026-07-06', DATE '2026-11-13',   6);
-INSERT INTO OT_FAMILIA_DEFINIDA VALUES ('2026', 'RETROEXCAVADORAS','Retroexcavadoras',          DATE '2026-07-06', DATE '2026-11-27',   8);
-INSERT INTO OT_FAMILIA_DEFINIDA VALUES ('2026', 'BULLDOZERS',      'Tractores de oruga',        DATE '2026-07-13', DATE '2026-12-04',   5);
-
--- Equipos: código legado con prefijo por familia (TR-001, VG-001, ...). Uno de cada familia
--- grande queda inactivo para que el cálculo tenga que respetar ACTIVO.
+-- Equipos: maquinaria del taller (con programa de reparación) y equipos de riego.
+DECLARE
+    PROCEDURE equipos(p_prefijo VARCHAR2, p_cant NUMBER, p_desc VARCHAR2, p_familia VARCHAR2) IS
+    BEGIN
+        FOR i IN 1 .. p_cant LOOP
+            INSERT INTO OT_EQUIPO VALUES (p_prefijo || LPAD(i, 3, '0'), p_desc || ' #' || i, p_familia, 'S');
+        END LOOP;
+    END;
 BEGIN
-    FOR f IN (SELECT FAMILIA_CODIGO, FAMILIA_NOMBRE, CANT_EQUIPO FROM OT_FAMILIA_DEFINIDA WHERE ANIO_PROGRAMA = '2026') LOOP
-        FOR i IN 1 .. f.CANT_EQUIPO LOOP
-            INSERT INTO OT_EQUIPO (CODIGO_LEGADO, DESCRIPCION, FAMILIA_CODIGO, ACTIVO)
-            VALUES (
-                CASE f.FAMILIA_CODIGO
-                    WHEN 'TRACTORES'        THEN 'TR-'
-                    WHEN 'VAGONES'          THEN 'VG-'
-                    WHEN 'CAMIONES'         THEN 'CM-'
-                    WHEN 'COSECHADORAS'     THEN 'CO-'
-                    WHEN 'ALZADORAS'        THEN 'AL-'
-                    WHEN 'MOTONIVELADORAS'  THEN 'MN-'
-                    WHEN 'RETROEXCAVADORAS' THEN 'RE-'
-                    WHEN 'BULLDOZERS'       THEN 'BD-'
-                END || LPAD(i, 3, '0'),
-                CASE f.FAMILIA_CODIGO
-                    WHEN 'TRACTORES'        THEN 'Tractor agrícola'
-                    WHEN 'VAGONES'          THEN 'Vagón cañero'
-                    WHEN 'CAMIONES'         THEN 'Camión de tiro'
-                    WHEN 'COSECHADORAS'     THEN 'Cosechadora de caña'
-                    WHEN 'ALZADORAS'        THEN 'Alzadora de caña'
-                    WHEN 'MOTONIVELADORAS'  THEN 'Motoniveladora'
-                    WHEN 'RETROEXCAVADORAS' THEN 'Retroexcavadora'
-                    WHEN 'BULLDOZERS'       THEN 'Tractor de oruga'
-                END || ' #' || i,
-                f.FAMILIA_CODIGO,
-                'S');
+    equipos('TR-', 45,  'Tractor agrícola',     'TRACTORES');
+    equipos('VG-', 120, 'Vagón cañero',         'VAGONES');
+    equipos('CM-', 30,  'Camión de tiro',       'CAMIONES');
+    equipos('CO-', 12,  'Cosechadora de caña',  'COSECHADORAS');
+    equipos('AL-', 18,  'Alzadora de caña',     'ALZADORAS');
+    equipos('MN-', 6,   'Motoniveladora',       'MOTONIVELADORAS');
+    equipos('RE-', 8,   'Retroexcavadora',      'RETROEXCAVADORAS');
+    equipos('BD-', 5,   'Tractor de oruga',     'BULLDOZERS');
+    equipos('RB-', 10,  'Bomba de riego',       'BOMBAS_RIEGO');
+    equipos('RG-', 11,  'Bomba de goteo',       'BOMBAS_RIEGO');
+    equipos('RA-', 10,  'Bomba de aspersión',   'BOMBAS_RIEGO');
+    equipos('RC-', 24,  'Bomba de caudal',      'BOMBAS_RIEGO');
+    equipos('RP-', 3,   'Pozo',                 'POZOS');
+    equipos('RT-', 6,   'Turbina vertical',     'TURBINAS');
+END;
+/
+UPDATE OT_EQUIPO SET ACTIVO = 'N' WHERE CODIGO_LEGADO IN ('TR-045', 'VG-120', 'RC-024');
+
+-- Reportes de disponibilidad, como en la captura de configuración.
+INSERT INTO OT_DISP_REPORTE VALUES (51, 1, 'Equipos De Riegos - Gerencial',     80, 85, 'Activo');
+INSERT INTO OT_DISP_REPORTE VALUES (52, 2, 'Equipos De Riegos - Detallado P30', 80, 85, 'Activo');
+INSERT INTO OT_DISP_REPORTE VALUES (53, 3, 'Centro De Servicios - P30',         80, 85, 'Activo');
+INSERT INTO OT_DISP_REPORTE VALUES (54, 4, 'Maquinaria De Nivelación',          70, 80, 'Activo');
+
+-- Semanas (Paso 2): rango 01/06/2026 al 27/12/2026, lunes a domingo. Horas (Paso 3): todas,
+-- salvo el detallado de riego, que solo mide de 6:00 a 18:00.
+DECLARE
+    v_lunes DATE;
+BEGIN
+    FOR r IN (SELECT REPORTE_ID FROM OT_DISP_REPORTE) LOOP
+        v_lunes := DATE '2026-06-01';
+        FOR s IN 1 .. 30 LOOP
+            INSERT INTO OT_DISP_SEMANA VALUES (r.REPORTE_ID, s, EXTRACT(MONTH FROM v_lunes), v_lunes, v_lunes + 6);
+            v_lunes := v_lunes + 7;
+        END LOOP;
+        FOR h IN 0 .. 23 LOOP
+            INSERT INTO OT_DISP_HORA VALUES (r.REPORTE_ID, h,
+                CASE WHEN r.REPORTE_ID = 52 AND (h < 6 OR h > 18) THEN 'Inactivo' ELSE 'Activo' END);
         END LOOP;
     END LOOP;
 END;
 /
-UPDATE OT_EQUIPO SET ACTIVO = 'N' WHERE CODIGO_LEGADO IN ('TR-045', 'VG-120');
 
-INSERT INTO OT_EQUIPOS_REQUERIDOS VALUES ('CS-P30', 'TRACTORES',    'TIRO',      28, 26);
-INSERT INTO OT_EQUIPOS_REQUERIDOS VALUES ('CS-P30', 'TRACTORES',    'CULTIVO',   12, 10);
-INSERT INTO OT_EQUIPOS_REQUERIDOS VALUES ('CS-P30', 'VAGONES',      'TIRO',     118, 105);
-INSERT INTO OT_EQUIPOS_REQUERIDOS VALUES ('CS-P30', 'CAMIONES',     'TIRO',      30, 25);
-INSERT INTO OT_EQUIPOS_REQUERIDOS VALUES ('CS-P30', 'COSECHADORAS', 'CORTE',     12, 10);
-INSERT INTO OT_EQUIPOS_REQUERIDOS VALUES ('CS-P30', 'ALZADORAS',    'ALCE',      18, 15);
-INSERT INTO OT_EQUIPOS_REQUERIDOS VALUES ('NIVELACION', 'MOTONIVELADORAS',  'NIVELACION', 6, 5);
-INSERT INTO OT_EQUIPOS_REQUERIDOS VALUES ('NIVELACION', 'RETROEXCAVADORAS', 'NIVELACION', 8, 6);
-INSERT INTO OT_EQUIPOS_REQUERIDOS VALUES ('NIVELACION', 'BULLDOZERS',       'NIVELACION', 5, 4);
-INSERT INTO OT_EQUIPOS_REQUERIDOS VALUES ('NIVELACION', 'TRACTORES',        'NIVELACION', 5, 4);
-
--- Curva en "S": semanas lunes-domingo desde el lunes de la semana de inicio hasta la de fin,
--- con un peso seno por semana (poco al principio y al final, mucho en el medio). Los % suman
--- exactamente 100 por familia (la última semana absorbe el redondeo).
+-- Asignaciones (Paso 4) y sus equipos.
 DECLARE
-    v_inicio  DATE;
-    v_semanas PLS_INTEGER;
-    v_total   NUMBER;
-    v_pct     NUMBER;
-    v_acum    NUMBER;
-    v_ini_sem DATE;
-    v_fin_sem DATE;
-    v_dias    PLS_INTEGER;
+    PROCEDURE asig(p_rep NUMBER, p_id NUMBER, p_nombre VARCHAR2, p_prefijo VARCHAR2, p_desde NUMBER, p_hasta NUMBER,
+                   p_req NUMBER, p_comp NUMBER DEFAULT 100, p_negrita VARCHAR2 DEFAULT 'No') IS
+        v_cant NUMBER := 0;
+    BEGIN
+        FOR i IN p_desde .. p_hasta LOOP
+            INSERT INTO OT_DISP_ASIG_EQUIPO VALUES (p_rep, p_id, p_prefijo || LPAD(i, 3, '0'));
+            v_cant := v_cant + 1;
+        END LOOP;
+        INSERT INTO OT_DISP_ASIGNACION VALUES (p_rep, p_id, p_id, p_nombre, v_cant, p_req, p_comp, p_negrita, 'No');
+    END;
 BEGIN
-    FOR f IN (SELECT FAMILIA_CODIGO, FECHA_EST_INICIO, FECHA_EST_FIN FROM OT_FAMILIA_DEFINIDA WHERE ANIO_PROGRAMA = '2026') LOOP
+    asig(51, 1, 'Aguacatico Caudal',    'RB-', 1, 10, 10);
+    asig(51, 2, 'Aguacatico Goteo',     'RG-', 1, 11, 11);
+    asig(51, 3, 'Aspersión Bombas',     'RA-', 1, 10, 9);
+    asig(51, 4, 'Caudal',               'RC-', 1, 24, 23);
+    asig(51, 5, 'Pozos Finca Madre',    'RP-', 1, 3, 3);
+    asig(51, 6, 'Turbinas Verticales',  'RT-', 1, 6, 6);
+
+    asig(52, 1, 'Aguacatico Caudal',    'RB-', 1, 10, 10, 100, 'Si');
+    asig(52, 2, 'Caudal',               'RC-', 1, 24, 23);
+
+    asig(53, 1, 'Tractores Tiro',       'TR-', 1, 28, 26);
+    asig(53, 2, 'Tractores Cultivo',    'TR-', 29, 40, 10);
+    asig(53, 3, 'Vagones',              'VG-', 1, 120, 105);
+    asig(53, 4, 'Camiones De Tiro',     'CM-', 1, 30, 25);
+    asig(53, 5, 'Cosechadoras',         'CO-', 1, 12, 10, 95);
+    asig(53, 6, 'Alzadoras',            'AL-', 1, 18, 15);
+
+    asig(54, 1, 'Motoniveladoras',      'MN-', 1, 6, 5);
+    asig(54, 2, 'Retroexcavadoras',     'RE-', 1, 8, 6);
+    asig(54, 3, 'Bulldozer',            'BD-', 1, 5, 4);
+    asig(54, 4, 'Tractores Nivelación', 'TR-', 41, 45, 4);
+END;
+/
+
+-- Períodos y reportes de avance, como en la captura de configuración.
+INSERT INTO OT_PERIODO VALUES (29, '2024 - 2025');
+INSERT INTO OT_PERIODO VALUES (30, '2025 - 2026');
+
+INSERT INTO OT_AVANCE_REPORTE VALUES (1, 29, 'Programa Reparación', 'Estimada', 'Programa De Reparacion 2025',            DATE '2025-06-30', DATE '2025-12-07');
+INSERT INTO OT_AVANCE_REPORTE VALUES (2, 30, 'Programa Reparación', 'Estimada', 'Programa De Reparacion 2026',            DATE '2026-06-01', DATE '2026-12-13');
+INSERT INTO OT_AVANCE_REPORTE VALUES (3, 30, 'Programa Reparación', 'Estimada', 'Programa De Reparacion 2026 Nivelacion', DATE '2026-07-06', DATE '2026-12-06');
+
+INSERT INTO OT_AVANCE_FAMILIA VALUES (1, 1, 'TRACTORES',        'Tractores',         DATE '2025-06-30', DATE '2025-11-28', 45);
+INSERT INTO OT_AVANCE_FAMILIA VALUES (1, 2, 'VAGONES',          'Vagones',           DATE '2025-07-07', DATE '2025-12-05', 120);
+INSERT INTO OT_AVANCE_FAMILIA VALUES (2, 1, 'COSECHADORAS',     'Cosechadoras',      DATE '2026-06-01', DATE '2026-11-20', 12);
+INSERT INTO OT_AVANCE_FAMILIA VALUES (2, 2, 'TRACTORES',        'Tractores',         DATE '2026-06-01', DATE '2026-11-27', 45);
+INSERT INTO OT_AVANCE_FAMILIA VALUES (2, 3, 'CAMIONES',         'Camiones De Tiro',  DATE '2026-06-08', DATE '2026-12-04', 30);
+INSERT INTO OT_AVANCE_FAMILIA VALUES (2, 4, 'VAGONES',          'Vagones',           DATE '2026-06-15', DATE '2026-12-10', 120);
+INSERT INTO OT_AVANCE_FAMILIA VALUES (2, 5, 'ALZADORAS',        'Alzadoras',         DATE '2026-06-22', DATE '2026-12-10', 18);
+INSERT INTO OT_AVANCE_FAMILIA VALUES (3, 1, 'MOTONIVELADORAS',  'Motoniveladoras',   DATE '2026-07-06', DATE '2026-11-13', 6);
+INSERT INTO OT_AVANCE_FAMILIA VALUES (3, 2, 'RETROEXCAVADORAS', 'Retroexcavadoras',  DATE '2026-07-06', DATE '2026-11-27', 8);
+INSERT INTO OT_AVANCE_FAMILIA VALUES (3, 3, 'BULLDOZERS',       'Bulldozer',         DATE '2026-07-13', DATE '2026-12-04', 5);
+
+-- Plan semanal por familia en "S": semanas del calendario del reporte (lunes a domingo) que
+-- caen en la ventana de la familia; actividades = ~20 por equipo repartidas con un peso seno;
+-- días ≈ 0.09 por actividad (como 550 actividades / 48.8 días en la captura).
+DECLARE
+    v_inicio   DATE;
+    v_semanas  PLS_INTEGER;
+    v_total    NUMBER;
+    v_act_tot  NUMBER;
+    v_act      NUMBER;
+    v_acum     NUMBER;
+    v_ini_sem  DATE;
+BEGIN
+    FOR f IN (SELECT f.*, r.FECHA_INICIO AS REP_INICIO FROM OT_AVANCE_FAMILIA f JOIN OT_AVANCE_REPORTE r ON r.REPORTE_ID = f.REPORTE_ID) LOOP
         v_inicio  := TRUNC(f.FECHA_EST_INICIO, 'IW');
         v_semanas := CEIL((TRUNC(f.FECHA_EST_FIN, 'IW') - v_inicio) / 7) + 1;
+        v_act_tot := f.CANT_EQUIPO * 20;
         v_total   := 0;
         FOR i IN 1 .. v_semanas LOOP
             v_total := v_total + SIN(ACOS(-1) * (i - 0.5) / v_semanas);
         END LOOP;
-
         v_acum := 0;
         FOR i IN 1 .. v_semanas LOOP
             IF i < v_semanas THEN
-                v_pct := ROUND(100 * SIN(ACOS(-1) * (i - 0.5) / v_semanas) / v_total, 2);
+                v_act := ROUND(v_act_tot * SIN(ACOS(-1) * (i - 0.5) / v_semanas) / v_total);
             ELSE
-                v_pct := 100 - v_acum;
+                v_act := v_act_tot - v_acum;
             END IF;
-            v_acum := v_acum + v_pct;
-
-            v_ini_sem := GREATEST(v_inicio + (i - 1) * 7, f.FECHA_EST_INICIO);
-            v_fin_sem := LEAST(v_inicio + (i - 1) * 7 + 6, f.FECHA_EST_FIN);
-            -- Días laborables (lunes a sábado) dentro de la semana recortada.
-            v_dias := 0;
-            FOR d IN 0 .. (v_fin_sem - v_ini_sem) LOOP
-                IF TO_CHAR(v_ini_sem + d, 'DY', 'NLS_DATE_LANGUAGE=ENGLISH') <> 'SUN' THEN
-                    v_dias := v_dias + 1;
-                END IF;
-            END LOOP;
-
-            INSERT INTO OT_SEMANA_FAMILIA
-            VALUES ('2026', f.FAMILIA_CODIGO, i, EXTRACT(MONTH FROM v_ini_sem), v_ini_sem, v_fin_sem, v_pct, v_dias);
+            v_acum := v_acum + v_act;
+            v_ini_sem := v_inicio + (i - 1) * 7;
+            INSERT INTO OT_AVANCE_SEMANA VALUES (
+                f.REPORTE_ID, f.FAMILIA_CODIGO,
+                -- número de semana dentro del calendario del reporte
+                (v_ini_sem - TRUNC(f.REP_INICIO, 'IW')) / 7 + 1,
+                EXTRACT(MONTH FROM v_ini_sem), v_ini_sem, v_ini_sem + 6,
+                v_act, ROUND(v_act * 0.09, 2));
         END LOOP;
     END LOOP;
 END;
@@ -172,10 +265,11 @@ END;
 
 COMMIT;
 
--- El usuario técnico del portal lee estas tablas a través de sus vistas _pgpm. El GRANT debe
--- ser directo (no por rol) para poder crear vistas encima.
-GRANT SELECT ON SISTEMA_OT.OT_TIPO_REPORTE       TO PGPM;
-GRANT SELECT ON SISTEMA_OT.OT_FAMILIA_DEFINIDA   TO PGPM;
-GRANT SELECT ON SISTEMA_OT.OT_EQUIPO             TO PGPM;
-GRANT SELECT ON SISTEMA_OT.OT_EQUIPOS_REQUERIDOS TO PGPM;
-GRANT SELECT ON SISTEMA_OT.OT_SEMANA_FAMILIA     TO PGPM;
+-- El usuario técnico del portal lee estas tablas a través de sus vistas _pgpm (GRANT directo,
+-- no por rol, para poder crear vistas encima).
+BEGIN
+    FOR t IN (SELECT TABLE_NAME FROM ALL_TABLES WHERE OWNER = 'SISTEMA_OT') LOOP
+        EXECUTE IMMEDIATE 'GRANT SELECT ON SISTEMA_OT.' || t.TABLE_NAME || ' TO PGPM';
+    END LOOP;
+END;
+/

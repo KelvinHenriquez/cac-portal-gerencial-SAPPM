@@ -42,7 +42,10 @@ namespace PortalGerencialBackEnd.Infrastructure.Persistence.Configurations
 
     public class ParametroConfiguration : IEntityTypeConfiguration<Parametro>
     {
-        private static readonly DateTime Sembrado = new(2026, 9, 30);
+        private static readonly DateTime Sembrado = new(2026, 10, 1);
+
+        private static Parametro P(string clave, string valor, string descripcion) =>
+            new() { Clave = clave, Valor = valor, Descripcion = descripcion, ActualizadoEn = Sembrado };
 
         public void Configure(EntityTypeBuilder<Parametro> b)
         {
@@ -51,73 +54,34 @@ namespace PortalGerencialBackEnd.Infrastructure.Persistence.Configurations
             b.Property(x => x.Clave).HasMaxLength(60);
             b.Property(x => x.Valor).HasMaxLength(500);
             b.Property(x => x.Descripcion).HasMaxLength(500);
-            b.Property(x => x.ActualizadoEn).HasDefaultValueSql("SYSTIMESTAMP");
+            b.Property(x => x.ActualizadoEn).HasColumnType("DATE");
 
-            // Supuestos iniciales: los marcados "pendiente" se ajustan cuando taller los confirme.
+            // Reglas de negocio que dependen de respuestas pendientes: se ajustan aquí, sin desplegar.
             b.HasData(
-                new Parametro
-                {
-                    Clave = ClavesParametro.EstadosFueraServicio,
-                    Valor = "Liberado,En Proceso",
-                    Descripcion = "Estados de orden que dejan al equipo fuera de servicio (pendiente de confirmar con taller, sección 6.1).",
-                    ActualizadoEn = Sembrado
-                },
-                new Parametro
-                {
-                    Clave = ClavesParametro.EstadosCerrados,
-                    Valor = "Cerrado tecnicamente,Cerrado",
-                    Descripcion = "Estados de orden que cuentan como orden terminada para el avance de reparación.",
-                    ActualizadoEn = Sembrado
-                },
-                new Parametro
-                {
-                    Clave = ClavesParametro.ClasesOrdenAvance,
-                    Valor = "ZC03",
-                    Descripcion = "Clases de orden (separadas por coma) que cuentan para Avance de Reparación (sección 4.2).",
-                    ActualizadoEn = Sembrado
-                },
-                new Parametro
-                {
-                    Clave = ClavesParametro.HoraCorridaDiaria,
-                    Valor = "05:00",
-                    Descripcion = "Hora local (HH:mm) de la corrida diaria del job de extracción y recálculo.",
-                    ActualizadoEn = Sembrado
-                },
-                new Parametro
-                {
-                    Clave = ClavesParametro.DiasRecalculoDisponibilidad,
-                    Valor = "120",
-                    Descripcion = "Días hacia atrás que se recalcula la disponibilidad diaria en cada corrida.",
-                    ActualizadoEn = Sembrado
-                },
-                new Parametro
-                {
-                    Clave = ClavesParametro.HorasAlertaFrescura,
-                    Valor = "24",
-                    Descripcion = "Horas sin una corrida exitosa a partir de las cuales se alerta (sección 11).",
-                    ActualizadoEn = Sembrado
-                },
-                new Parametro
-                {
-                    Clave = ClavesParametro.ProgramaVigente,
-                    Valor = "2026",
-                    Descripcion = "Programa de reparación que se abre por defecto en Avance de Reparación.",
-                    ActualizadoEn = Sembrado
-                },
-                new Parametro
-                {
-                    Clave = ClavesParametro.FormulaAvanceReal,
-                    Valor = "HH_ORDENES_CERRADAS",
-                    Descripcion = "Fórmula provisional del % real de avance (pendiente 'Total Ejec. %'): HH_ORDENES_CERRADAS u ORDENES_CERRADAS.",
-                    ActualizadoEn = Sembrado
-                },
-                new Parametro
-                {
-                    Clave = ClavesParametro.FechaCargaInicial,
-                    Valor = "2026-01-01",
-                    Descripcion = "Fecha (yyyy-MM-dd) desde la que se extrae de SAP en la primera corrida.",
-                    ActualizadoEn = Sembrado
-                });
+                P(ClavesParametro.TipoPorClaseOrden, "ZC01=CORRECTIVA,ZC02=PREVENTIVO,ZC03=PLANIFICADA",
+                    "Clase de orden SAP -> tipo de horas (CORRECTIVA / PREVENTIVO / PLANIFICADA). Pendiente de confirmar con el ABAP (clases y ILART reales)."),
+                P(ClavesParametro.EstadosCerrados, "Cerrada",
+                    "Estados de orden que la cierran (fin de la indisponibilidad)."),
+                P(ClavesParametro.EstadosExcluidos, "Anulada",
+                    "Estados de orden que no cuentan ni para disponibilidad ni para avance."),
+                P(ClavesParametro.FechaCargaInicial, "2026-06-01",
+                    "Fecha (yyyy-MM-dd) desde la que se extrae de SAP la primera vez: salida en vivo de SAP PM."),
+                P(ClavesParametro.ClasesOrdenDisponibilidad, "*",
+                    "Clases de orden que dejan equipos fuera de servicio, separadas por coma; * = todas. Pendiente: ¿cuentan las ZC03 del programa de reparación?"),
+                P(ClavesParametro.InicioVentana, "CREACION",
+                    "Desde cuándo cuenta fuera de servicio: CREACION de la orden (respuesta del 01/10/2026) o INICIO_REAL."),
+                P(ClavesParametro.CorrectivasSegunAviso, "S",
+                    "S = una correctiva con aviso solo deja el equipo fuera si el aviso indica parada, desde el inicio hasta el fin de la avería."),
+                P(ClavesParametro.ClasesOrdenAvance, "ZC03",
+                    "Clases de orden (separadas por coma) del programa de reparación que cuentan para Avance."),
+                P(ClavesParametro.BasePlanAvance, "ACTIVIDADES",
+                    "Con qué se arma el % programado de cada semana: ACTIVIDADES o DIAS del plan de Oracle. Pendiente de confirmar."),
+                P(ClavesParametro.HoraCorridaDiaria, "05:00",
+                    "Hora local (HH:mm) de la corrida diaria del job de extracción y recálculo."),
+                P(ClavesParametro.DiasRecalculoDisponibilidad, "120",
+                    "Días hacia atrás que se recalcula la disponibilidad en cada corrida."),
+                P(ClavesParametro.HorasAlertaFrescura, "24",
+                    "Horas sin una corrida exitosa a partir de las cuales se alerta (sección 11)."));
         }
     }
 }

@@ -1,31 +1,41 @@
 namespace PortalGerencialBackEnd.Core.Entities.Calculo
 {
     /// <summary>
-    /// Avance semanal YA CALCULADO por familia (sección 3 y 6.2). Tabla CALC_AVANCE_SEMANAL_PGPM.
-    /// Además de los % de la spec guarda los insumos (órdenes y horas), para poder auditar el
-    /// número y cambiar la fórmula de "Total Ejec. %" (pendiente) sin perder trazabilidad.
+    /// Avance de UNA semana (no acumulado, como las columnas del reporte de Oracle) por reporte y
+    /// familia, con las dos formas de medir el real: por órdenes cerradas y por actividades. Los
+    /// acumulados, Prog. Cierre, Pend. Ant. y T. Pend. R. se arman al leer.
+    /// Tabla CALC_AVANCE_SEMANAL_PGPM.
     /// </summary>
     public class CalcAvanceSemanal
     {
+        public int ReporteId { get; set; }
         public string FamiliaCodigo { get; set; } = default!;
-        public string AnioPrograma { get; set; } = default!;
-        public int Semana { get; set; }
-        public DateTime FechaInicioSemana { get; set; }
-        public DateTime FechaFinSemana { get; set; }
+        public int NoSemana { get; set; }
+        public DateTime FechaInicio { get; set; }
+        public DateTime FechaFin { get; set; }
 
-        /// <summary>Acumulado de la curva planeada hasta esta semana (VW_CURVA_PLANEADA_PGPM).</summary>
+        /// <summary>% programado de esta semana (plan de Oracle / total del plan de la familia).</summary>
         public decimal ProgPct { get; set; }
 
-        /// <summary>Acumulado real derivado del staging SAP hasta esta semana.</summary>
-        public decimal RealPct { get; set; }
-
-        /// <summary>ProgPct - RealPct (atraso; negativo = adelantado).</summary>
-        public decimal PendPct { get; set; }
-
-        public int TotalOrdenes { get; set; }
+        // --- real por órdenes: órdenes cerradas en la semana / total de órdenes del programa
+        public int OrdenesTotal { get; set; }
         public int OrdenesCerradas { get; set; }
-        public decimal HhPlan { get; set; }
-        public decimal HhReal { get; set; }
+        public decimal RealOrdenesPct { get; set; }
+
+        // --- real por actividades: días de actividades terminadas en la semana / días totales
+        public int ActTotal { get; set; }
+        public int ActTerminadas { get; set; }
+        public decimal DiasActTotal { get; set; }
+        public decimal DiasActTerminadas { get; set; }
+
+        /// <summary>Real Ejecutado (programadas + no programadas).</summary>
+        public decimal RealActPct { get; set; }
+
+        /// <summary>Real Programado: actividades del plan original.</summary>
+        public decimal RealActProgPct { get; set; }
+
+        /// <summary>Real No Programado: actividades agregadas en la reparación.</summary>
+        public decimal RealActNoProgPct { get; set; }
 
         public string CorridaId { get; set; } = default!;
         public DateTime GeneradoEn { get; set; }

@@ -1,34 +1,53 @@
 -- =====================================================================================
--- SOLO LOCAL. Vistas de estructura del portal (sección 4.1) sobre el esquema simulado
--- SISTEMA_OT. En producción se crean con docs/oracle/vistas_produccion.sql, apuntando a las
--- tablas reales: mismos nombres de vista y mismas columnas, para que el código no cambie.
--- Llevan sufijo _pgpm porque son objetos que crea el portal.
+-- SOLO LOCAL. Vistas de estructura del portal sobre el esquema simulado SISTEMA_OT. En
+-- producción se crean con docs/oracle/vistas_produccion.sql, apuntando a las tablas reales:
+-- mismos nombres de vista y mismas columnas, para que el código no cambie. Llevan sufijo _pgpm
+-- porque son objetos que crea el portal. Compatibles con Oracle 11g.
 -- =====================================================================================
 
--- Tipos de reporte de disponibilidad y sus umbrales de semáforo (Paso 1).
-CREATE OR REPLACE VIEW PGPM.VW_UMBRALES_SEMAFORO_PGPM AS
-SELECT TIPO_REPORTE, DESCRIPCION, UMBRAL_ROJO, UMBRAL_NARANJA
-FROM   SISTEMA_OT.OT_TIPO_REPORTE;
-
--- Familias y su ventana de reparación por programa (Paso 3).
-CREATE OR REPLACE VIEW PGPM.VW_ESTRUCTURA_FAMILIAS_PGPM AS
-SELECT ANIO_PROGRAMA, FAMILIA_CODIGO, FAMILIA_NOMBRE, FECHA_EST_INICIO, FECHA_EST_FIN, CANT_EQUIPO
-FROM   SISTEMA_OT.OT_FAMILIA_DEFINIDA;
-
--- Curva de avance planeado por familia y semana (Paso 3, "Semana Definida Por Familia").
--- La spec no traía FAMILIA_CODIGO en esta vista, pero la curva es por familia.
-CREATE OR REPLACE VIEW PGPM.VW_CURVA_PLANEADA_PGPM AS
-SELECT ANIO_PROGRAMA, FAMILIA_CODIGO, MES, NO_SEMANA, FECHA_INICIO_SEMANA, FECHA_FIN_SEMANA,
-       ACTIVIDAD_PCT, DIAS
-FROM   SISTEMA_OT.OT_SEMANA_FAMILIA;
-
--- Equipos requeridos por familia y asignación (Paso 4).
-CREATE OR REPLACE VIEW PGPM.VW_EQUIPOS_REQUERIDOS_PGPM AS
-SELECT TIPO_REPORTE, FAMILIA_CODIGO, ASIGNACION, CANT_ASIGNADA, CANT_REQUERIDA
-FROM   SISTEMA_OT.OT_EQUIPOS_REQUERIDOS;
-
--- Equipos y su familia (no estaba en la spec): sin esto no hay cruce SAP <-> familia por
--- código legado, ni detalle de equipos por familia (sección 8.2).
+-- Equipos y su familia (cruce SAP <-> Oracle por código legado).
 CREATE OR REPLACE VIEW PGPM.VW_EQUIPOS_FAMILIA_PGPM AS
 SELECT CODIGO_LEGADO, DESCRIPCION, FAMILIA_CODIGO, ACTIVO
 FROM   SISTEMA_OT.OT_EQUIPO;
+
+-- ---------------------------------------------------------------- disponibilidad
+CREATE OR REPLACE VIEW PGPM.VW_DISP_REPORTE_PGPM AS
+SELECT REPORTE_ID, ORDEN, DESCRIPCION, COMP1 AS UMBRAL_ROJO, COMP2 AS UMBRAL_NARANJA,
+       CASE WHEN UPPER(ESTADO) = 'ACTIVO' THEN 'S' ELSE 'N' END AS ACTIVO
+FROM   SISTEMA_OT.OT_DISP_REPORTE;
+
+CREATE OR REPLACE VIEW PGPM.VW_DISP_SEMANA_PGPM AS
+SELECT REPORTE_ID, NO_SEMANA, MES, FECHA_INICIO, FECHA_FIN
+FROM   SISTEMA_OT.OT_DISP_SEMANA;
+
+CREATE OR REPLACE VIEW PGPM.VW_DISP_HORA_PGPM AS
+SELECT REPORTE_ID, HORA, CASE WHEN UPPER(ESTADO) = 'ACTIVO' THEN 'S' ELSE 'N' END AS ACTIVO
+FROM   SISTEMA_OT.OT_DISP_HORA;
+
+CREATE OR REPLACE VIEW PGPM.VW_DISP_ASIGNACION_PGPM AS
+SELECT REPORTE_ID, ASIGNACION_ID, ORDEN, ASIGNACION, CANT_ASIG AS CANT_ASIGNADA,
+       CANT_REQ AS CANT_REQUERIDA, DISP_COMP AS DISP_COMP_PCT,
+       CASE WHEN UPPER(NEGRITA) IN ('SI', 'S') THEN 'S' ELSE 'N' END AS NEGRITA,
+       CASE WHEN UPPER(GRUPO) IN ('SI', 'S') THEN 'S' ELSE 'N' END AS GRUPO
+FROM   SISTEMA_OT.OT_DISP_ASIGNACION;
+
+CREATE OR REPLACE VIEW PGPM.VW_DISP_ASIG_EQUIPO_PGPM AS
+SELECT REPORTE_ID, ASIGNACION_ID, CODIGO_LEGADO
+FROM   SISTEMA_OT.OT_DISP_ASIG_EQUIPO;
+
+-- ---------------------------------------------------------------- avance
+CREATE OR REPLACE VIEW PGPM.VW_AVANCE_PERIODO_PGPM AS
+SELECT PERIODO_ID, DESCRIPCION
+FROM   SISTEMA_OT.OT_PERIODO;
+
+CREATE OR REPLACE VIEW PGPM.VW_AVANCE_REPORTE_PGPM AS
+SELECT REPORTE_ID, PERIODO_ID, NOMBRE, TIPO_OT, FECHA_REF, FECHA_INICIO, FECHA_FIN
+FROM   SISTEMA_OT.OT_AVANCE_REPORTE;
+
+CREATE OR REPLACE VIEW PGPM.VW_AVANCE_FAMILIA_PGPM AS
+SELECT REPORTE_ID, ORDEN, FAMILIA_CODIGO, FAMILIA_NOMBRE, FECHA_EST_INICIO, FECHA_EST_FIN, CANT_EQUIPO
+FROM   SISTEMA_OT.OT_AVANCE_FAMILIA;
+
+CREATE OR REPLACE VIEW PGPM.VW_AVANCE_SEMANA_PGPM AS
+SELECT REPORTE_ID, FAMILIA_CODIGO, NO_SEMANA, MES, FECHA_INICIO, FECHA_FIN, ACTIVIDAD, DIAS
+FROM   SISTEMA_OT.OT_AVANCE_SEMANA;

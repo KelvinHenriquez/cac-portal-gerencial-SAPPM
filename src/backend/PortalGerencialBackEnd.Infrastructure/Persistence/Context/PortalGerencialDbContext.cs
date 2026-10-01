@@ -24,7 +24,8 @@ namespace PortalGerencialBackEnd.Infrastructure.Persistence.Context
         // Staging de SAP
         public DbSet<StgSapEquipo> StgSapEquipos => Set<StgSapEquipo>();
         public DbSet<StgSapOrden> StgSapOrdenes => Set<StgSapOrden>();
-        public DbSet<StgSapOperacionHoras> StgSapOperacionesHoras => Set<StgSapOperacionHoras>();
+        public DbSet<StgSapOperacion> StgSapOperaciones => Set<StgSapOperacion>();
+        public DbSet<StgSapAviso> StgSapAvisos => Set<StgSapAviso>();
         public DbSet<StgSapHistorialEstado> StgSapHistorialEstados => Set<StgSapHistorialEstado>();
 
         // Resultados calculados
@@ -39,11 +40,16 @@ namespace PortalGerencialBackEnd.Infrastructure.Persistence.Context
         public DbSet<AlertaEnviada> AlertasEnviadas => Set<AlertaEnviada>();
 
         // Vistas de estructura (solo lectura)
-        public DbSet<VwUmbralSemaforo> VwUmbralesSemaforo => Set<VwUmbralSemaforo>();
-        public DbSet<VwEstructuraFamilia> VwEstructuraFamilias => Set<VwEstructuraFamilia>();
-        public DbSet<VwCurvaPlaneada> VwCurvaPlaneada => Set<VwCurvaPlaneada>();
-        public DbSet<VwEquipoRequerido> VwEquiposRequeridos => Set<VwEquipoRequerido>();
         public DbSet<VwEquipoFamilia> VwEquiposFamilia => Set<VwEquipoFamilia>();
+        public DbSet<VwDispReporte> VwDispReportes => Set<VwDispReporte>();
+        public DbSet<VwDispSemana> VwDispSemanas => Set<VwDispSemana>();
+        public DbSet<VwDispHora> VwDispHoras => Set<VwDispHora>();
+        public DbSet<VwDispAsignacion> VwDispAsignaciones => Set<VwDispAsignacion>();
+        public DbSet<VwDispAsigEquipo> VwDispAsigEquipos => Set<VwDispAsigEquipo>();
+        public DbSet<VwAvancePeriodo> VwAvancePeriodos => Set<VwAvancePeriodo>();
+        public DbSet<VwAvanceReporte> VwAvanceReportes => Set<VwAvanceReporte>();
+        public DbSet<VwAvanceFamilia> VwAvanceFamilias => Set<VwAvanceFamilia>();
+        public DbSet<VwAvanceSemana> VwAvanceSemanas => Set<VwAvanceSemana>();
 
         protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
         {

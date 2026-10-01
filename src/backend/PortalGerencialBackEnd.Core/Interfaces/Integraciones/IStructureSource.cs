@@ -3,20 +3,29 @@ using PortalGerencialBackEnd.Core.Dtos.Estructura;
 namespace PortalGerencialBackEnd.Core.Interfaces.Integraciones
 {
     /// <summary>
-    /// Estructura de negocio que vive en Oracle (sección 5), leída en vivo por las vistas _pgpm.
-    /// Una sola implementación para local y producción: lo que cambia entre ambientes es a qué
-    /// tablas apuntan las vistas, no el código.
+    /// Configuración que vive en Oracle Forms (sección 5), leída en vivo por las vistas _pgpm. Una
+    /// sola implementación para local y producción: entre ambientes cambia a qué tablas apuntan las
+    /// vistas, no el código.
     /// </summary>
     public interface IStructureSource
     {
-        Task<List<TipoReporteDto>> GetTiposReporteAsync();
-        Task<UmbralesDto?> GetUmbralesAsync(string tipoReporte);
-        Task<List<ProgramaDto>> GetProgramasAsync();
-        Task<List<FamiliaDto>> GetFamiliasAsync(string anioPrograma);
-        Task<List<CurvaSemanaDto>> GetCurvaPlaneadaAsync(string anioPrograma);
-        Task<List<EquipoRequeridoDto>> GetEquiposRequeridosAsync(string tipoReporte);
+        /// <summary>Reportes de disponibilidad activos, en el orden configurado.</summary>
+        Task<List<ReporteResumenDto>> GetReportesDisponibilidadAsync();
 
-        /// <summary>Equipos de Oracle con su familia; sin filtro trae todos (lo usa el cruce del job).</summary>
+        Task<ConfigDisponibilidadDto?> GetConfigDisponibilidadAsync(int reporteId);
+
+        /// <summary>Configuración de todos los reportes de disponibilidad activos (la usa el job).</summary>
+        Task<List<ConfigDisponibilidadDto>> GetConfigsDisponibilidadAsync();
+
+        /// <summary>Períodos de reparación con sus reportes de avance, del más reciente al más viejo.</summary>
+        Task<List<PeriodoDto>> GetPeriodosAsync();
+
+        Task<ConfigAvanceDto?> GetConfigAvanceAsync(int reporteId);
+
+        /// <summary>Configuración de todos los reportes de avance (la usan el job y el simulador).</summary>
+        Task<List<ConfigAvanceDto>> GetConfigsAvanceAsync();
+
+        /// <summary>Equipos de Oracle con su familia; sin filtro trae todos.</summary>
         Task<List<EquipoFamiliaDto>> GetEquiposFamiliaAsync(string? familiaCodigo = null);
     }
 }

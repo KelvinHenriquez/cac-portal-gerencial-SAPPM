@@ -1,7 +1,5 @@
-using System.Globalization;
 using Microsoft.EntityFrameworkCore;
 using PortalGerencialBackEnd.Core.Calculo;
-using PortalGerencialBackEnd.Core.Constants;
 using PortalGerencialBackEnd.Core.Dtos.Disponibilidad;
 using PortalGerencialBackEnd.Core.Dtos.Estructura;
 using PortalGerencialBackEnd.Core.Exceptions;
@@ -12,8 +10,10 @@ using PortalGerencialBackEnd.Infrastructure.Persistence.Context;
 namespace PortalGerencialBackEnd.Infrastructure.Services
 {
     /// <summary>
-    /// Pantalla Disponibilidad de Maquinaria (sección 8.2). La tabla principal sale de los
-    /// resultados ya calculados; los drill-down leen además el staging (órdenes), nunca SAP.
+    /// Disponibilidad de Equipos, como el reporte de Oracle. Las semanas salen de los resultados ya
+    /// calculados; las columnas actuales son la foto de la última hora medida antes de la última
+    /// actualización (como "Última Actualización 17:00" en Oracle), calculada sobre el staging con
+    /// las mismas reglas que el job. Nunca llama a SAP.
     /// </summary>
     public class ReporteDisponibilidadService : IReporteDisponibilidadService
     {
@@ -21,124 +21,140 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
 
         private readonly PortalGerencialDbContext _db;
         private readonly IStructureSource _estructura;
+        private readonly ISistemaService _sistema;
         private readonly TimeProvider _time;
 
-        public ReporteDisponibilidadService(PortalGerencialDbContext db, IStructureSource estructura, TimeProvider time)
+        public ReporteDisponibilidadService(PortalGerencialDbContext db, IStructureSource estructura, ISistemaService sistema, TimeProvider time)
         {
             _db = db;
             _estructura = estructura;
+            _sistema = sistema;
             _time = time;
         }
 
-        public async Task<ReporteDisponibilidadDto> GetDisponibilidadAsync(string tipoReporte, int semanas)
+        private sealed record Base(ConfigDisponibilidadDto Config, DateTime? Corte, MapeoEquipos Mapeo, ReglasVentana Reglas)
         {
-            semanas = Math.Clamp(semanas, 1, 26);
-            var (tipo, umbrales) = await TipoYUmbralesAsync(tipoReporte);
-            var nombres = await NombresFamiliaAsync();
+            /// <summary>Corte, o ahora si todavía no hubo ninguna actualización.</summary>
+            public DateTime Referencia(DateTime ahora) => Corte ?? ahora;
 
-            var fechaCorte = await _db.CalcDisponibilidadDiaria.AsNoTracking()
-                .Where(d => d.TipoReporte == tipoReporte)
-                .MaxAsync(d => (DateTime?)d.Fecha);
+            public AsignacionDto Asignacion(int asignacionId) =>
+                Config.Asignaciones.FirstOrDefault(a => a.AsignacionId == asignacionId)
+                ?? throw new NotFoundException($"La asignación {asignacionId} no existe en el reporte {Config.ReporteId}.");
 
-            var referencia = fechaCorte ?? _time.GetLocalNow().Date;
-            var lunesActual = ISOWeek.ToDateTime(ISOWeek.GetYear(referencia), ISOWeek.GetWeekOfYear(referencia), DayOfWeek.Monday);
-            var columnas = Enumerable.Range(0, semanas)
-                .Select(i => lunesActual.AddDays(-7 * (semanas - 1 - i)))
-                .Select(lunes => new SemanaColumnaDto
-                {
-                    AnioIso = ISOWeek.GetYear(lunes),
-                    SemanaIso = ISOWeek.GetWeekOfYear(lunes),
-                    FechaInicio = lunes,
-                    FechaFin = lunes.AddDays(6)
-                })
-                .ToList();
+            public string Color(decimal pct) => Semaforo.Color(pct, Config.UmbralRojo, Config.UmbralNaranja);
+
+            /// <summary>Última hora activa del reporte a la que ya se llegó en <paramref name="instante"/>.</summary>
+            public DateTime InstanteFoto(DateTime instante)
+            {
+                var horas = Config.HorasActivas.Count == 0 ? Enumerable.Range(0, 24).ToList() : Config.HorasActivas;
+                var hoy = horas.Where(h => h <= instante.Hour).ToList();
+                return hoy.Count > 0 ? instante.Date.AddHours(hoy.Max()) : instante.Date.AddDays(-1).AddHours(horas.Max());
+            }
+        }
+
+        private async Task<Base> CargarBaseAsync(int reporteId)
+        {
+            var config = await _estructura.GetConfigDisponibilidadAsync(reporteId)
+                         ?? throw new NotFoundException($"No existe el reporte de disponibilidad {reporteId}.");
+            var corte = (await _sistema.GetEstadoActualizacionAsync()).UltimaActualizacion;
+            var parametros = await ParametrosPortal.CargarAsync(_db);
+            return new Base(config, corte, await MapeoEquipos.CargarAsync(_db, _estructura), ReglasPortal.Ventana(parametros));
+        }
+
+        private DateTime Ahora => _time.GetLocalNow().DateTime;
+
+        public async Task<ReporteDisponibilidadDto> GetReporteAsync(int reporteId)
+        {
+            var b = await CargarBaseAsync(reporteId);
+            var referencia = b.Referencia(Ahora);
+            var hoy = referencia.Date;
 
             var reporte = new ReporteDisponibilidadDto
             {
-                TipoReporte = tipo.TipoReporte,
-                Descripcion = tipo.Descripcion,
-                UmbralRojo = umbrales.UmbralRojo,
-                UmbralNaranja = umbrales.UmbralNaranja,
-                FechaCorte = fechaCorte,
-                Semanas = columnas
+                ReporteId = b.Config.ReporteId,
+                Descripcion = b.Config.Descripcion,
+                UmbralRojo = b.Config.UmbralRojo,
+                UmbralNaranja = b.Config.UmbralNaranja,
+                FechaCorte = b.Corte == null ? null : b.InstanteFoto(b.Corte.Value),
+                Semanas = b.Config.Semanas.Select(s => new SemanaColumnaDto
+                {
+                    NoSemana = s.NoSemana,
+                    FechaInicio = s.FechaInicio,
+                    FechaFin = s.FechaFin,
+                    Momento = s.FechaFin < hoy ? "PASADA" : s.FechaInicio <= hoy ? "ACTUAL" : "FUTURA"
+                }).ToList()
             };
-            if (fechaCorte == null)
+            if (b.Corte == null)
                 return reporte;
 
-            var actuales = await _db.CalcDisponibilidadDiaria.AsNoTracking()
-                .Where(d => d.TipoReporte == tipoReporte && d.Fecha == fechaCorte)
-                .ToListAsync();
+            // Foto actual de cada asignación.
+            var instante = b.InstanteFoto(b.Corte.Value);
+            var ventanas = await ProcesoActualizacionService.VentanasAsync(_db, b.Mapeo.LegadoPorEquipoSap, b.Reglas, instante.Date, b.Corte.Value);
+            var semanales = (await _db.CalcDisponibilidadSemanal.AsNoTracking().Where(s => s.ReporteId == reporteId).ToListAsync())
+                .ToDictionary(s => (s.AsignacionId, s.NoSemana));
 
-            var primerLunes = columnas[0].FechaInicio;
-            var semanales = (await _db.CalcDisponibilidadSemanal.AsNoTracking()
-                    .Where(s => s.TipoReporte == tipoReporte && s.FechaInicioSemana >= primerLunes)
-                    .ToListAsync())
-                .ToDictionary(s => (s.FamiliaCodigo, s.AnioIso, s.SemanaIso));
-
-            string Color(decimal pct) => Semaforo.Color(pct, umbrales.UmbralRojo, umbrales.UmbralNaranja);
-
-            reporte.Familias = actuales
-                .Select(a => new FilaDisponibilidadDto
+            var actuales = new List<(AsignacionDto Asig, int Equipos, int Disponibles)>();
+            foreach (var a in b.Config.Asignaciones)
+            {
+                var equipos = a.Equipos.Where(b.Mapeo.CuentaParaDisponibilidad).ToList();
+                var foto = CalculadoraDisponibilidad.FotosDelDia(equipos, a.CantRequerida, new[] { instante.Hour }, ventanas, instante.Date).Single();
+                actuales.Add((a, equipos.Count, foto.EqDisponible));
+                reporte.Filas.Add(new FilaDisponibilidadDto
                 {
-                    FamiliaCodigo = a.FamiliaCodigo,
-                    FamiliaNombre = nombres.GetValueOrDefault(a.FamiliaCodigo, a.FamiliaCodigo),
-                    CantEquipo = a.CantEquipo,
-                    EqRequerido = a.EqRequerido,
-                    EqDisponible = a.EqDisponible,
-                    EqFueraServicio = a.EqFueraServicio,
-                    DispRealPct = a.DispRealPct,
-                    DispPotencialPct = a.DispPotencialPct,
-                    Semaforo = Color(a.DispRealPct),
-                    Semanas = columnas.Select(c => semanales.TryGetValue((a.FamiliaCodigo, c.AnioIso, c.SemanaIso), out var s)
+                    AsignacionId = a.AsignacionId,
+                    Asignacion = a.Nombre,
+                    Negrita = a.Negrita,
+                    Grupo = a.Grupo,
+                    CantEquipo = equipos.Count,
+                    EqRequerido = a.CantRequerida,
+                    EqDisponible = foto.EqDisponible,
+                    DispRealPct = foto.DispPct,
+                    PotencialPct = foto.PotencialPct,
+                    DispCompPct = a.DispCompPct,
+                    Semaforo = b.Color(foto.DispPct),
+                    Semanas = reporte.Semanas.Select(s => semanales.TryGetValue((a.AsignacionId, s.NoSemana), out var c)
                         ? new CeldaSemanaDto
                         {
-                            AnioIso = c.AnioIso,
-                            SemanaIso = c.SemanaIso,
-                            DispRealPct = s.DispRealPct,
-                            DispRealMinPct = s.DispRealMinPct,
-                            EqDisponibleProm = s.EqDisponibleProm,
-                            EqRequerido = s.EqRequerido,
-                            DiasCalculados = s.DiasCalculados,
-                            Semaforo = Color(s.DispRealPct)
+                            NoSemana = s.NoSemana,
+                            DispRealPct = c.DispRealPct,
+                            DispRealMinPct = c.DispRealMinPct,
+                            PotencialPct = c.PotencialPct,
+                            DiasCalculados = c.DiasCalculados,
+                            Semaforo = b.Color(c.DispRealPct)
                         }
-                        : new CeldaSemanaDto { AnioIso = c.AnioIso, SemanaIso = c.SemanaIso }).ToList()
-                })
-                .OrderBy(f => f.FamiliaNombre)
-                .ToList();
+                        : new CeldaSemanaDto { NoSemana = s.NoSemana }).ToList()
+                });
+            }
 
-            if (reporte.Familias.Count > 0)
+            if (actuales.Count > 0)
             {
-                // Total disponible / total requerido (decisión del 30/09/2026), con el sobrante de
-                // cada familia recortado: los equipos de más en una familia no tapan la falta en otra.
-                var totalReal = CalculadoraDisponibilidad.PorcentajeTotal(
-                    reporte.Familias.Select(f => ((decimal)f.EqDisponible, f.EqRequerido)));
-                reporte.Promedio = new FilaDisponibilidadDto
+                var totalPct = CalculadoraDisponibilidad.PorcentajeTotal(actuales.Select(x => ((decimal)x.Disponibles, x.Asig.CantRequerida)));
+                reporte.Todas = new FilaDisponibilidadDto
                 {
-                    FamiliaCodigo = "TODAS",
-                    FamiliaNombre = "Todas (Promedio)",
-                    CantEquipo = reporte.Familias.Sum(f => f.CantEquipo),
-                    EqRequerido = reporte.Familias.Sum(f => f.EqRequerido),
-                    EqDisponible = reporte.Familias.Sum(f => f.EqDisponible),
-                    EqFueraServicio = reporte.Familias.Sum(f => f.EqFueraServicio),
-                    DispRealPct = totalReal,
-                    DispPotencialPct = CalculadoraDisponibilidad.Porcentaje(
-                        reporte.Familias.Sum(f => f.EqDisponible), reporte.Familias.Sum(f => f.CantEquipo)),
-                    Semaforo = Color(totalReal),
-                    Semanas = columnas.Select((c, i) =>
+                    Asignacion = "Todas (Promedio)",
+                    Negrita = true,
+                    CantEquipo = actuales.Sum(x => x.Equipos),
+                    EqRequerido = actuales.Sum(x => x.Asig.CantRequerida),
+                    EqDisponible = actuales.Sum(x => x.Disponibles),
+                    DispRealPct = totalPct,
+                    PotencialPct = CalculadoraDisponibilidad.PorcentajeSinTope(actuales.Sum(x => x.Disponibles), actuales.Sum(x => x.Asig.CantRequerida)),
+                    Semaforo = b.Color(totalPct),
+                    Semanas = reporte.Semanas.Select(s =>
                     {
-                        var celdas = reporte.Familias.Select(f => f.Semanas[i]).Where(s => s.EqDisponibleProm != null).ToList();
+                        var celdas = b.Config.Asignaciones
+                            .Select(a => semanales.TryGetValue((a.AsignacionId, s.NoSemana), out var c) ? c : null)
+                            .OfType<Core.Entities.Calculo.CalcDisponibilidadSemanal>()
+                            .ToList();
                         if (celdas.Count == 0)
-                            return new CeldaSemanaDto { AnioIso = c.AnioIso, SemanaIso = c.SemanaIso };
-                        var pct = CalculadoraDisponibilidad.PorcentajeTotal(celdas.Select(s => (s.EqDisponibleProm!.Value, s.EqRequerido)));
+                            return new CeldaSemanaDto { NoSemana = s.NoSemana };
+                        var pct = CalculadoraDisponibilidad.PorcentajeTotal(celdas.Select(c => (c.EqDisponibleProm, c.EqRequerido)));
                         return new CeldaSemanaDto
                         {
-                            AnioIso = c.AnioIso,
-                            SemanaIso = c.SemanaIso,
+                            NoSemana = s.NoSemana,
                             DispRealPct = pct,
-                            EqDisponibleProm = celdas.Sum(s => s.EqDisponibleProm),
-                            EqRequerido = celdas.Sum(s => s.EqRequerido),
-                            DiasCalculados = celdas.Max(s => s.DiasCalculados),
-                            Semaforo = Color(pct)
+                            PotencialPct = CalculadoraDisponibilidad.PorcentajeSinTope(celdas.Sum(c => c.EqDisponibleProm), celdas.Sum(c => c.EqRequerido)),
+                            DiasCalculados = celdas.Max(c => c.DiasCalculados),
+                            Semaforo = b.Color(pct)
                         };
                     }).ToList()
                 };
@@ -147,194 +163,182 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
             return reporte;
         }
 
-        public async Task<EquiposFamiliaDetalleDto> GetEquiposFamiliaAsync(string tipoReporte, string familiaCodigo)
+        public async Task<DetalleSemanaDto> GetDetalleSemanaAsync(int reporteId, int asignacionId, int noSemana)
         {
-            await TipoYUmbralesAsync(tipoReporte);
-            var nombres = await NombresFamiliaAsync();
-            var fecha = await _db.CalcDisponibilidadDiaria.AsNoTracking()
-                            .Where(d => d.TipoReporte == tipoReporte && d.FamiliaCodigo == familiaCodigo)
-                            .MaxAsync(d => (DateTime?)d.Fecha)
-                        ?? _time.GetLocalNow().Date;
+            var b = await CargarBaseAsync(reporteId);
+            var asignacion = b.Asignacion(asignacionId);
+            var semana = b.Config.Semanas.FirstOrDefault(s => s.NoSemana == noSemana)
+                         ?? throw new NotFoundException($"La semana {noSemana} no existe en el reporte {reporteId}.");
 
-            var equipos = await _estructura.GetEquiposFamiliaAsync(familiaCodigo);
-            if (equipos.Count == 0)
-                throw new NotFoundException($"La familia '{familiaCodigo}' no tiene equipos en Oracle.");
+            var dias = await _db.CalcDisponibilidadDiaria.AsNoTracking()
+                .Where(d => d.ReporteId == reporteId && d.AsignacionId == asignacionId && d.Fecha >= semana.FechaInicio && d.Fecha <= semana.FechaFin)
+                .OrderBy(d => d.Fecha)
+                .ToListAsync();
+            var resumen = (await _db.CalcDisponibilidadSemanal.AsNoTracking()
+                    .Where(s => s.ReporteId == reporteId && s.AsignacionId == asignacionId && s.NoSemana == noSemana)
+                    .ToListAsync())
+                .FirstOrDefault();
 
-            var (sapPorLegado, ordenesPorLegado) = await OrdenesDeEquiposAsync(equipos, fecha, fecha);
-            var estadosFs = await EstadosFueraServicioAsync();
-
-            var requeridos = (await _estructura.GetEquiposRequeridosAsync(tipoReporte))
-                .Where(r => r.FamiliaCodigo == familiaCodigo)
-                .Select(r => new RequeridoAsignacionDto { Asignacion = r.Asignacion, CantAsignada = r.CantAsignada, CantRequerida = r.CantRequerida })
+            var referencia = b.Referencia(Ahora);
+            var ventanas = await ProcesoActualizacionService.VentanasAsync(_db, b.Mapeo.LegadoPorEquipoSap, b.Reglas, semana.FechaInicio, referencia);
+            var finSemana = semana.FechaFin.AddDays(1);
+            var delaSemana = asignacion.Equipos
+                .SelectMany(e => ventanas[e])
+                .Where(v => v.Desde < finSemana && v.Hasta > semana.FechaInicio)
                 .ToList();
 
-            var detalle = equipos.Select(e =>
+            return new DetalleSemanaDto
             {
-                var ordenes = ordenesPorLegado.GetValueOrDefault(e.CodigoLegado, new())
-                    .Where(o => CubreDia(o, fecha, estadosFs))
-                    .ToList();
-                var enSap = sapPorLegado.ContainsKey(e.CodigoLegado);
+                ReporteId = reporteId,
+                AsignacionId = asignacionId,
+                Asignacion = asignacion.Nombre,
+                NoSemana = noSemana,
+                FechaInicio = semana.FechaInicio,
+                FechaFin = semana.FechaFin,
+                UmbralRojo = b.Config.UmbralRojo,
+                UmbralNaranja = b.Config.UmbralNaranja,
+                Dias = dias.Select(d => new DiaDetalleDto
+                {
+                    Fecha = d.Fecha,
+                    DispRealPct = d.DispRealPct,
+                    DispCompPct = d.DispCompPct,
+                    HrsDia = d.HrsDia,
+                    HrsOtPlanificada = d.HrsOtPlanificada,
+                    HrsOtPreventivo = d.HrsOtPreventivo,
+                    HrsOtCorrectiva = d.HrsOtCorrectiva,
+                    HrsRealEfec = d.HrsRealEfec,
+                    HrsDiaDispComp = d.HrsDiaDispComp,
+                    Semaforo = b.Color(d.DispRealPct)
+                }).ToList(),
+                Resumen = resumen == null ? null : new DiaDetalleDto
+                {
+                    Dias = resumen.DiasCalculados,
+                    DispRealPct = resumen.DispRealPct,
+                    DispCompPct = resumen.DispCompPct,
+                    HrsDia = resumen.HrsDia,
+                    HrsOtPlanificada = resumen.HrsOtPlanificada,
+                    HrsOtPreventivo = resumen.HrsOtPreventivo,
+                    HrsOtCorrectiva = resumen.HrsOtCorrectiva,
+                    HrsRealEfec = resumen.HrsRealEfec,
+                    HrsDiaDispComp = resumen.HrsDiaDispComp,
+                    Semaforo = b.Color(resumen.DispRealPct)
+                },
+                Ordenes = await DetallarAsync(delaSemana, b, referencia)
+            };
+        }
+
+        public async Task<List<HoraDisponibilidadDto>> GetHorasAsync(int reporteId, int asignacionId, DateTime fecha)
+        {
+            var b = await CargarBaseAsync(reporteId);
+            var asignacion = b.Asignacion(asignacionId);
+            var referencia = b.Referencia(Ahora);
+            var dia = fecha.Date;
+            if (dia > referencia.Date)
+                return new List<HoraDisponibilidadDto>();
+
+            var horas = b.Config.HorasActivas.Where(h => dia < referencia.Date || h <= referencia.Hour).ToList();
+            var ventanas = await ProcesoActualizacionService.VentanasAsync(_db, b.Mapeo.LegadoPorEquipoSap, b.Reglas, dia, referencia);
+            var equipos = asignacion.Equipos.Where(b.Mapeo.CuentaParaDisponibilidad).ToList();
+
+            return CalculadoraDisponibilidad.FotosDelDia(equipos, asignacion.CantRequerida, horas, ventanas, dia)
+                .OrderByDescending(f => f.Hora)
+                .Select(f => new HoraDisponibilidadDto
+                {
+                    Hora = f.Hora,
+                    CantEquipo = f.CantEquipo,
+                    EqRequerido = f.EqRequerido,
+                    EqDisponible = f.EqDisponible,
+                    DispPct = f.DispPct,
+                    PotencialPct = f.PotencialPct
+                })
+                .ToList();
+        }
+
+        public async Task<EquiposAsignacionDto> GetEquiposAsync(int reporteId, int asignacionId)
+        {
+            var b = await CargarBaseAsync(reporteId);
+            var asignacion = b.Asignacion(asignacionId);
+            var referencia = b.Referencia(Ahora);
+            var instante = b.Corte == null ? referencia : b.InstanteFoto(b.Corte.Value);
+            var ventanas = await ProcesoActualizacionService.VentanasAsync(_db, b.Mapeo.LegadoPorEquipoSap, b.Reglas, instante.Date, referencia);
+
+            var activas = asignacion.Equipos
+                .SelectMany(e => ventanas[e])
+                .Where(v => v.Desde <= instante && instante < v.Hasta)
+                .ToList();
+            var detalle = (await DetallarAsync(activas, b, referencia)).ToLookup(o => o.Ficha, StringComparer.OrdinalIgnoreCase);
+
+            var equipos = asignacion.Equipos.Select(legado =>
+            {
+                b.Mapeo.EquiposOracle.TryGetValue(legado, out var oracle);
+                var enSap = b.Mapeo.EquipoSapPorLegado.TryGetValue(legado, out var sapId);
+                var ordenes = detalle[legado].ToList();
                 return new EquipoDetalleDto
                 {
-                    CodigoLegado = e.CodigoLegado,
-                    Descripcion = e.Descripcion,
-                    EquipoSapId = enSap ? sapPorLegado[e.CodigoLegado] : null,
-                    Activo = e.Activo,
-                    Estado = !e.Activo ? "INACTIVO"
+                    Ficha = legado,
+                    Descripcion = oracle?.Descripcion ?? legado,
+                    EquipoSapId = sapId,
+                    Estado = !b.Mapeo.CuentaParaDisponibilidad(legado) ? "INACTIVO"
                         : ordenes.Count > 0 ? "FUERA_SERVICIO"
                         : !enSap ? "SIN_SAP"
                         : "DISPONIBLE",
                     Ordenes = ordenes
                 };
             })
-            // Primero lo que requiere atención: fuera de servicio, luego sin SAP.
             .OrderBy(e => e.Estado switch { "FUERA_SERVICIO" => 0, "SIN_SAP" => 1, "DISPONIBLE" => 2, _ => 3 })
-            .ThenBy(e => e.CodigoLegado)
+            .ThenBy(e => e.Ficha)
             .ToList();
 
-            return new EquiposFamiliaDetalleDto
+            return new EquiposAsignacionDto
             {
-                FamiliaCodigo = familiaCodigo,
-                FamiliaNombre = nombres.GetValueOrDefault(familiaCodigo, familiaCodigo),
-                Fecha = fecha,
-                Requeridos = requeridos,
-                Equipos = detalle
+                Asignacion = asignacion.Nombre,
+                Fecha = instante,
+                CantRequerida = asignacion.CantRequerida,
+                Equipos = equipos
             };
         }
 
-        public async Task<DetalleSemanaDto> GetDetalleSemanaAsync(string tipoReporte, string familiaCodigo, int anioIso, int semanaIso)
+        /// <summary>Completa las ventanas con los datos de la orden y del aviso para mostrarlas.</summary>
+        private async Task<List<OrdenDetalleDto>> DetallarAsync(List<VentanaFueraServicio> ventanas, Base b, DateTime referencia)
         {
-            if (semanaIso < 1 || semanaIso > ISOWeek.GetWeeksInYear(anioIso))
-                throw new BadRequestException($"La semana {semanaIso} no existe en {anioIso}.");
-
-            var (_, umbrales) = await TipoYUmbralesAsync(tipoReporte);
-            var nombres = await NombresFamiliaAsync();
-            var lunes = ISOWeek.ToDateTime(anioIso, semanaIso, DayOfWeek.Monday);
-            var domingo = lunes.AddDays(6);
-
-            var dias = await _db.CalcDisponibilidadDiaria.AsNoTracking()
-                .Where(d => d.TipoReporte == tipoReporte && d.FamiliaCodigo == familiaCodigo && d.Fecha >= lunes && d.Fecha <= domingo)
-                .OrderBy(d => d.Fecha)
-                .ToListAsync();
-
-            var equipos = (await _estructura.GetEquiposFamiliaAsync(familiaCodigo)).Where(e => e.Activo).ToList();
-            var (_, ordenesPorLegado) = await OrdenesDeEquiposAsync(equipos, lunes, domingo);
-            var estadosFs = await EstadosFueraServicioAsync();
-            var todas = ordenesPorLegado.Values.SelectMany(o => o).ToList();
-
-            return new DetalleSemanaDto
+            var ids = ventanas.Select(v => v.OrdenSapId).Distinct().ToList();
+            var ordenes = new Dictionary<string, (string Clase, string Estado, string? Desc, string? AvisoId)>();
+            foreach (var lote in ids.Chunk(TamanoLote))
             {
-                TipoReporte = tipoReporte,
-                FamiliaCodigo = familiaCodigo,
-                FamiliaNombre = nombres.GetValueOrDefault(familiaCodigo, familiaCodigo),
-                AnioIso = anioIso,
-                SemanaIso = semanaIso,
-                FechaInicio = lunes,
-                FechaFin = domingo,
-                Dias = dias.Select(d => new DiaDisponibilidadDto
-                {
-                    Fecha = d.Fecha,
-                    CantEquipo = d.CantEquipo,
-                    EqRequerido = d.EqRequerido,
-                    EqFueraServicio = d.EqFueraServicio,
-                    EqDisponible = d.EqDisponible,
-                    DispRealPct = d.DispRealPct,
-                    Semaforo = Semaforo.Color(d.DispRealPct, umbrales.UmbralRojo, umbrales.UmbralNaranja),
-                    Ordenes = todas.Where(o => CubreDia(o, d.Fecha, estadosFs))
-                        .OrderBy(o => o.CodigoLegado).ThenBy(o => o.OrdenSapId)
-                        .ToList()
-                }).ToList()
-            };
-        }
-
-        // ---------------------------------------------------------------- apoyo
-
-        private async Task<(TipoReporteDto Tipo, UmbralesDto Umbrales)> TipoYUmbralesAsync(string tipoReporte)
-        {
-            var tipo = (await _estructura.GetTiposReporteAsync()).FirstOrDefault(t => t.TipoReporte == tipoReporte)
-                       ?? throw new NotFoundException($"No existe el tipo de reporte '{tipoReporte}'.");
-            var umbrales = (await _estructura.GetUmbralesAsync(tipoReporte))!;
-            return (tipo, umbrales);
-        }
-
-        /// <summary>Código de familia → nombre, del programa más reciente en que aparece.</summary>
-        private async Task<Dictionary<string, string>> NombresFamiliaAsync()
-        {
-            var nombres = new Dictionary<string, string>();
-            foreach (var programa in (await _estructura.GetProgramasAsync()).OrderBy(p => p.AnioPrograma))
-            {
-                foreach (var f in await _estructura.GetFamiliasAsync(programa.AnioPrograma))
-                    nombres[f.FamiliaCodigo] = f.FamiliaNombre;
-            }
-            return nombres;
-        }
-
-        private async Task<HashSet<string>> EstadosFueraServicioAsync() =>
-            (await ParametrosPortal.CargarAsync(_db)).Lista(ClavesParametro.EstadosFueraServicio, "Liberado,En Proceso");
-
-        /// <summary>Misma regla que el cálculo del job (CalculadoraDisponibilidad.VentanaFueraServicio).</summary>
-        private bool CubreDia(OrdenResumenDto o, DateTime dia, ISet<string> estadosFs)
-        {
-            var ventana = CalculadoraDisponibilidad.VentanaFueraServicio(
-                new OrdenDisponibilidad(o.CodigoLegado, o.EstadoOrden, o.FechaInicioReal, o.FechaFinReal),
-                estadosFs, _time.GetLocalNow().Date);
-            return ventana is { } v && v.Desde <= dia.Date && dia.Date <= v.Hasta;
-        }
-
-        /// <summary>
-        /// Equipo SAP de cada código legado, y las órdenes del staging de esos equipos que pueden
-        /// cubrir algún día del rango (empezaron antes del fin y no terminaron antes del inicio).
-        /// </summary>
-        private async Task<(Dictionary<string, string> SapPorLegado, Dictionary<string, List<OrdenResumenDto>> OrdenesPorLegado)>
-            OrdenesDeEquiposAsync(IEnumerable<EquipoFamiliaDto> equipos, DateTime desde, DateTime hasta)
-        {
-            var legados = equipos.Select(e => e.CodigoLegado).ToList();
-            var descripciones = equipos.ToDictionary(e => e.CodigoLegado, e => e.Descripcion, StringComparer.OrdinalIgnoreCase);
-
-            var sapPorLegado = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-            var legadoPorSap = new Dictionary<string, string>();
-            foreach (var lote in legados.Chunk(TamanoLote))
-            {
-                var filas = await _db.StgSapEquipos.AsNoTracking()
-                    .Where(e => e.CodigoLegado != null && lote.Contains(e.CodigoLegado))
-                    .Select(e => new { e.EquipoSapId, e.CodigoLegado })
-                    .ToListAsync();
-                foreach (var f in filas)
-                {
-                    sapPorLegado.TryAdd(f.CodigoLegado!, f.EquipoSapId);
-                    legadoPorSap[f.EquipoSapId] = f.CodigoLegado!;
-                }
+                foreach (var o in await _db.StgSapOrdenes.AsNoTracking().Where(o => lote.Contains(o.OrdenSapId))
+                             .Select(o => new { o.OrdenSapId, o.ClaseOrden, o.EstadoOrden, o.Descripcion, o.AvisoSapId }).ToListAsync())
+                    ordenes[o.OrdenSapId] = (o.ClaseOrden, o.EstadoOrden, o.Descripcion, o.AvisoSapId);
             }
 
-            var ordenes = new Dictionary<string, List<OrdenResumenDto>>(StringComparer.OrdinalIgnoreCase);
-            foreach (var lote in legadoPorSap.Keys.Chunk(TamanoLote))
+            var avisoIds = ordenes.Values.Select(o => o.AvisoId).OfType<string>().Distinct().ToList();
+            var avisos = new Dictionary<string, string?>();
+            foreach (var lote in avisoIds.Chunk(TamanoLote))
             {
-                var filas = await _db.StgSapOrdenes.AsNoTracking()
-                    .Where(o => o.EquipoSapId != null && lote.Contains(o.EquipoSapId)
-                                && o.FechaInicioReal != null && o.FechaInicioReal <= hasta
-                                && (o.FechaFinReal == null || o.FechaFinReal >= desde))
-                    .ToListAsync();
+                foreach (var a in await _db.StgSapAvisos.AsNoTracking().Where(a => lote.Contains(a.AvisoSapId))
+                             .Select(a => new { a.AvisoSapId, a.Texto }).ToListAsync())
+                    avisos[a.AvisoSapId] = a.Texto;
+            }
 
-                foreach (var o in filas)
+            return ventanas
+                .OrderBy(v => v.Desde)
+                .Select(v =>
                 {
-                    var legado = legadoPorSap[o.EquipoSapId!];
-                    if (!ordenes.TryGetValue(legado, out var lista))
-                        ordenes[legado] = lista = new List<OrdenResumenDto>();
-                    lista.Add(new OrdenResumenDto
+                    var o = ordenes.GetValueOrDefault(v.OrdenSapId);
+                    var avisoTexto = o.AvisoId != null ? avisos.GetValueOrDefault(o.AvisoId) : null;
+                    return new OrdenDetalleDto
                     {
-                        OrdenSapId = o.OrdenSapId,
-                        ClaseOrden = o.ClaseOrden,
-                        EstadoOrden = o.EstadoOrden,
-                        Descripcion = o.Descripcion,
-                        CodigoLegado = legado,
-                        EquipoDescripcion = descripciones.GetValueOrDefault(legado),
-                        FechaInicioReal = o.FechaInicioReal,
-                        FechaFinReal = o.FechaFinReal
-                    });
-                }
-            }
-
-            return (sapPorLegado, ordenes);
+                        OrdenSapId = v.OrdenSapId,
+                        ClaseOrden = o.Clase ?? "",
+                        Tipo = v.Tipo,
+                        Ficha = v.CodigoLegado,
+                        EquipoDescripcion = b.Mapeo.EquiposOracle.TryGetValue(v.CodigoLegado, out var e) ? e.Descripcion : null,
+                        Desde = v.Desde,
+                        Hasta = v.Hasta >= referencia ? null : v.Hasta,
+                        EstadoActual = o.Estado ?? "",
+                        Observacion = avisoTexto != null ? $"{o.Desc} (aviso {o.AvisoId}: {avisoTexto})" : o.Desc
+                    };
+                })
+                .ToList();
         }
     }
 }

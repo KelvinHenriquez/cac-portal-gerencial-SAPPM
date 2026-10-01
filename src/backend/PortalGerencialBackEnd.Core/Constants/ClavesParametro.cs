@@ -3,36 +3,47 @@ namespace PortalGerencialBackEnd.Core.Constants
     /// <summary>Claves de PARAMETRO_PGPM. Los valores iniciales se siembran en la migración.</summary>
     public static class ClavesParametro
     {
-        /// <summary>Estados de orden (separados por coma) que dejan al equipo fuera de servicio (sección 6.1, pendiente de confirmar).</summary>
-        public const string EstadosFueraServicio = "SAP.ESTADOS_FUERA_SERVICIO";
+        /// <summary>
+        /// Clase de orden (AUART) → tipo de horas del reporte de disponibilidad: lista
+        /// "ZC01=CORRECTIVA,ZC02=PREVENTIVO,ZC03=PLANIFICADA". Una clase que no esté cuenta como PLANIFICADA.
+        /// </summary>
+        public const string TipoPorClaseOrden = "SAP.TIPO_POR_CLASE";
 
-        /// <summary>Estados de orden (separados por coma) que cuentan como orden terminada para el avance.</summary>
+        /// <summary>Estados de orden (separados por coma) que cierran la orden (fin de la indisponibilidad).</summary>
         public const string EstadosCerrados = "SAP.ESTADOS_CERRADOS";
 
-        /// <summary>Clases de orden que cuentan para Avance de Reparación (sección 4.2).</summary>
-        public const string ClasesOrdenAvance = "SAP.CLASES_ORDEN_AVANCE";
+        /// <summary>Estados de orden que no cuentan para nada (p. ej. Anulada).</summary>
+        public const string EstadosExcluidos = "SAP.ESTADOS_EXCLUIDOS";
+
+        /// <summary>Fecha (yyyy-MM-dd) desde la que se extrae de SAP en la primera corrida.</summary>
+        public const string FechaCargaInicial = "SAP.FECHA_CARGA_INICIAL";
+
+        /// <summary>Clases de orden que dejan equipos fuera de servicio ("*" = todas).</summary>
+        public const string ClasesOrdenDisponibilidad = "DISPONIBILIDAD.CLASES_ORDEN";
+
+        /// <summary>Desde cuándo cuenta la indisponibilidad: CREACION (de la orden) o INICIO_REAL.</summary>
+        public const string InicioVentana = "DISPONIBILIDAD.INICIO_VENTANA";
+
+        /// <summary>
+        /// S = una orden correctiva con aviso solo deja el equipo fuera si el aviso indica parada, y
+        /// entonces cuenta desde el inicio hasta el fin de la avería del aviso.
+        /// </summary>
+        public const string CorrectivasSegunAviso = "DISPONIBILIDAD.CORRECTIVAS_SEGUN_AVISO";
+
+        /// <summary>Clases de orden que cuentan para Avance de Reparación.</summary>
+        public const string ClasesOrdenAvance = "AVANCE.CLASES_ORDEN";
+
+        /// <summary>Con qué se arma el % programado de cada semana: ACTIVIDADES o DIAS del plan de Oracle.</summary>
+        public const string BasePlanAvance = "AVANCE.BASE_PLAN";
 
         /// <summary>Hora local (HH:mm) de la corrida diaria del job.</summary>
         public const string HoraCorridaDiaria = "JOB.HORA_CORRIDA_DIARIA";
 
-        /// <summary>Días hacia atrás que se recalcula la disponibilidad diaria en cada corrida.</summary>
+        /// <summary>Días hacia atrás que se recalcula la disponibilidad en cada corrida.</summary>
         public const string DiasRecalculoDisponibilidad = "JOB.DIAS_RECALCULO_DISPONIBILIDAD";
 
         /// <summary>Horas sin una corrida exitosa a partir de las cuales se alerta (sección 11).</summary>
         public const string HorasAlertaFrescura = "MONITOREO.HORAS_ALERTA";
-
-        /// <summary>Programa de reparación que se abre por defecto en Avance.</summary>
-        public const string ProgramaVigente = "AVANCE.PROGRAMA_VIGENTE";
-
-        /// <summary>
-        /// Fórmula provisional del % real de avance mientras se confirma "Total Ejec. %" (sección 6.2):
-        /// HH_ORDENES_CERRADAS = horas plan de las órdenes cerradas / horas plan de todas las órdenes;
-        /// ORDENES_CERRADAS = órdenes cerradas / total de órdenes.
-        /// </summary>
-        public const string FormulaAvanceReal = "AVANCE.FORMULA_REAL";
-
-        /// <summary>Fecha (yyyy-MM-dd) desde la que se extrae de SAP la primera vez que corre el job.</summary>
-        public const string FechaCargaInicial = "SAP.FECHA_CARGA_INICIAL";
     }
 
     /// <summary>Fuentes (pasos) que se registran en LOG_EXTRACCION_PGPM.</summary>
@@ -40,14 +51,12 @@ namespace PortalGerencialBackEnd.Core.Constants
     {
         public const string SapEquipos = "SAP_EQUIPOS";
         public const string SapOrdenes = "SAP_ORDENES";
+        public const string SapOperaciones = "SAP_OPERACIONES";
+        public const string SapAvisos = "SAP_AVISOS";
         public const string SapHistorial = "SAP_HISTORIAL";
-        public const string SapHoras = "SAP_HORAS";
         public const string CalcSinClasificar = "CALC_SIN_CLASIFICAR";
         public const string CalcDisponibilidad = "CALC_DISPONIBILIDAD";
         public const string CalcAvance = "CALC_AVANCE";
-
-        public static readonly string[] Todas =
-            { SapEquipos, SapOrdenes, SapHistorial, SapHoras, CalcSinClasificar, CalcDisponibilidad, CalcAvance };
     }
 
     public static class EstadosLog
@@ -55,5 +64,13 @@ namespace PortalGerencialBackEnd.Core.Constants
         public const string EnCurso = "EN_CURSO";
         public const string Ok = "OK";
         public const string Error = "ERROR";
+    }
+
+    /// <summary>Tipos de horas OT del reporte de disponibilidad.</summary>
+    public static class TiposOrden
+    {
+        public const string Planificada = "PLANIFICADA";
+        public const string Preventivo = "PREVENTIVO";
+        public const string Correctiva = "CORRECTIVA";
     }
 }

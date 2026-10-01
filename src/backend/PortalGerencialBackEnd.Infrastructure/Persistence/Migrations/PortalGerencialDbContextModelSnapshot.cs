@@ -75,21 +75,27 @@ namespace PortalGerencialBackEnd.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("PortalGerencialBackEnd.Core.Entities.Calculo.CalcAvanceSemanal", b =>
                 {
+                    b.Property<int>("ReporteId")
+                        .HasColumnType("NUMBER(10)")
+                        .HasColumnName("REPORTE_ID");
+
                     b.Property<string>("FamiliaCodigo")
                         .HasMaxLength(60)
                         .IsUnicode(false)
                         .HasColumnType("VARCHAR2(60)")
                         .HasColumnName("FAMILIA_CODIGO");
 
-                    b.Property<string>("AnioPrograma")
-                        .HasMaxLength(20)
-                        .IsUnicode(false)
-                        .HasColumnType("VARCHAR2(20)")
-                        .HasColumnName("ANIO_PROGRAMA");
-
-                    b.Property<int>("Semana")
+                    b.Property<int>("NoSemana")
                         .HasColumnType("NUMBER(10)")
-                        .HasColumnName("SEMANA");
+                        .HasColumnName("NO_SEMANA");
+
+                    b.Property<int>("ActTerminadas")
+                        .HasColumnType("NUMBER(10)")
+                        .HasColumnName("ACT_TERMINADAS");
+
+                    b.Property<int>("ActTotal")
+                        .HasColumnType("NUMBER(10)")
+                        .HasColumnName("ACT_TOTAL");
 
                     b.Property<string>("CorridaId")
                         .IsRequired()
@@ -98,75 +104,76 @@ namespace PortalGerencialBackEnd.Infrastructure.Persistence.Migrations
                         .HasColumnType("VARCHAR2(36)")
                         .HasColumnName("CORRIDA_ID");
 
-                    b.Property<DateTime>("FechaFinSemana")
-                        .HasColumnType("DATE")
-                        .HasColumnName("FECHA_FIN_SEMANA");
+                    b.Property<decimal>("DiasActTerminadas")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("DECIMAL(12,2)")
+                        .HasColumnName("DIAS_ACT_TERMINADAS");
 
-                    b.Property<DateTime>("FechaInicioSemana")
+                    b.Property<decimal>("DiasActTotal")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("DECIMAL(12,2)")
+                        .HasColumnName("DIAS_ACT_TOTAL");
+
+                    b.Property<DateTime>("FechaFin")
                         .HasColumnType("DATE")
-                        .HasColumnName("FECHA_INICIO_SEMANA");
+                        .HasColumnName("FECHA_FIN");
+
+                    b.Property<DateTime>("FechaInicio")
+                        .HasColumnType("DATE")
+                        .HasColumnName("FECHA_INICIO");
 
                     b.Property<DateTime>("GeneradoEn")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TIMESTAMP(7)")
-                        .HasColumnName("GENERADO_EN")
-                        .HasDefaultValueSql("SYSTIMESTAMP");
-
-                    b.Property<decimal>("HhPlan")
-                        .HasPrecision(12, 2)
-                        .HasColumnType("DECIMAL(12,2)")
-                        .HasColumnName("HH_PLAN");
-
-                    b.Property<decimal>("HhReal")
-                        .HasPrecision(12, 2)
-                        .HasColumnType("DECIMAL(12,2)")
-                        .HasColumnName("HH_REAL");
+                        .HasColumnType("DATE")
+                        .HasColumnName("GENERADO_EN");
 
                     b.Property<int>("OrdenesCerradas")
                         .HasColumnType("NUMBER(10)")
                         .HasColumnName("ORDENES_CERRADAS");
 
-                    b.Property<decimal>("PendPct")
-                        .HasPrecision(6, 2)
-                        .HasColumnType("DECIMAL(6,2)")
-                        .HasColumnName("PEND_PCT");
+                    b.Property<int>("OrdenesTotal")
+                        .HasColumnType("NUMBER(10)")
+                        .HasColumnName("ORDENES_TOTAL");
 
                     b.Property<decimal>("ProgPct")
-                        .HasPrecision(5, 2)
-                        .HasColumnType("DECIMAL(5,2)")
+                        .HasPrecision(6, 2)
+                        .HasColumnType("DECIMAL(6,2)")
                         .HasColumnName("PROG_PCT");
 
-                    b.Property<decimal>("RealPct")
-                        .HasPrecision(5, 2)
-                        .HasColumnType("DECIMAL(5,2)")
-                        .HasColumnName("REAL_PCT");
+                    b.Property<decimal>("RealActNoProgPct")
+                        .HasPrecision(6, 2)
+                        .HasColumnType("DECIMAL(6,2)")
+                        .HasColumnName("REAL_ACT_NO_PROG_PCT");
 
-                    b.Property<int>("TotalOrdenes")
-                        .HasColumnType("NUMBER(10)")
-                        .HasColumnName("TOTAL_ORDENES");
+                    b.Property<decimal>("RealActPct")
+                        .HasPrecision(6, 2)
+                        .HasColumnType("DECIMAL(6,2)")
+                        .HasColumnName("REAL_ACT_PCT");
 
-                    b.HasKey("FamiliaCodigo", "AnioPrograma", "Semana")
+                    b.Property<decimal>("RealActProgPct")
+                        .HasPrecision(6, 2)
+                        .HasColumnType("DECIMAL(6,2)")
+                        .HasColumnName("REAL_ACT_PROG_PCT");
+
+                    b.Property<decimal>("RealOrdenesPct")
+                        .HasPrecision(6, 2)
+                        .HasColumnType("DECIMAL(6,2)")
+                        .HasColumnName("REAL_ORDENES_PCT");
+
+                    b.HasKey("ReporteId", "FamiliaCodigo", "NoSemana")
                         .HasName("PK_CALC_AVANCE_SEMANAL_PGPM");
-
-                    b.HasIndex("AnioPrograma")
-                        .HasDatabaseName("IX_CALC_AVANCE_PROG_PGPM");
 
                     b.ToTable("CALC_AVANCE_SEMANAL_PGPM", (string)null);
                 });
 
             modelBuilder.Entity("PortalGerencialBackEnd.Core.Entities.Calculo.CalcDisponibilidadDiaria", b =>
                 {
-                    b.Property<string>("TipoReporte")
-                        .HasMaxLength(60)
-                        .IsUnicode(false)
-                        .HasColumnType("VARCHAR2(60)")
-                        .HasColumnName("TIPO_REPORTE");
+                    b.Property<int>("ReporteId")
+                        .HasColumnType("NUMBER(10)")
+                        .HasColumnName("REPORTE_ID");
 
-                    b.Property<string>("FamiliaCodigo")
-                        .HasMaxLength(60)
-                        .IsUnicode(false)
-                        .HasColumnType("VARCHAR2(60)")
-                        .HasColumnName("FAMILIA_CODIGO");
+                    b.Property<int>("AsignacionId")
+                        .HasColumnType("NUMBER(10)")
+                        .HasColumnName("ASIGNACION_ID");
 
                     b.Property<DateTime>("Fecha")
                         .HasColumnType("DATE")
@@ -183,38 +190,72 @@ namespace PortalGerencialBackEnd.Infrastructure.Persistence.Migrations
                         .HasColumnType("VARCHAR2(36)")
                         .HasColumnName("CORRIDA_ID");
 
-                    b.Property<decimal>("DispPotencialPct")
-                        .HasPrecision(5, 2)
-                        .HasColumnType("DECIMAL(5,2)")
-                        .HasColumnName("DISP_POTENCIAL_PCT");
+                    b.Property<decimal>("DispCompPct")
+                        .HasPrecision(6, 2)
+                        .HasColumnType("DECIMAL(6,2)")
+                        .HasColumnName("DISP_COMP_PCT");
 
                     b.Property<decimal>("DispRealPct")
-                        .HasPrecision(5, 2)
-                        .HasColumnType("DECIMAL(5,2)")
+                        .HasPrecision(6, 2)
+                        .HasColumnType("DECIMAL(6,2)")
                         .HasColumnName("DISP_REAL_PCT");
 
-                    b.Property<int>("EqDisponible")
-                        .HasColumnType("NUMBER(10)")
-                        .HasColumnName("EQ_DISPONIBLE");
-
-                    b.Property<int>("EqFueraServicio")
-                        .HasColumnType("NUMBER(10)")
-                        .HasColumnName("EQ_FUERA_SERVICIO");
+                    b.Property<decimal>("EqDisponibleProm")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("DECIMAL(10,2)")
+                        .HasColumnName("EQ_DISPONIBLE_PROM");
 
                     b.Property<int>("EqRequerido")
                         .HasColumnType("NUMBER(10)")
                         .HasColumnName("EQ_REQUERIDO");
 
                     b.Property<DateTime>("GeneradoEn")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TIMESTAMP(7)")
-                        .HasColumnName("GENERADO_EN")
-                        .HasDefaultValueSql("SYSTIMESTAMP");
+                        .HasColumnType("DATE")
+                        .HasColumnName("GENERADO_EN");
 
-                    b.HasKey("TipoReporte", "FamiliaCodigo", "Fecha")
+                    b.Property<int>("HorasMedidas")
+                        .HasColumnType("NUMBER(10)")
+                        .HasColumnName("HORAS_MEDIDAS");
+
+                    b.Property<decimal>("HrsDia")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("DECIMAL(12,2)")
+                        .HasColumnName("HRS_DIA");
+
+                    b.Property<decimal>("HrsDiaDispComp")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("DECIMAL(12,2)")
+                        .HasColumnName("HRS_DIA_DISP_COMP");
+
+                    b.Property<decimal>("HrsOtCorrectiva")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("DECIMAL(12,2)")
+                        .HasColumnName("HRS_OT_CORRECTIVA");
+
+                    b.Property<decimal>("HrsOtPlanificada")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("DECIMAL(12,2)")
+                        .HasColumnName("HRS_OT_PLANIFICADA");
+
+                    b.Property<decimal>("HrsOtPreventivo")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("DECIMAL(12,2)")
+                        .HasColumnName("HRS_OT_PREVENTIVO");
+
+                    b.Property<decimal>("HrsRealEfec")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("DECIMAL(12,2)")
+                        .HasColumnName("HRS_REAL_EFEC");
+
+                    b.Property<decimal>("PotencialPct")
+                        .HasPrecision(7, 2)
+                        .HasColumnType("DECIMAL(7,2)")
+                        .HasColumnName("POTENCIAL_PCT");
+
+                    b.HasKey("ReporteId", "AsignacionId", "Fecha")
                         .HasName("PK_CALC_DISP_DIARIA_PGPM");
 
-                    b.HasIndex("TipoReporte", "Fecha")
+                    b.HasIndex("ReporteId", "Fecha")
                         .HasDatabaseName("IX_CALC_DISP_DIARIA_FEC_PGPM");
 
                     b.ToTable("CALC_DISP_DIARIA_PGPM", (string)null);
@@ -222,25 +263,17 @@ namespace PortalGerencialBackEnd.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("PortalGerencialBackEnd.Core.Entities.Calculo.CalcDisponibilidadSemanal", b =>
                 {
-                    b.Property<string>("TipoReporte")
-                        .HasMaxLength(60)
-                        .IsUnicode(false)
-                        .HasColumnType("VARCHAR2(60)")
-                        .HasColumnName("TIPO_REPORTE");
-
-                    b.Property<string>("FamiliaCodigo")
-                        .HasMaxLength(60)
-                        .IsUnicode(false)
-                        .HasColumnType("VARCHAR2(60)")
-                        .HasColumnName("FAMILIA_CODIGO");
-
-                    b.Property<int>("AnioIso")
+                    b.Property<int>("ReporteId")
                         .HasColumnType("NUMBER(10)")
-                        .HasColumnName("ANIO_ISO");
+                        .HasColumnName("REPORTE_ID");
 
-                    b.Property<int>("SemanaIso")
+                    b.Property<int>("AsignacionId")
                         .HasColumnType("NUMBER(10)")
-                        .HasColumnName("SEMANA_ISO");
+                        .HasColumnName("ASIGNACION_ID");
+
+                    b.Property<int>("NoSemana")
+                        .HasColumnType("NUMBER(10)")
+                        .HasColumnName("NO_SEMANA");
 
                     b.Property<int>("CantEquipo")
                         .HasColumnType("NUMBER(10)")
@@ -257,24 +290,20 @@ namespace PortalGerencialBackEnd.Infrastructure.Persistence.Migrations
                         .HasColumnType("NUMBER(10)")
                         .HasColumnName("DIAS_CALCULADOS");
 
-                    b.Property<decimal>("DispPotencialPct")
-                        .HasPrecision(5, 2)
-                        .HasColumnType("DECIMAL(5,2)")
-                        .HasColumnName("DISP_POTENCIAL_PCT");
+                    b.Property<decimal>("DispCompPct")
+                        .HasPrecision(6, 2)
+                        .HasColumnType("DECIMAL(6,2)")
+                        .HasColumnName("DISP_COMP_PCT");
 
                     b.Property<decimal>("DispRealMinPct")
-                        .HasPrecision(5, 2)
-                        .HasColumnType("DECIMAL(5,2)")
+                        .HasPrecision(6, 2)
+                        .HasColumnType("DECIMAL(6,2)")
                         .HasColumnName("DISP_REAL_MIN_PCT");
 
                     b.Property<decimal>("DispRealPct")
-                        .HasPrecision(5, 2)
-                        .HasColumnType("DECIMAL(5,2)")
+                        .HasPrecision(6, 2)
+                        .HasColumnType("DECIMAL(6,2)")
                         .HasColumnName("DISP_REAL_PCT");
-
-                    b.Property<int>("EqDisponibleMin")
-                        .HasColumnType("NUMBER(10)")
-                        .HasColumnName("EQ_DISPONIBLE_MIN");
 
                     b.Property<decimal>("EqDisponibleProm")
                         .HasPrecision(10, 2)
@@ -285,25 +314,55 @@ namespace PortalGerencialBackEnd.Infrastructure.Persistence.Migrations
                         .HasColumnType("NUMBER(10)")
                         .HasColumnName("EQ_REQUERIDO");
 
-                    b.Property<DateTime>("FechaFinSemana")
+                    b.Property<DateTime>("FechaFin")
                         .HasColumnType("DATE")
-                        .HasColumnName("FECHA_FIN_SEMANA");
+                        .HasColumnName("FECHA_FIN");
 
-                    b.Property<DateTime>("FechaInicioSemana")
+                    b.Property<DateTime>("FechaInicio")
                         .HasColumnType("DATE")
-                        .HasColumnName("FECHA_INICIO_SEMANA");
+                        .HasColumnName("FECHA_INICIO");
 
                     b.Property<DateTime>("GeneradoEn")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TIMESTAMP(7)")
-                        .HasColumnName("GENERADO_EN")
-                        .HasDefaultValueSql("SYSTIMESTAMP");
+                        .HasColumnType("DATE")
+                        .HasColumnName("GENERADO_EN");
 
-                    b.HasKey("TipoReporte", "FamiliaCodigo", "AnioIso", "SemanaIso")
+                    b.Property<decimal>("HrsDia")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("DECIMAL(12,2)")
+                        .HasColumnName("HRS_DIA");
+
+                    b.Property<decimal>("HrsDiaDispComp")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("DECIMAL(12,2)")
+                        .HasColumnName("HRS_DIA_DISP_COMP");
+
+                    b.Property<decimal>("HrsOtCorrectiva")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("DECIMAL(12,2)")
+                        .HasColumnName("HRS_OT_CORRECTIVA");
+
+                    b.Property<decimal>("HrsOtPlanificada")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("DECIMAL(12,2)")
+                        .HasColumnName("HRS_OT_PLANIFICADA");
+
+                    b.Property<decimal>("HrsOtPreventivo")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("DECIMAL(12,2)")
+                        .HasColumnName("HRS_OT_PREVENTIVO");
+
+                    b.Property<decimal>("HrsRealEfec")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("DECIMAL(12,2)")
+                        .HasColumnName("HRS_REAL_EFEC");
+
+                    b.Property<decimal>("PotencialPct")
+                        .HasPrecision(7, 2)
+                        .HasColumnType("DECIMAL(7,2)")
+                        .HasColumnName("POTENCIAL_PCT");
+
+                    b.HasKey("ReporteId", "AsignacionId", "NoSemana")
                         .HasName("PK_CALC_DISP_SEMANAL_PGPM");
-
-                    b.HasIndex("TipoReporte", "FechaInicioSemana")
-                        .HasDatabaseName("IX_CALC_DISP_SEM_FEC_PGPM");
 
                     b.ToTable("CALC_DISP_SEMANAL_PGPM", (string)null);
                 });
@@ -340,10 +399,8 @@ namespace PortalGerencialBackEnd.Infrastructure.Persistence.Migrations
                         .HasColumnName("DESCRIPCION");
 
                     b.Property<DateTime>("DetectadoEn")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TIMESTAMP(7)")
-                        .HasColumnName("DETECTADO_EN")
-                        .HasDefaultValueSql("SYSTIMESTAMP");
+                        .HasColumnType("DATE")
+                        .HasColumnName("DETECTADO_EN");
 
                     b.Property<string>("Motivo")
                         .IsRequired()
@@ -364,21 +421,113 @@ namespace PortalGerencialBackEnd.Infrastructure.Persistence.Migrations
                     b.ToTable("CALC_EQUIPO_SIN_CLASIF_PGPM", (string)null);
                 });
 
-            modelBuilder.Entity("PortalGerencialBackEnd.Core.Entities.Estructura.VwCurvaPlaneada", b =>
+            modelBuilder.Entity("PortalGerencialBackEnd.Core.Entities.Estructura.VwAvanceFamilia", b =>
                 {
-                    b.Property<decimal>("ActividadPct")
-                        .HasPrecision(5, 2)
-                        .HasColumnType("DECIMAL(5,2)")
-                        .HasColumnName("ACTIVIDAD_PCT");
+                    b.Property<int>("CantEquipo")
+                        .HasColumnType("NUMBER(10)")
+                        .HasColumnName("CANT_EQUIPO");
 
-                    b.Property<string>("AnioPrograma")
+                    b.Property<string>("FamiliaCodigo")
                         .IsRequired()
                         .IsUnicode(false)
                         .HasColumnType("VARCHAR2(4000)")
-                        .HasColumnName("ANIO_PROGRAMA");
+                        .HasColumnName("FAMILIA_CODIGO");
 
-                    b.Property<int>("Dias")
+                    b.Property<string>("FamiliaNombre")
+                        .IsRequired()
+                        .IsUnicode(false)
+                        .HasColumnType("VARCHAR2(4000)")
+                        .HasColumnName("FAMILIA_NOMBRE");
+
+                    b.Property<DateTime>("FechaEstFin")
+                        .HasColumnType("DATE")
+                        .HasColumnName("FECHA_EST_FIN");
+
+                    b.Property<DateTime>("FechaEstInicio")
+                        .HasColumnType("DATE")
+                        .HasColumnName("FECHA_EST_INICIO");
+
+                    b.Property<int>("Orden")
                         .HasColumnType("NUMBER(10)")
+                        .HasColumnName("ORDEN");
+
+                    b.Property<int>("ReporteId")
+                        .HasColumnType("NUMBER(10)")
+                        .HasColumnName("REPORTE_ID");
+
+                    b.ToTable((string)null);
+
+                    b.ToView("VW_AVANCE_FAMILIA_PGPM", (string)null);
+                });
+
+            modelBuilder.Entity("PortalGerencialBackEnd.Core.Entities.Estructura.VwAvancePeriodo", b =>
+                {
+                    b.Property<string>("Descripcion")
+                        .IsRequired()
+                        .IsUnicode(false)
+                        .HasColumnType("VARCHAR2(4000)")
+                        .HasColumnName("DESCRIPCION");
+
+                    b.Property<int>("PeriodoId")
+                        .HasColumnType("NUMBER(10)")
+                        .HasColumnName("PERIODO_ID");
+
+                    b.ToTable((string)null);
+
+                    b.ToView("VW_AVANCE_PERIODO_PGPM", (string)null);
+                });
+
+            modelBuilder.Entity("PortalGerencialBackEnd.Core.Entities.Estructura.VwAvanceReporte", b =>
+                {
+                    b.Property<DateTime>("FechaFin")
+                        .HasColumnType("DATE")
+                        .HasColumnName("FECHA_FIN");
+
+                    b.Property<DateTime>("FechaInicio")
+                        .HasColumnType("DATE")
+                        .HasColumnName("FECHA_INICIO");
+
+                    b.Property<string>("FechaRef")
+                        .IsRequired()
+                        .IsUnicode(false)
+                        .HasColumnType("VARCHAR2(4000)")
+                        .HasColumnName("FECHA_REF");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .IsUnicode(false)
+                        .HasColumnType("VARCHAR2(4000)")
+                        .HasColumnName("NOMBRE");
+
+                    b.Property<int>("PeriodoId")
+                        .HasColumnType("NUMBER(10)")
+                        .HasColumnName("PERIODO_ID");
+
+                    b.Property<int>("ReporteId")
+                        .HasColumnType("NUMBER(10)")
+                        .HasColumnName("REPORTE_ID");
+
+                    b.Property<string>("TipoOt")
+                        .IsRequired()
+                        .IsUnicode(false)
+                        .HasColumnType("VARCHAR2(4000)")
+                        .HasColumnName("TIPO_OT");
+
+                    b.ToTable((string)null);
+
+                    b.ToView("VW_AVANCE_REPORTE_PGPM", (string)null);
+                });
+
+            modelBuilder.Entity("PortalGerencialBackEnd.Core.Entities.Estructura.VwAvanceSemana", b =>
+                {
+                    b.Property<decimal>("Actividad")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("DECIMAL(10,2)")
+                        .HasColumnName("ACTIVIDAD");
+
+                    b.Property<decimal>("Dias")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("DECIMAL(10,2)")
                         .HasColumnName("DIAS");
 
                     b.Property<string>("FamiliaCodigo")
@@ -387,13 +536,13 @@ namespace PortalGerencialBackEnd.Infrastructure.Persistence.Migrations
                         .HasColumnType("VARCHAR2(4000)")
                         .HasColumnName("FAMILIA_CODIGO");
 
-                    b.Property<DateTime>("FechaFinSemana")
+                    b.Property<DateTime>("FechaFin")
                         .HasColumnType("DATE")
-                        .HasColumnName("FECHA_FIN_SEMANA");
+                        .HasColumnName("FECHA_FIN");
 
-                    b.Property<DateTime>("FechaInicioSemana")
+                    b.Property<DateTime>("FechaInicio")
                         .HasColumnType("DATE")
-                        .HasColumnName("FECHA_INICIO_SEMANA");
+                        .HasColumnName("FECHA_INICIO");
 
                     b.Property<int>("Mes")
                         .HasColumnType("NUMBER(10)")
@@ -403,9 +552,169 @@ namespace PortalGerencialBackEnd.Infrastructure.Persistence.Migrations
                         .HasColumnType("NUMBER(10)")
                         .HasColumnName("NO_SEMANA");
 
+                    b.Property<int>("ReporteId")
+                        .HasColumnType("NUMBER(10)")
+                        .HasColumnName("REPORTE_ID");
+
                     b.ToTable((string)null);
 
-                    b.ToView("VW_CURVA_PLANEADA_PGPM", (string)null);
+                    b.ToView("VW_AVANCE_SEMANA_PGPM", (string)null);
+                });
+
+            modelBuilder.Entity("PortalGerencialBackEnd.Core.Entities.Estructura.VwDispAsigEquipo", b =>
+                {
+                    b.Property<int>("AsignacionId")
+                        .HasColumnType("NUMBER(10)")
+                        .HasColumnName("ASIGNACION_ID");
+
+                    b.Property<string>("CodigoLegado")
+                        .IsRequired()
+                        .IsUnicode(false)
+                        .HasColumnType("VARCHAR2(4000)")
+                        .HasColumnName("CODIGO_LEGADO");
+
+                    b.Property<int>("ReporteId")
+                        .HasColumnType("NUMBER(10)")
+                        .HasColumnName("REPORTE_ID");
+
+                    b.ToTable((string)null);
+
+                    b.ToView("VW_DISP_ASIG_EQUIPO_PGPM", (string)null);
+                });
+
+            modelBuilder.Entity("PortalGerencialBackEnd.Core.Entities.Estructura.VwDispAsignacion", b =>
+                {
+                    b.Property<string>("Asignacion")
+                        .IsRequired()
+                        .IsUnicode(false)
+                        .HasColumnType("VARCHAR2(4000)")
+                        .HasColumnName("ASIGNACION");
+
+                    b.Property<int>("AsignacionId")
+                        .HasColumnType("NUMBER(10)")
+                        .HasColumnName("ASIGNACION_ID");
+
+                    b.Property<int>("CantAsignada")
+                        .HasColumnType("NUMBER(10)")
+                        .HasColumnName("CANT_ASIGNADA");
+
+                    b.Property<int>("CantRequerida")
+                        .HasColumnType("NUMBER(10)")
+                        .HasColumnName("CANT_REQUERIDA");
+
+                    b.Property<decimal>("DispCompPct")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("DECIMAL(5,2)")
+                        .HasColumnName("DISP_COMP_PCT");
+
+                    b.Property<string>("Grupo")
+                        .IsRequired()
+                        .IsUnicode(false)
+                        .HasColumnType("VARCHAR2(4000)")
+                        .HasColumnName("GRUPO");
+
+                    b.Property<string>("Negrita")
+                        .IsRequired()
+                        .IsUnicode(false)
+                        .HasColumnType("VARCHAR2(4000)")
+                        .HasColumnName("NEGRITA");
+
+                    b.Property<int>("Orden")
+                        .HasColumnType("NUMBER(10)")
+                        .HasColumnName("ORDEN");
+
+                    b.Property<int>("ReporteId")
+                        .HasColumnType("NUMBER(10)")
+                        .HasColumnName("REPORTE_ID");
+
+                    b.ToTable((string)null);
+
+                    b.ToView("VW_DISP_ASIGNACION_PGPM", (string)null);
+                });
+
+            modelBuilder.Entity("PortalGerencialBackEnd.Core.Entities.Estructura.VwDispHora", b =>
+                {
+                    b.Property<string>("Activo")
+                        .IsRequired()
+                        .IsUnicode(false)
+                        .HasColumnType("VARCHAR2(4000)")
+                        .HasColumnName("ACTIVO");
+
+                    b.Property<int>("Hora")
+                        .HasColumnType("NUMBER(10)")
+                        .HasColumnName("HORA");
+
+                    b.Property<int>("ReporteId")
+                        .HasColumnType("NUMBER(10)")
+                        .HasColumnName("REPORTE_ID");
+
+                    b.ToTable((string)null);
+
+                    b.ToView("VW_DISP_HORA_PGPM", (string)null);
+                });
+
+            modelBuilder.Entity("PortalGerencialBackEnd.Core.Entities.Estructura.VwDispReporte", b =>
+                {
+                    b.Property<string>("Activo")
+                        .IsRequired()
+                        .IsUnicode(false)
+                        .HasColumnType("VARCHAR2(4000)")
+                        .HasColumnName("ACTIVO");
+
+                    b.Property<string>("Descripcion")
+                        .IsRequired()
+                        .IsUnicode(false)
+                        .HasColumnType("VARCHAR2(4000)")
+                        .HasColumnName("DESCRIPCION");
+
+                    b.Property<int>("Orden")
+                        .HasColumnType("NUMBER(10)")
+                        .HasColumnName("ORDEN");
+
+                    b.Property<int>("ReporteId")
+                        .HasColumnType("NUMBER(10)")
+                        .HasColumnName("REPORTE_ID");
+
+                    b.Property<decimal>("UmbralNaranja")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("DECIMAL(5,2)")
+                        .HasColumnName("UMBRAL_NARANJA");
+
+                    b.Property<decimal>("UmbralRojo")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("DECIMAL(5,2)")
+                        .HasColumnName("UMBRAL_ROJO");
+
+                    b.ToTable((string)null);
+
+                    b.ToView("VW_DISP_REPORTE_PGPM", (string)null);
+                });
+
+            modelBuilder.Entity("PortalGerencialBackEnd.Core.Entities.Estructura.VwDispSemana", b =>
+                {
+                    b.Property<DateTime>("FechaFin")
+                        .HasColumnType("DATE")
+                        .HasColumnName("FECHA_FIN");
+
+                    b.Property<DateTime>("FechaInicio")
+                        .HasColumnType("DATE")
+                        .HasColumnName("FECHA_INICIO");
+
+                    b.Property<int>("Mes")
+                        .HasColumnType("NUMBER(10)")
+                        .HasColumnName("MES");
+
+                    b.Property<int>("NoSemana")
+                        .HasColumnType("NUMBER(10)")
+                        .HasColumnName("NO_SEMANA");
+
+                    b.Property<int>("ReporteId")
+                        .HasColumnType("NUMBER(10)")
+                        .HasColumnName("REPORTE_ID");
+
+                    b.ToTable((string)null);
+
+                    b.ToView("VW_DISP_SEMANA_PGPM", (string)null);
                 });
 
             modelBuilder.Entity("PortalGerencialBackEnd.Core.Entities.Estructura.VwEquipoFamilia", b =>
@@ -437,105 +746,6 @@ namespace PortalGerencialBackEnd.Infrastructure.Persistence.Migrations
                     b.ToTable((string)null);
 
                     b.ToView("VW_EQUIPOS_FAMILIA_PGPM", (string)null);
-                });
-
-            modelBuilder.Entity("PortalGerencialBackEnd.Core.Entities.Estructura.VwEquipoRequerido", b =>
-                {
-                    b.Property<string>("Asignacion")
-                        .IsRequired()
-                        .IsUnicode(false)
-                        .HasColumnType("VARCHAR2(4000)")
-                        .HasColumnName("ASIGNACION");
-
-                    b.Property<int>("CantAsignada")
-                        .HasColumnType("NUMBER(10)")
-                        .HasColumnName("CANT_ASIGNADA");
-
-                    b.Property<int>("CantRequerida")
-                        .HasColumnType("NUMBER(10)")
-                        .HasColumnName("CANT_REQUERIDA");
-
-                    b.Property<string>("FamiliaCodigo")
-                        .IsRequired()
-                        .IsUnicode(false)
-                        .HasColumnType("VARCHAR2(4000)")
-                        .HasColumnName("FAMILIA_CODIGO");
-
-                    b.Property<string>("TipoReporte")
-                        .IsRequired()
-                        .IsUnicode(false)
-                        .HasColumnType("VARCHAR2(4000)")
-                        .HasColumnName("TIPO_REPORTE");
-
-                    b.ToTable((string)null);
-
-                    b.ToView("VW_EQUIPOS_REQUERIDOS_PGPM", (string)null);
-                });
-
-            modelBuilder.Entity("PortalGerencialBackEnd.Core.Entities.Estructura.VwEstructuraFamilia", b =>
-                {
-                    b.Property<string>("AnioPrograma")
-                        .IsRequired()
-                        .IsUnicode(false)
-                        .HasColumnType("VARCHAR2(4000)")
-                        .HasColumnName("ANIO_PROGRAMA");
-
-                    b.Property<int>("CantEquipo")
-                        .HasColumnType("NUMBER(10)")
-                        .HasColumnName("CANT_EQUIPO");
-
-                    b.Property<string>("FamiliaCodigo")
-                        .IsRequired()
-                        .IsUnicode(false)
-                        .HasColumnType("VARCHAR2(4000)")
-                        .HasColumnName("FAMILIA_CODIGO");
-
-                    b.Property<string>("FamiliaNombre")
-                        .IsRequired()
-                        .IsUnicode(false)
-                        .HasColumnType("VARCHAR2(4000)")
-                        .HasColumnName("FAMILIA_NOMBRE");
-
-                    b.Property<DateTime>("FechaEstFin")
-                        .HasColumnType("DATE")
-                        .HasColumnName("FECHA_EST_FIN");
-
-                    b.Property<DateTime>("FechaEstInicio")
-                        .HasColumnType("DATE")
-                        .HasColumnName("FECHA_EST_INICIO");
-
-                    b.ToTable((string)null);
-
-                    b.ToView("VW_ESTRUCTURA_FAMILIAS_PGPM", (string)null);
-                });
-
-            modelBuilder.Entity("PortalGerencialBackEnd.Core.Entities.Estructura.VwUmbralSemaforo", b =>
-                {
-                    b.Property<string>("Descripcion")
-                        .IsRequired()
-                        .IsUnicode(false)
-                        .HasColumnType("VARCHAR2(4000)")
-                        .HasColumnName("DESCRIPCION");
-
-                    b.Property<string>("TipoReporte")
-                        .IsRequired()
-                        .IsUnicode(false)
-                        .HasColumnType("VARCHAR2(4000)")
-                        .HasColumnName("TIPO_REPORTE");
-
-                    b.Property<decimal>("UmbralNaranja")
-                        .HasPrecision(5, 2)
-                        .HasColumnType("DECIMAL(5,2)")
-                        .HasColumnName("UMBRAL_NARANJA");
-
-                    b.Property<decimal>("UmbralRojo")
-                        .HasPrecision(5, 2)
-                        .HasColumnType("DECIMAL(5,2)")
-                        .HasColumnName("UMBRAL_ROJO");
-
-                    b.ToTable((string)null);
-
-                    b.ToView("VW_UMBRALES_SEMAFORO_PGPM", (string)null);
                 });
 
             modelBuilder.Entity("PortalGerencialBackEnd.Core.Entities.LogExtraccion", b =>
@@ -615,10 +825,8 @@ namespace PortalGerencialBackEnd.Infrastructure.Persistence.Migrations
                         .HasColumnName("CLAVE");
 
                     b.Property<DateTime>("ActualizadoEn")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TIMESTAMP(7)")
-                        .HasColumnName("ACTUALIZADO_EN")
-                        .HasDefaultValueSql("SYSTIMESTAMP");
+                        .HasColumnType("DATE")
+                        .HasColumnName("ACTUALIZADO_EN");
 
                     b.Property<string>("Descripcion")
                         .HasMaxLength(500)
@@ -641,67 +849,159 @@ namespace PortalGerencialBackEnd.Infrastructure.Persistence.Migrations
                     b.HasData(
                         new
                         {
-                            Clave = "SAP.ESTADOS_FUERA_SERVICIO",
-                            ActualizadoEn = new DateTime(2026, 9, 30, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Descripcion = "Estados de orden que dejan al equipo fuera de servicio (pendiente de confirmar con taller, sección 6.1).",
-                            Valor = "Liberado,En Proceso"
+                            Clave = "SAP.TIPO_POR_CLASE",
+                            ActualizadoEn = new DateTime(2026, 10, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Descripcion = "Clase de orden SAP -> tipo de horas (CORRECTIVA / PREVENTIVO / PLANIFICADA). Pendiente de confirmar con el ABAP (clases y ILART reales).",
+                            Valor = "ZC01=CORRECTIVA,ZC02=PREVENTIVO,ZC03=PLANIFICADA"
                         },
                         new
                         {
                             Clave = "SAP.ESTADOS_CERRADOS",
-                            ActualizadoEn = new DateTime(2026, 9, 30, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Descripcion = "Estados de orden que cuentan como orden terminada para el avance de reparación.",
-                            Valor = "Cerrado tecnicamente,Cerrado"
+                            ActualizadoEn = new DateTime(2026, 10, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Descripcion = "Estados de orden que la cierran (fin de la indisponibilidad).",
+                            Valor = "Cerrada"
                         },
                         new
                         {
-                            Clave = "SAP.CLASES_ORDEN_AVANCE",
-                            ActualizadoEn = new DateTime(2026, 9, 30, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Descripcion = "Clases de orden (separadas por coma) que cuentan para Avance de Reparación (sección 4.2).",
+                            Clave = "SAP.ESTADOS_EXCLUIDOS",
+                            ActualizadoEn = new DateTime(2026, 10, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Descripcion = "Estados de orden que no cuentan ni para disponibilidad ni para avance.",
+                            Valor = "Anulada"
+                        },
+                        new
+                        {
+                            Clave = "SAP.FECHA_CARGA_INICIAL",
+                            ActualizadoEn = new DateTime(2026, 10, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Descripcion = "Fecha (yyyy-MM-dd) desde la que se extrae de SAP la primera vez: salida en vivo de SAP PM.",
+                            Valor = "2026-06-01"
+                        },
+                        new
+                        {
+                            Clave = "DISPONIBILIDAD.CLASES_ORDEN",
+                            ActualizadoEn = new DateTime(2026, 10, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Descripcion = "Clases de orden que dejan equipos fuera de servicio, separadas por coma; * = todas. Pendiente: ¿cuentan las ZC03 del programa de reparación?",
+                            Valor = "*"
+                        },
+                        new
+                        {
+                            Clave = "DISPONIBILIDAD.INICIO_VENTANA",
+                            ActualizadoEn = new DateTime(2026, 10, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Descripcion = "Desde cuándo cuenta fuera de servicio: CREACION de la orden (respuesta del 01/10/2026) o INICIO_REAL.",
+                            Valor = "CREACION"
+                        },
+                        new
+                        {
+                            Clave = "DISPONIBILIDAD.CORRECTIVAS_SEGUN_AVISO",
+                            ActualizadoEn = new DateTime(2026, 10, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Descripcion = "S = una correctiva con aviso solo deja el equipo fuera si el aviso indica parada, desde el inicio hasta el fin de la avería.",
+                            Valor = "S"
+                        },
+                        new
+                        {
+                            Clave = "AVANCE.CLASES_ORDEN",
+                            ActualizadoEn = new DateTime(2026, 10, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Descripcion = "Clases de orden (separadas por coma) del programa de reparación que cuentan para Avance.",
                             Valor = "ZC03"
                         },
                         new
                         {
+                            Clave = "AVANCE.BASE_PLAN",
+                            ActualizadoEn = new DateTime(2026, 10, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Descripcion = "Con qué se arma el % programado de cada semana: ACTIVIDADES o DIAS del plan de Oracle. Pendiente de confirmar.",
+                            Valor = "ACTIVIDADES"
+                        },
+                        new
+                        {
                             Clave = "JOB.HORA_CORRIDA_DIARIA",
-                            ActualizadoEn = new DateTime(2026, 9, 30, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            ActualizadoEn = new DateTime(2026, 10, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             Descripcion = "Hora local (HH:mm) de la corrida diaria del job de extracción y recálculo.",
                             Valor = "05:00"
                         },
                         new
                         {
                             Clave = "JOB.DIAS_RECALCULO_DISPONIBILIDAD",
-                            ActualizadoEn = new DateTime(2026, 9, 30, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Descripcion = "Días hacia atrás que se recalcula la disponibilidad diaria en cada corrida.",
+                            ActualizadoEn = new DateTime(2026, 10, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Descripcion = "Días hacia atrás que se recalcula la disponibilidad en cada corrida.",
                             Valor = "120"
                         },
                         new
                         {
                             Clave = "MONITOREO.HORAS_ALERTA",
-                            ActualizadoEn = new DateTime(2026, 9, 30, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            ActualizadoEn = new DateTime(2026, 10, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             Descripcion = "Horas sin una corrida exitosa a partir de las cuales se alerta (sección 11).",
                             Valor = "24"
-                        },
-                        new
-                        {
-                            Clave = "AVANCE.PROGRAMA_VIGENTE",
-                            ActualizadoEn = new DateTime(2026, 9, 30, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Descripcion = "Programa de reparación que se abre por defecto en Avance de Reparación.",
-                            Valor = "2026"
-                        },
-                        new
-                        {
-                            Clave = "AVANCE.FORMULA_REAL",
-                            ActualizadoEn = new DateTime(2026, 9, 30, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Descripcion = "Fórmula provisional del % real de avance (pendiente 'Total Ejec. %'): HH_ORDENES_CERRADAS u ORDENES_CERRADAS.",
-                            Valor = "HH_ORDENES_CERRADAS"
-                        },
-                        new
-                        {
-                            Clave = "SAP.FECHA_CARGA_INICIAL",
-                            ActualizadoEn = new DateTime(2026, 9, 30, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Descripcion = "Fecha (yyyy-MM-dd) desde la que se extrae de SAP en la primera corrida.",
-                            Valor = "2026-01-01"
                         });
+                });
+
+            modelBuilder.Entity("PortalGerencialBackEnd.Core.Entities.Sap.StgSapAviso", b =>
+                {
+                    b.Property<string>("AvisoSapId")
+                        .HasMaxLength(20)
+                        .IsUnicode(false)
+                        .HasColumnType("VARCHAR2(20)")
+                        .HasColumnName("AVISO_SAP_ID");
+
+                    b.Property<DateTime>("ActualizadoEn")
+                        .HasColumnType("DATE")
+                        .HasColumnName("ACTUALIZADO_EN");
+
+                    b.Property<string>("ClaseAviso")
+                        .HasMaxLength(10)
+                        .IsUnicode(false)
+                        .HasColumnType("VARCHAR2(10)")
+                        .HasColumnName("CLASE_AVISO");
+
+                    b.Property<string>("EquipoSapId")
+                        .HasMaxLength(30)
+                        .IsUnicode(false)
+                        .HasColumnType("VARCHAR2(30)")
+                        .HasColumnName("EQUIPO_SAP_ID");
+
+                    b.Property<DateTime>("FechaAviso")
+                        .HasColumnType("DATE")
+                        .HasColumnName("FECHA_AVISO");
+
+                    b.Property<DateTime?>("FechaCierre")
+                        .HasColumnType("DATE")
+                        .HasColumnName("FECHA_CIERRE");
+
+                    b.Property<DateTime?>("FinAveria")
+                        .HasColumnType("DATE")
+                        .HasColumnName("FIN_AVERIA");
+
+                    b.Property<DateTime?>("InicioAveria")
+                        .HasColumnType("DATE")
+                        .HasColumnName("INICIO_AVERIA");
+
+                    b.Property<string>("OrdenSapId")
+                        .HasMaxLength(20)
+                        .IsUnicode(false)
+                        .HasColumnType("VARCHAR2(20)")
+                        .HasColumnName("ORDEN_SAP_ID");
+
+                    b.Property<bool>("Parada")
+                        .HasColumnType("NUMBER(1)")
+                        .HasColumnName("PARADA");
+
+                    b.Property<string>("StatusSistema")
+                        .HasMaxLength(100)
+                        .IsUnicode(false)
+                        .HasColumnType("VARCHAR2(100)")
+                        .HasColumnName("STATUS_SISTEMA");
+
+                    b.Property<string>("Texto")
+                        .HasMaxLength(200)
+                        .IsUnicode(false)
+                        .HasColumnType("VARCHAR2(200)")
+                        .HasColumnName("TEXTO");
+
+                    b.HasKey("AvisoSapId")
+                        .HasName("PK_STG_AVISO_PGPM");
+
+                    b.HasIndex("OrdenSapId")
+                        .HasDatabaseName("IX_STG_AVISO_ORDEN_PGPM");
+
+                    b.ToTable("STG_SAP_AVISO_PGPM", (string)null);
                 });
 
             modelBuilder.Entity("PortalGerencialBackEnd.Core.Entities.Sap.StgSapEquipo", b =>
@@ -713,10 +1013,8 @@ namespace PortalGerencialBackEnd.Infrastructure.Persistence.Migrations
                         .HasColumnName("EQUIPO_SAP_ID");
 
                     b.Property<DateTime>("ActualizadoEn")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TIMESTAMP(7)")
-                        .HasColumnName("ACTUALIZADO_EN")
-                        .HasDefaultValueSql("SYSTIMESTAMP");
+                        .HasColumnType("DATE")
+                        .HasColumnName("ACTUALIZADO_EN");
 
                     b.Property<string>("CodigoLegado")
                         .HasMaxLength(30)
@@ -729,6 +1027,10 @@ namespace PortalGerencialBackEnd.Infrastructure.Persistence.Migrations
                         .IsUnicode(false)
                         .HasColumnType("VARCHAR2(200)")
                         .HasColumnName("DESCRIPCION");
+
+                    b.Property<bool>("Inactivo")
+                        .HasColumnType("NUMBER(1)")
+                        .HasColumnName("INACTIVO");
 
                     b.Property<string>("PuestoTrabajo")
                         .HasMaxLength(60)
@@ -766,10 +1068,8 @@ namespace PortalGerencialBackEnd.Infrastructure.Persistence.Migrations
                         .HasColumnName("NUMERO_CAMBIO");
 
                     b.Property<DateTime>("ActualizadoEn")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TIMESTAMP(7)")
-                        .HasColumnName("ACTUALIZADO_EN")
-                        .HasDefaultValueSql("SYSTIMESTAMP");
+                        .HasColumnType("DATE")
+                        .HasColumnName("ACTUALIZADO_EN");
 
                     b.Property<string>("EstadoTexto")
                         .HasMaxLength(60)
@@ -797,7 +1097,7 @@ namespace PortalGerencialBackEnd.Infrastructure.Persistence.Migrations
                     b.ToTable("STG_SAP_HIST_ESTADO_PGPM", (string)null);
                 });
 
-            modelBuilder.Entity("PortalGerencialBackEnd.Core.Entities.Sap.StgSapOperacionHoras", b =>
+            modelBuilder.Entity("PortalGerencialBackEnd.Core.Entities.Sap.StgSapOperacion", b =>
                 {
                     b.Property<string>("OrdenSapId")
                         .HasMaxLength(20)
@@ -812,29 +1112,80 @@ namespace PortalGerencialBackEnd.Infrastructure.Persistence.Migrations
                         .HasColumnName("OPERACION");
 
                     b.Property<DateTime>("ActualizadoEn")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TIMESTAMP(7)")
-                        .HasColumnName("ACTUALIZADO_EN")
-                        .HasDefaultValueSql("SYSTIMESTAMP");
+                        .HasColumnType("DATE")
+                        .HasColumnName("ACTUALIZADO_EN");
+
+                    b.Property<string>("Componente")
+                        .HasMaxLength(100)
+                        .IsUnicode(false)
+                        .HasColumnType("VARCHAR2(100)")
+                        .HasColumnName("COMPONENTE");
+
+                    b.Property<bool>("ConfFinal")
+                        .HasColumnType("NUMBER(1)")
+                        .HasColumnName("CONF_FINAL");
+
+                    b.Property<DateTime?>("FechaFinPlan")
+                        .HasColumnType("DATE")
+                        .HasColumnName("FECHA_FIN_PLAN");
+
+                    b.Property<DateTime?>("FechaInicioPlan")
+                        .HasColumnType("DATE")
+                        .HasColumnName("FECHA_INICIO_PLAN");
+
+                    b.Property<DateTime?>("FechaPrimeraConf")
+                        .HasColumnType("DATE")
+                        .HasColumnName("FECHA_PRIMERA_CONF");
+
+                    b.Property<DateTime?>("FechaUltimaConf")
+                        .HasColumnType("DATE")
+                        .HasColumnName("FECHA_ULTIMA_CONF");
+
+                    b.Property<bool>("Programada")
+                        .HasColumnType("NUMBER(1)")
+                        .HasColumnName("PROGRAMADA");
+
+                    b.Property<string>("PuestoTrabajo")
+                        .HasMaxLength(60)
+                        .IsUnicode(false)
+                        .HasColumnType("VARCHAR2(60)")
+                        .HasColumnName("PUESTO_TRABAJO");
+
+                    b.Property<string>("Sistema")
+                        .HasMaxLength(100)
+                        .IsUnicode(false)
+                        .HasColumnType("VARCHAR2(100)")
+                        .HasColumnName("SISTEMA");
+
+                    b.Property<string>("Subsistema")
+                        .HasMaxLength(100)
+                        .IsUnicode(false)
+                        .HasColumnType("VARCHAR2(100)")
+                        .HasColumnName("SUBSISTEMA");
+
+                    b.Property<string>("Texto")
+                        .HasMaxLength(200)
+                        .IsUnicode(false)
+                        .HasColumnType("VARCHAR2(200)")
+                        .HasColumnName("TEXTO");
 
                     b.Property<decimal>("TrabajoPlanHh")
-                        .ValueGeneratedOnAdd()
                         .HasPrecision(12, 2)
                         .HasColumnType("DECIMAL(12,2)")
-                        .HasDefaultValue(0m)
                         .HasColumnName("TRABAJO_PLAN_HH");
 
                     b.Property<decimal>("TrabajoRealHh")
-                        .ValueGeneratedOnAdd()
                         .HasPrecision(12, 2)
                         .HasColumnType("DECIMAL(12,2)")
-                        .HasDefaultValue(0m)
                         .HasColumnName("TRABAJO_REAL_HH");
 
                     b.HasKey("OrdenSapId", "Operacion")
-                        .HasName("PK_STG_OPER_HORAS_PGPM");
+                        .HasName("PK_STG_OPERACION_PGPM");
 
-                    b.ToTable("STG_SAP_OPERACION_HORAS_PGPM", (string)null);
+                    b.HasIndex("FechaUltimaConf")
+                        .HasDatabaseName("IX_STG_OPERACION_CONF_PGPM");
+
+                    b.ToTable("STG_SAP_OPERACION_PGPM", (string)null);
                 });
 
             modelBuilder.Entity("PortalGerencialBackEnd.Core.Entities.Sap.StgSapOrden", b =>
@@ -846,16 +1197,26 @@ namespace PortalGerencialBackEnd.Infrastructure.Persistence.Migrations
                         .HasColumnName("ORDEN_SAP_ID");
 
                     b.Property<DateTime>("ActualizadoEn")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TIMESTAMP(7)")
-                        .HasColumnName("ACTUALIZADO_EN")
-                        .HasDefaultValueSql("SYSTIMESTAMP");
+                        .HasColumnType("DATE")
+                        .HasColumnName("ACTUALIZADO_EN");
+
+                    b.Property<string>("AvisoSapId")
+                        .HasMaxLength(20)
+                        .IsUnicode(false)
+                        .HasColumnType("VARCHAR2(20)")
+                        .HasColumnName("AVISO_SAP_ID");
+
+                    b.Property<string>("ClaseActividad")
+                        .HasMaxLength(10)
+                        .IsUnicode(false)
+                        .HasColumnType("VARCHAR2(10)")
+                        .HasColumnName("CLASE_ACTIVIDAD");
 
                     b.Property<string>("ClaseOrden")
                         .IsRequired()
-                        .HasMaxLength(60)
+                        .HasMaxLength(10)
                         .IsUnicode(false)
-                        .HasColumnType("VARCHAR2(60)")
+                        .HasColumnType("VARCHAR2(10)")
                         .HasColumnName("CLASE_ORDEN");
 
                     b.Property<string>("Descripcion")
@@ -872,12 +1233,16 @@ namespace PortalGerencialBackEnd.Infrastructure.Persistence.Migrations
 
                     b.Property<string>("EstadoOrden")
                         .IsRequired()
-                        .HasMaxLength(60)
+                        .HasMaxLength(30)
                         .IsUnicode(false)
-                        .HasColumnType("VARCHAR2(60)")
+                        .HasColumnType("VARCHAR2(30)")
                         .HasColumnName("ESTADO_ORDEN");
 
-                    b.Property<DateTime?>("FechaCreacion")
+                    b.Property<DateTime?>("FechaCierre")
+                        .HasColumnType("DATE")
+                        .HasColumnName("FECHA_CIERRE");
+
+                    b.Property<DateTime>("FechaCreacion")
                         .HasColumnType("DATE")
                         .HasColumnName("FECHA_CREACION");
 
@@ -903,6 +1268,18 @@ namespace PortalGerencialBackEnd.Infrastructure.Persistence.Migrations
                         .HasColumnType("VARCHAR2(60)")
                         .HasColumnName("PUESTO_TRABAJO");
 
+                    b.Property<string>("StatusSistema")
+                        .HasMaxLength(100)
+                        .IsUnicode(false)
+                        .HasColumnType("VARCHAR2(100)")
+                        .HasColumnName("STATUS_SISTEMA");
+
+                    b.Property<string>("StatusUsuario")
+                        .HasMaxLength(100)
+                        .IsUnicode(false)
+                        .HasColumnType("VARCHAR2(100)")
+                        .HasColumnName("STATUS_USUARIO");
+
                     b.HasKey("OrdenSapId")
                         .HasName("PK_STG_ORDEN_PGPM");
 
@@ -912,20 +1289,20 @@ namespace PortalGerencialBackEnd.Infrastructure.Persistence.Migrations
                     b.HasIndex("EquipoSapId")
                         .HasDatabaseName("IX_STG_ORDEN_EQUIPO_PGPM");
 
-                    b.HasIndex("FechaInicioReal", "FechaFinReal")
+                    b.HasIndex("FechaCreacion", "FechaCierre")
                         .HasDatabaseName("IX_STG_ORDEN_FECHAS_PGPM");
 
                     b.ToTable("STG_SAP_ORDEN_PGPM", (string)null);
                 });
 
-            modelBuilder.Entity("PortalGerencialBackEnd.Core.Entities.Sap.StgSapOperacionHoras", b =>
+            modelBuilder.Entity("PortalGerencialBackEnd.Core.Entities.Sap.StgSapOperacion", b =>
                 {
                     b.HasOne("PortalGerencialBackEnd.Core.Entities.Sap.StgSapOrden", "Orden")
                         .WithMany("Operaciones")
                         .HasForeignKey("OrdenSapId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
-                        .HasConstraintName("FK_STG_OPER_ORDEN_PGPM");
+                        .HasConstraintName("FK_STG_OPERACION_ORDEN_PGPM");
 
                     b.Navigation("Orden");
                 });

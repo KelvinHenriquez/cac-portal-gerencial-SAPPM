@@ -1,131 +1,142 @@
 namespace PortalGerencialBackEnd.Core.Dtos.Disponibilidad
 {
-    /// <summary>Pantalla Disponibilidad de Maquinaria (sección 8.2).</summary>
+    /// <summary>Pantalla Disponibilidad de Equipos, como el reporte de Oracle.</summary>
     public class ReporteDisponibilidadDto
     {
-        public string TipoReporte { get; set; } = default!;
+        public int ReporteId { get; set; }
         public string Descripcion { get; set; } = default!;
+
+        /// <summary>Rojo si &lt; UmbralRojo; naranja si &lt; UmbralNaranja; si no, negro.</summary>
         public decimal UmbralRojo { get; set; }
         public decimal UmbralNaranja { get; set; }
 
-        /// <summary>Último día calculado: las columnas "actuales" (Eq. Disponible, %) son de este día.</summary>
+        /// <summary>Instante de la foto de las columnas actuales: el de la última actualización exitosa.</summary>
         public DateTime? FechaCorte { get; set; }
 
         public List<SemanaColumnaDto> Semanas { get; set; } = new();
-        public List<FilaDisponibilidadDto> Familias { get; set; } = new();
 
-        /// <summary>
-        /// Fila "Todas (Promedio)": cantidades sumadas; Disponibilidad % = total disponible / total
-        /// requerido, contando de cada familia como máximo sus requeridos (el sobrante de una no
-        /// compensa la falta de otra). Potencial % = total disponible / total de equipos.
-        /// </summary>
-        public FilaDisponibilidadDto? Promedio { get; set; }
+        /// <summary>Fila "Todas (Promedio)": total disponible / total requerido.</summary>
+        public FilaDisponibilidadDto? Todas { get; set; }
+
+        public List<FilaDisponibilidadDto> Filas { get; set; } = new();
     }
 
     public class SemanaColumnaDto
     {
-        public int AnioIso { get; set; }
-        public int SemanaIso { get; set; }
+        public int NoSemana { get; set; }
         public DateTime FechaInicio { get; set; }
         public DateTime FechaFin { get; set; }
+
+        /// <summary>PASADA, ACTUAL o FUTURA respecto de la fecha de corte.</summary>
+        public string Momento { get; set; } = default!;
     }
 
     public class FilaDisponibilidadDto
     {
-        public string FamiliaCodigo { get; set; } = default!;
-        public string FamiliaNombre { get; set; } = default!;
+        /// <summary>0 en la fila "Todas".</summary>
+        public int AsignacionId { get; set; }
+
+        public string Asignacion { get; set; } = default!;
+        public bool Negrita { get; set; }
+        public bool Grupo { get; set; }
         public int CantEquipo { get; set; }
         public int EqRequerido { get; set; }
         public int EqDisponible { get; set; }
-        public int EqFueraServicio { get; set; }
         public decimal DispRealPct { get; set; }
-        public decimal DispPotencialPct { get; set; }
+        public decimal PotencialPct { get; set; }
+        public decimal DispCompPct { get; set; }
         public string Semaforo { get; set; } = default!;
         public List<CeldaSemanaDto> Semanas { get; set; } = new();
     }
 
     public class CeldaSemanaDto
     {
-        public int AnioIso { get; set; }
-        public int SemanaIso { get; set; }
-
-        /// <summary>Null = sin dato calculado para esa semana.</summary>
+        public int NoSemana { get; set; }
         public decimal? DispRealPct { get; set; }
-
         public decimal? DispRealMinPct { get; set; }
-        public decimal? EqDisponibleProm { get; set; }
-        public int EqRequerido { get; set; }
+        public decimal? PotencialPct { get; set; }
         public int DiasCalculados { get; set; }
         public string? Semaforo { get; set; }
     }
 
-    /// <summary>Drill-down por familia: equipos individuales (sección 8.2).</summary>
-    public class EquiposFamiliaDetalleDto
+    /// <summary>Drill-down "Disponibilidad Semanal" de una asignación (pantalla de Oracle).</summary>
+    public class DetalleSemanaDto
     {
-        public string FamiliaCodigo { get; set; } = default!;
-        public string FamiliaNombre { get; set; } = default!;
-        public DateTime Fecha { get; set; }
-        public List<RequeridoAsignacionDto> Requeridos { get; set; } = new();
-        public List<EquipoDetalleDto> Equipos { get; set; } = new();
+        public int ReporteId { get; set; }
+        public int AsignacionId { get; set; }
+        public string Asignacion { get; set; } = default!;
+        public int NoSemana { get; set; }
+        public DateTime FechaInicio { get; set; }
+        public DateTime FechaFin { get; set; }
+        public decimal UmbralRojo { get; set; }
+        public decimal UmbralNaranja { get; set; }
+        public List<DiaDetalleDto> Dias { get; set; } = new();
+        public DiaDetalleDto? Resumen { get; set; }
+        public List<OrdenDetalleDto> Ordenes { get; set; } = new();
     }
 
-    public class RequeridoAsignacionDto
+    public class DiaDetalleDto
+    {
+        public DateTime? Fecha { get; set; }
+        public int Dias { get; set; } = 1;
+        public decimal DispRealPct { get; set; }
+        public decimal DispCompPct { get; set; }
+        public decimal HrsDia { get; set; }
+        public decimal HrsOtPlanificada { get; set; }
+        public decimal HrsOtPreventivo { get; set; }
+        public decimal HrsOtCorrectiva { get; set; }
+        public decimal HrsRealEfec { get; set; }
+        public decimal HrsDiaDispComp { get; set; }
+        public string Semaforo { get; set; } = default!;
+    }
+
+    /// <summary>Orden de la lista "Órdenes de Trabajo" del drill-down.</summary>
+    public class OrdenDetalleDto
+    {
+        public string OrdenSapId { get; set; } = default!;
+        public string ClaseOrden { get; set; } = default!;
+        public string Tipo { get; set; } = default!;
+        public string Ficha { get; set; } = default!;
+        public string? EquipoDescripcion { get; set; }
+
+        /// <summary>Desde cuándo deja el equipo fuera (creación, o inicio de la avería).</summary>
+        public DateTime Desde { get; set; }
+
+        /// <summary>Hasta cuándo (cierre técnico); null si sigue abierta.</summary>
+        public DateTime? Hasta { get; set; }
+
+        public string EstadoActual { get; set; } = default!;
+        public string? Observacion { get; set; }
+    }
+
+    public class HoraDisponibilidadDto
+    {
+        public int Hora { get; set; }
+        public int CantEquipo { get; set; }
+        public int EqRequerido { get; set; }
+        public int EqDisponible { get; set; }
+        public decimal DispPct { get; set; }
+        public decimal PotencialPct { get; set; }
+    }
+
+    /// <summary>Equipos de una asignación y su estado en la fecha de corte.</summary>
+    public class EquiposAsignacionDto
     {
         public string Asignacion { get; set; } = default!;
-        public int CantAsignada { get; set; }
+        public DateTime Fecha { get; set; }
         public int CantRequerida { get; set; }
+        public List<EquipoDetalleDto> Equipos { get; set; } = new();
     }
 
     public class EquipoDetalleDto
     {
-        /// <summary>Código legado = ficha del equipo en Oracle.</summary>
-        public string CodigoLegado { get; set; } = default!;
-
+        public string Ficha { get; set; } = default!;
         public string Descripcion { get; set; } = default!;
         public string? EquipoSapId { get; set; }
-        public bool Activo { get; set; }
 
-        /// <summary>DISPONIBLE / FUERA_SERVICIO / INACTIVO / SIN_SAP (está en Oracle pero no aparece en SAP).</summary>
+        /// <summary>DISPONIBLE / FUERA_SERVICIO / INACTIVO / SIN_SAP.</summary>
         public string Estado { get; set; } = default!;
 
-        /// <summary>Órdenes que lo tienen fuera de servicio en la fecha.</summary>
-        public List<OrdenResumenDto> Ordenes { get; set; } = new();
-    }
-
-    public class OrdenResumenDto
-    {
-        public string OrdenSapId { get; set; } = default!;
-        public string ClaseOrden { get; set; } = default!;
-        public string EstadoOrden { get; set; } = default!;
-        public string? Descripcion { get; set; }
-        public string CodigoLegado { get; set; } = default!;
-        public string? EquipoDescripcion { get; set; }
-        public DateTime? FechaInicioReal { get; set; }
-        public DateTime? FechaFinReal { get; set; }
-    }
-
-    /// <summary>Drill-down por semana: detalle diario de una familia con las órdenes de cada día (sección 8.2).</summary>
-    public class DetalleSemanaDto
-    {
-        public string TipoReporte { get; set; } = default!;
-        public string FamiliaCodigo { get; set; } = default!;
-        public string FamiliaNombre { get; set; } = default!;
-        public int AnioIso { get; set; }
-        public int SemanaIso { get; set; }
-        public DateTime FechaInicio { get; set; }
-        public DateTime FechaFin { get; set; }
-        public List<DiaDisponibilidadDto> Dias { get; set; } = new();
-    }
-
-    public class DiaDisponibilidadDto
-    {
-        public DateTime Fecha { get; set; }
-        public int CantEquipo { get; set; }
-        public int EqRequerido { get; set; }
-        public int EqFueraServicio { get; set; }
-        public int EqDisponible { get; set; }
-        public decimal DispRealPct { get; set; }
-        public string Semaforo { get; set; } = default!;
-        public List<OrdenResumenDto> Ordenes { get; set; } = new();
+        public List<OrdenDetalleDto> Ordenes { get; set; } = new();
     }
 }

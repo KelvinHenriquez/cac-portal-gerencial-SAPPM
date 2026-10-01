@@ -7,8 +7,8 @@ using PortalGerencialBackEnd.Core.Interfaces.Integraciones;
 namespace PortalGerencialBackEnd.API.Controllers
 {
     /// <summary>
-    /// Estructura de negocio de Oracle (sección 4.1), en vivo y de solo lectura. Alimenta los
-    /// selectores de las pantallas (tipo de reporte, programa) y el detalle por familia.
+    /// Configuración de Oracle Forms, en vivo y de solo lectura. Alimenta los selectores de las
+    /// pantallas (reporte de disponibilidad, período y reporte de avance).
     /// </summary>
     [ApiController]
     [Route("api/estructura")]
@@ -22,30 +22,23 @@ namespace PortalGerencialBackEnd.API.Controllers
             _structureSource = structureSource;
         }
 
-        [HttpGet("tipos-reporte")]
-        public async Task<ActionResult<List<TipoReporteDto>>> GetTiposReporte() =>
-            Ok(await _structureSource.GetTiposReporteAsync());
+        [HttpGet("disponibilidad/reportes")]
+        public async Task<ActionResult<List<ReporteResumenDto>>> GetReportesDisponibilidad() =>
+            Ok(await _structureSource.GetReportesDisponibilidadAsync());
 
-        [HttpGet("tipos-reporte/{tipoReporte}/umbrales")]
-        public async Task<ActionResult<UmbralesDto>> GetUmbrales(string tipoReporte) =>
-            Ok(await _structureSource.GetUmbralesAsync(tipoReporte)
-               ?? throw new NotFoundException($"No existe el tipo de reporte '{tipoReporte}'."));
+        [HttpGet("disponibilidad/reportes/{reporteId:int}")]
+        public async Task<ActionResult<ConfigDisponibilidadDto>> GetConfigDisponibilidad(int reporteId) =>
+            Ok(await _structureSource.GetConfigDisponibilidadAsync(reporteId)
+               ?? throw new NotFoundException($"No existe el reporte de disponibilidad {reporteId}."));
 
-        [HttpGet("tipos-reporte/{tipoReporte}/equipos-requeridos")]
-        public async Task<ActionResult<List<EquipoRequeridoDto>>> GetEquiposRequeridos(string tipoReporte) =>
-            Ok(await _structureSource.GetEquiposRequeridosAsync(tipoReporte));
+        [HttpGet("avance/periodos")]
+        public async Task<ActionResult<List<PeriodoDto>>> GetPeriodos() =>
+            Ok(await _structureSource.GetPeriodosAsync());
 
-        [HttpGet("programas")]
-        public async Task<ActionResult<List<ProgramaDto>>> GetProgramas() =>
-            Ok(await _structureSource.GetProgramasAsync());
-
-        [HttpGet("programas/{anioPrograma}/familias")]
-        public async Task<ActionResult<List<FamiliaDto>>> GetFamilias(string anioPrograma) =>
-            Ok(await _structureSource.GetFamiliasAsync(anioPrograma));
-
-        [HttpGet("programas/{anioPrograma}/curva-planeada")]
-        public async Task<ActionResult<List<CurvaSemanaDto>>> GetCurvaPlaneada(string anioPrograma) =>
-            Ok(await _structureSource.GetCurvaPlaneadaAsync(anioPrograma));
+        [HttpGet("avance/reportes/{reporteId:int}")]
+        public async Task<ActionResult<ConfigAvanceDto>> GetConfigAvance(int reporteId) =>
+            Ok(await _structureSource.GetConfigAvanceAsync(reporteId)
+               ?? throw new NotFoundException($"No existe el reporte de avance {reporteId}."));
 
         [HttpGet("familias/{familiaCodigo}/equipos")]
         public async Task<ActionResult<List<EquipoFamiliaDto>>> GetEquiposFamilia(string familiaCodigo) =>

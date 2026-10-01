@@ -15,8 +15,8 @@ using PortalGerencialBackEnd.Infrastructure.Persistence.Context;
 namespace PortalGerencialBackEnd.Infrastructure.Services
 {
     /// <summary>
-    /// Una corrida del job (sección 6 y 12): SAP → staging → resultados calculados. Cada paso queda
-    /// en LOG_EXTRACCION_PGPM. Si un paso falla la corrida se detiene: los resultados que ya estaban
+    /// Una corrida del job: SAP → staging → resultados calculados. Cada paso queda en
+    /// LOG_EXTRACCION_PGPM. Si un paso falla la corrida se detiene: los resultados que ya estaban
     /// calculados no se tocan y el portal sigue mostrándolos (sección 10).
     /// </summary>
     public class ProcesoActualizacionService : IProcesoActualizacionService
@@ -56,28 +56,24 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
         {
             var corridaId = Guid.NewGuid().ToString();
             var origenLog = $"{origen}:{_modo}";
-            var hoy = Ahora.Date;
             var parametros = await ParametrosPortal.CargarAsync(_db);
-            var cargaInicial = parametros.Fecha(ClavesParametro.FechaCargaInicial, new DateTime(hoy.Year, 1, 1));
+            var cargaInicial = parametros.Fecha(ClavesParametro.FechaCargaInicial, new DateTime(Ahora.Year, 1, 1));
 
             _logger.LogInformation("Corrida {CorridaId} ({Origen}) iniciada.", corridaId, origenLog);
 
             var ok =
-                await PasoAsync(corridaId, origenLog, FuentesLog.SapEquipos, null, () => ExtraerEquiposAsync(ct))
-                && await PasoAsync(corridaId, origenLog, FuentesLog.SapOrdenes, await DesdeAsync(FuentesLog.SapOrdenes, cargaInicial),
-                    d => ExtraerOrdenesAsync(d, ct))
-                && await PasoAsync(corridaId, origenLog, FuentesLog.SapHistorial, await DesdeAsync(FuentesLog.SapHistorial, cargaInicial),
-                    d => ExtraerHistorialAsync(d, ct))
-                && await PasoAsync(corridaId, origenLog, FuentesLog.SapHoras, await DesdeAsync(FuentesLog.SapHoras, cargaInicial),
-                    d => ExtraerHorasAsync(d, ct));
+                await PasoAsync(corridaId, origenLog, FuentesLog.SapEquipos, null, _ => ExtraerEquiposAsync(ct))
+                && await PasoAsync(corridaId, origenLog, FuentesLog.SapOrdenes, await DesdeAsync(FuentesLog.SapOrdenes, cargaInicial), d => ExtraerOrdenesAsync(d, ct))
+                && await PasoAsync(corridaId, origenLog, FuentesLog.SapOperaciones, await DesdeAsync(FuentesLog.SapOperaciones, cargaInicial), d => ExtraerOperacionesAsync(d, ct))
+                && await PasoAsync(corridaId, origenLog, FuentesLog.SapAvisos, await DesdeAsync(FuentesLog.SapAvisos, cargaInicial), d => ExtraerAvisosAsync(d, ct))
+                && await PasoAsync(corridaId, origenLog, FuentesLog.SapHistorial, await DesdeAsync(FuentesLog.SapHistorial, cargaInicial), d => ExtraerHistorialAsync(d, ct));
 
             if (ok)
             {
-                var contexto = await CargarContextoCalculoAsync(parametros, hoy);
-                ok = await PasoAsync(corridaId, origenLog, FuentesLog.CalcSinClasificar, null, () => CalcularSinClasificarAsync(contexto, corridaId))
-                     && await PasoAsync(corridaId, origenLog, FuentesLog.CalcDisponibilidad, contexto.DesdeDisponibilidad,
-                         _ => CalcularDisponibilidadAsync(contexto, corridaId))
-                     && await PasoAsync(corridaId, origenLog, FuentesLog.CalcAvance, null, () => CalcularAvanceAsync(contexto, corridaId));
+                var contexto = await CargarContextoAsync(parametros);
+                ok = await PasoAsync(corridaId, origenLog, FuentesLog.CalcSinClasificar, null, _ => CalcularSinClasificarAsync(contexto, corridaId))
+                     && await PasoAsync(corridaId, origenLog, FuentesLog.CalcDisponibilidad, contexto.DesdeDisponibilidad, _ => CalcularDisponibilidadAsync(contexto, corridaId))
+                     && await PasoAsync(corridaId, origenLog, FuentesLog.CalcAvance, null, _ => CalcularAvanceAsync(contexto, corridaId));
             }
 
             _logger.LogInformation("Corrida {CorridaId} terminada: {Resultado}.", corridaId, ok ? "OK" : "ERROR");
@@ -85,9 +81,6 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
         }
 
         // ---------------------------------------------------------------- bitácora
-
-        private Task<bool> PasoAsync(string corridaId, string origen, string fuente, DateTime? desde, Func<Task<int>> accion) =>
-            PasoAsync(corridaId, origen, fuente, desde, _ => accion());
 
         private async Task<bool> PasoAsync(string corridaId, string origen, string fuente, DateTime? desde, Func<DateTime, Task<int>> accion)
         {
@@ -114,9 +107,7 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Corrida {CorridaId}: falló el paso {Fuente}.", corridaId, fuente);
-
-                // Descarta lo que el paso dejó a medias en el contexto antes de grabar el error.
-                _db.ChangeTracker.Clear();
+                _db.ChangeTracker.Clear(); // descarta lo que el paso dejó a medias
                 log.Estado = EstadosLog.Error;
                 log.Fin = Ahora;
                 log.ErrorMensaje = ex.GetBaseException() == ex ? ex.Message : $"{ex.Message} → {ex.GetBaseException().Message}";
@@ -127,9 +118,8 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
         }
 
         /// <summary>
-        /// Delta: desde el día de la última extracción OK de esa fuente, menos un día de solape
-        /// (lo que cambió en SAP durante la corrida anterior no se pierde). La primera vez, la fecha
-        /// de carga inicial.
+        /// Delta: desde el día de la última extracción OK de esa fuente, menos un día de solape. La
+        /// primera vez, la fecha de carga inicial (salida en vivo de SAP).
         /// </summary>
         private async Task<DateTime> DesdeAsync(string fuente, DateTime cargaInicial)
         {
@@ -158,6 +148,7 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
                 e.CodigoLegado = string.IsNullOrWhiteSpace(dto.CodigoLegado) ? null : dto.CodigoLegado.Trim();
                 e.Descripcion = dto.Descripcion;
                 e.PuestoTrabajo = dto.PuestoTrabajo;
+                e.Inactivo = dto.Inactivo;
                 e.ActualizadoEn = ahora;
             }
 
@@ -170,18 +161,16 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
             var ordenes = await _sap.GetOrdenesModificadasDesdeAsync(desde, ct);
             var ahora = Ahora;
 
-            // Una orden puede apuntar a un equipo que no vino en el maestro (p. ej. creado después
-            // de la extracción de equipos): se registra vacío para no romper la FK, y como no tiene
-            // código legado aparece en "equipos sin clasificar".
+            // Una orden puede apuntar a un equipo que no vino en el maestro: se registra vacío para
+            // no romper la FK y, sin código legado, aparece en "equipos sin clasificar".
             var equiposConocidos = (await _db.StgSapEquipos.Select(e => e.EquipoSapId).ToListAsync(ct)).ToHashSet();
-            foreach (var equipoId in ordenes.Select(o => o.EquipoSapId).OfType<string>().Distinct().Where(id => !equiposConocidos.Contains(id)))
-                _db.StgSapEquipos.Add(new StgSapEquipo { EquipoSapId = equipoId, ActualizadoEn = ahora });
+            foreach (var id in ordenes.Select(o => o.EquipoSapId).OfType<string>().Distinct().Where(id => !equiposConocidos.Contains(id)))
+                _db.StgSapEquipos.Add(new StgSapEquipo { EquipoSapId = id, ActualizadoEn = ahora });
 
             foreach (var lote in ordenes.Chunk(TamanoLote))
             {
                 var ids = lote.Select(o => o.OrdenSapId).ToList();
                 var existentes = await _db.StgSapOrdenes.Where(o => ids.Contains(o.OrdenSapId)).ToDictionaryAsync(o => o.OrdenSapId, ct);
-
                 foreach (var dto in lote)
                 {
                     if (!existentes.TryGetValue(dto.OrdenSapId, out var o))
@@ -190,21 +179,105 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
                         _db.StgSapOrdenes.Add(o);
                     }
                     o.ClaseOrden = dto.ClaseOrden;
+                    o.ClaseActividad = dto.ClaseActividad;
                     o.EquipoSapId = dto.EquipoSapId;
                     o.Descripcion = dto.Descripcion;
                     o.PuestoTrabajo = dto.PuestoTrabajo;
+                    o.AvisoSapId = dto.AvisoSapId;
                     o.EstadoOrden = dto.EstadoOrden;
+                    o.StatusSistema = dto.StatusSistema;
+                    o.StatusUsuario = dto.StatusUsuario;
                     o.FechaCreacion = dto.FechaCreacion;
                     o.FechaInicioPlan = dto.FechaInicioPlan;
                     o.FechaFinPlan = dto.FechaFinPlan;
                     o.FechaInicioReal = dto.FechaInicioReal;
                     o.FechaFinReal = dto.FechaFinReal;
+                    o.FechaCierre = dto.FechaCierre;
                     o.ActualizadoEn = ahora;
                 }
             }
 
             await _db.SaveChangesAsync(ct);
             return ordenes.Count;
+        }
+
+        private async Task<int> ExtraerOperacionesAsync(DateTime desde, CancellationToken ct)
+        {
+            var operaciones = await _sap.GetOperacionesModificadasDesdeAsync(desde, ct);
+            var ahora = Ahora;
+            var procesadas = 0;
+
+            foreach (var lote in operaciones.GroupBy(o => o.OrdenSapId).Chunk(TamanoLote))
+            {
+                var ids = lote.Select(g => g.Key).ToList();
+                var ordenesExistentes = (await _db.StgSapOrdenes.Where(o => ids.Contains(o.OrdenSapId)).Select(o => o.OrdenSapId).ToListAsync(ct)).ToHashSet();
+                var existentes = await _db.StgSapOperaciones.Where(o => ids.Contains(o.OrdenSapId)).ToDictionaryAsync(o => (o.OrdenSapId, o.Operacion), ct);
+
+                foreach (var dto in lote.SelectMany(g => g))
+                {
+                    // De una orden que aún no llegó al staging: entra en la próxima corrida (solape de un día).
+                    if (!ordenesExistentes.Contains(dto.OrdenSapId))
+                        continue;
+                    if (!existentes.TryGetValue((dto.OrdenSapId, dto.Operacion), out var o))
+                    {
+                        o = new StgSapOperacion { OrdenSapId = dto.OrdenSapId, Operacion = dto.Operacion };
+                        _db.StgSapOperaciones.Add(o);
+                        existentes[(dto.OrdenSapId, dto.Operacion)] = o;
+                    }
+                    o.Texto = dto.Texto;
+                    o.PuestoTrabajo = dto.PuestoTrabajo;
+                    o.Sistema = dto.Sistema;
+                    o.Subsistema = dto.Subsistema;
+                    o.Componente = dto.Componente;
+                    o.TrabajoPlanHh = dto.TrabajoPlanHh;
+                    o.TrabajoRealHh = dto.TrabajoRealHh;
+                    o.FechaInicioPlan = dto.FechaInicioPlan;
+                    o.FechaFinPlan = dto.FechaFinPlan;
+                    o.FechaPrimeraConf = dto.FechaPrimeraConf;
+                    o.FechaUltimaConf = dto.FechaUltimaConf;
+                    o.ConfFinal = dto.ConfFinal;
+                    o.Programada = dto.Programada;
+                    o.ActualizadoEn = ahora;
+                    procesadas++;
+                }
+            }
+
+            await _db.SaveChangesAsync(ct);
+            return procesadas;
+        }
+
+        private async Task<int> ExtraerAvisosAsync(DateTime desde, CancellationToken ct)
+        {
+            var avisos = await _sap.GetAvisosModificadosDesdeAsync(desde, ct);
+            var ahora = Ahora;
+
+            foreach (var lote in avisos.Chunk(TamanoLote))
+            {
+                var ids = lote.Select(a => a.AvisoSapId).ToList();
+                var existentes = await _db.StgSapAvisos.Where(a => ids.Contains(a.AvisoSapId)).ToDictionaryAsync(a => a.AvisoSapId, ct);
+                foreach (var dto in lote)
+                {
+                    if (!existentes.TryGetValue(dto.AvisoSapId, out var a))
+                    {
+                        a = new StgSapAviso { AvisoSapId = dto.AvisoSapId };
+                        _db.StgSapAvisos.Add(a);
+                    }
+                    a.ClaseAviso = dto.ClaseAviso;
+                    a.Texto = dto.Texto;
+                    a.EquipoSapId = dto.EquipoSapId;
+                    a.OrdenSapId = dto.OrdenSapId;
+                    a.FechaAviso = dto.FechaAviso;
+                    a.Parada = dto.Parada;
+                    a.InicioAveria = dto.InicioAveria;
+                    a.FinAveria = dto.FinAveria;
+                    a.StatusSistema = dto.StatusSistema;
+                    a.FechaCierre = dto.FechaCierre;
+                    a.ActualizadoEn = ahora;
+                }
+            }
+
+            await _db.SaveChangesAsync(ct);
+            return avisos.Count;
         }
 
         private async Task<int> ExtraerHistorialAsync(DateTime desde, CancellationToken ct)
@@ -215,20 +288,13 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
             foreach (var lote in historial.GroupBy(h => h.OrdenSapId).Chunk(TamanoLote))
             {
                 var ids = lote.Select(g => g.Key).ToList();
-                var existentes = await _db.StgSapHistorialEstados
-                    .Where(h => ids.Contains(h.OrdenSapId))
+                var existentes = await _db.StgSapHistorialEstados.Where(h => ids.Contains(h.OrdenSapId))
                     .ToDictionaryAsync(h => (h.OrdenSapId, h.EstadoCodigo, h.NumeroCambio), ct);
-
                 foreach (var dto in lote.SelectMany(g => g))
                 {
                     if (!existentes.TryGetValue((dto.OrdenSapId, dto.EstadoCodigo, dto.NumeroCambio), out var h))
                     {
-                        h = new StgSapHistorialEstado
-                        {
-                            OrdenSapId = dto.OrdenSapId,
-                            EstadoCodigo = dto.EstadoCodigo,
-                            NumeroCambio = dto.NumeroCambio
-                        };
+                        h = new StgSapHistorialEstado { OrdenSapId = dto.OrdenSapId, EstadoCodigo = dto.EstadoCodigo, NumeroCambio = dto.NumeroCambio };
                         _db.StgSapHistorialEstados.Add(h);
                         existentes[(dto.OrdenSapId, dto.EstadoCodigo, dto.NumeroCambio)] = h;
                     }
@@ -243,89 +309,29 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
             return historial.Count;
         }
 
-        private async Task<int> ExtraerHorasAsync(DateTime desde, CancellationToken ct)
-        {
-            var horas = await _sap.GetHorasModificadasDesdeAsync(desde, ct);
-            var ahora = Ahora;
-            var procesadas = 0;
-
-            foreach (var lote in horas.GroupBy(h => h.OrdenSapId).Chunk(TamanoLote))
-            {
-                var ids = lote.Select(g => g.Key).ToList();
-                var ordenesExistentes = (await _db.StgSapOrdenes.Where(o => ids.Contains(o.OrdenSapId)).Select(o => o.OrdenSapId).ToListAsync(ct)).ToHashSet();
-                var existentes = await _db.StgSapOperacionesHoras
-                    .Where(h => ids.Contains(h.OrdenSapId))
-                    .ToDictionaryAsync(h => (h.OrdenSapId, h.Operacion), ct);
-
-                foreach (var dto in lote.SelectMany(g => g))
-                {
-                    // Horas de una orden que aún no llegó al staging: se toman en la próxima corrida
-                    // (el delta tiene un día de solape).
-                    if (!ordenesExistentes.Contains(dto.OrdenSapId))
-                        continue;
-
-                    if (!existentes.TryGetValue((dto.OrdenSapId, dto.Operacion), out var h))
-                    {
-                        h = new StgSapOperacionHoras { OrdenSapId = dto.OrdenSapId, Operacion = dto.Operacion };
-                        _db.StgSapOperacionesHoras.Add(h);
-                        existentes[(dto.OrdenSapId, dto.Operacion)] = h;
-                    }
-                    h.TrabajoPlanHh = dto.TrabajoPlanHh;
-                    h.TrabajoRealHh = dto.TrabajoRealHh;
-                    h.ActualizadoEn = ahora;
-                    procesadas++;
-                }
-            }
-
-            await _db.SaveChangesAsync(ct);
-            return procesadas;
-        }
-
         // ---------------------------------------------------------------- cálculo
 
         private sealed class ContextoCalculo
         {
-            public DateTime Hoy { get; init; }
+            public DateTime Ahora { get; init; }
             public DateTime DesdeDisponibilidad { get; init; }
-            public HashSet<string> EstadosFueraServicio { get; init; } = default!;
-            public HashSet<string> EstadosCerrados { get; init; } = default!;
+            public ReglasVentana Reglas { get; init; } = default!;
             public HashSet<string> ClasesAvance { get; init; } = default!;
-            public FormulaAvanceReal Formula { get; init; }
-
-            /// <summary>Equipo SAP → código legado (solo los que tienen uno).</summary>
-            public Dictionary<string, string> LegadoPorEquipoSap { get; init; } = default!;
-
-            /// <summary>Código legado → familia, según Oracle.</summary>
-            public Dictionary<string, (string Familia, bool Activo)> EquiposOracle { get; init; } = default!;
+            public BasePlan BasePlan { get; init; }
+            public MapeoEquipos Equipos { get; init; } = default!;
         }
 
-        private async Task<ContextoCalculo> CargarContextoCalculoAsync(ParametrosPortal p, DateTime hoy)
+        private async Task<ContextoCalculo> CargarContextoAsync(ParametrosPortal p)
         {
-            var dias = p.Entero(ClavesParametro.DiasRecalculoDisponibilidad, 120);
-            var desde = hoy.AddDays(-dias);
-            // Arranca en lunes para que la primera semana del agregado semanal quede completa.
-            desde = desde.AddDays(-(((int)desde.DayOfWeek + 6) % 7));
-
-            var equiposOracle = await _estructura.GetEquiposFamiliaAsync();
-            var legados = await _db.StgSapEquipos.AsNoTracking()
-                .Where(e => e.CodigoLegado != null)
-                .Select(e => new { e.EquipoSapId, e.CodigoLegado })
-                .ToListAsync();
-
+            var ahora = Ahora;
             return new ContextoCalculo
             {
-                Hoy = hoy,
-                DesdeDisponibilidad = desde,
-                EstadosFueraServicio = p.Lista(ClavesParametro.EstadosFueraServicio, "Liberado,En Proceso"),
-                EstadosCerrados = p.Lista(ClavesParametro.EstadosCerrados, "Cerrado tecnicamente"),
-                ClasesAvance = p.Lista(ClavesParametro.ClasesOrdenAvance, "ZC03"),
-                Formula = p.Texto(ClavesParametro.FormulaAvanceReal, "HH_ORDENES_CERRADAS") == "ORDENES_CERRADAS"
-                    ? FormulaAvanceReal.OrdenesCerradas
-                    : FormulaAvanceReal.HhOrdenesCerradas,
-                LegadoPorEquipoSap = legados.ToDictionary(e => e.EquipoSapId, e => e.CodigoLegado!),
-                EquiposOracle = equiposOracle
-                    .GroupBy(e => e.CodigoLegado, StringComparer.OrdinalIgnoreCase)
-                    .ToDictionary(g => g.Key, g => (g.First().FamiliaCodigo, g.First().Activo), StringComparer.OrdinalIgnoreCase)
+                Ahora = ahora,
+                DesdeDisponibilidad = ahora.Date.AddDays(-p.Entero(ClavesParametro.DiasRecalculoDisponibilidad, 120)),
+                Reglas = ReglasPortal.Ventana(p),
+                ClasesAvance = ReglasPortal.ClasesAvance(p),
+                BasePlan = ReglasPortal.BasePlan(p),
+                Equipos = await MapeoEquipos.CargarAsync(_db, _estructura)
             };
         }
 
@@ -337,15 +343,13 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
                 .Select(g => new { EquipoSapId = g.Key, Cantidad = g.Count() })
                 .ToDictionaryAsync(x => x.EquipoSapId, x => x.Cantidad);
 
-            var equipos = await _db.StgSapEquipos.AsNoTracking().ToListAsync();
             var ahora = Ahora;
-            var sinClasificar = equipos
+            var sinClasificar = (await _db.StgSapEquipos.AsNoTracking().ToListAsync())
                 .Select(e => new
                 {
                     Equipo = e,
-                    Motivo = e.CodigoLegado == null
-                        ? "SIN_CODIGO_LEGADO"
-                        : c.EquiposOracle.ContainsKey(e.CodigoLegado) ? null : "CODIGO_NO_EXISTE_EN_ORACLE"
+                    Motivo = e.CodigoLegado == null ? "SIN_CODIGO_LEGADO"
+                        : c.Equipos.EquiposOracle.ContainsKey(e.CodigoLegado) ? null : "CODIGO_NO_EXISTE_EN_ORACLE"
                 })
                 .Where(x => x.Motivo != null)
                 .Select(x => new CalcEquipoSinClasificar
@@ -369,55 +373,94 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
             return sinClasificar.Count;
         }
 
+        /// <summary>
+        /// Ventanas fuera de servicio de todas las órdenes que tocan [desde, ahora]: las usa el
+        /// cálculo y también los drill-down de la pantalla (ReporteDisponibilidadService).
+        /// </summary>
+        internal static async Task<ILookup<string, VentanaFueraServicio>> VentanasAsync(
+            PortalGerencialDbContext db, Dictionary<string, string> legadoPorEquipoSap, ReglasVentana reglas, DateTime desde, DateTime ahora)
+        {
+            var ordenes = await db.StgSapOrdenes.AsNoTracking()
+                .Where(o => o.EquipoSapId != null && o.FechaCreacion <= ahora && (o.FechaCierre == null || o.FechaCierre >= desde))
+                .Select(o => new
+                {
+                    o.OrdenSapId, o.EquipoSapId, o.ClaseOrden, o.EstadoOrden, o.FechaCreacion,
+                    o.FechaInicioReal, o.FechaFinReal, o.FechaCierre, o.AvisoSapId
+                })
+                .ToListAsync();
+
+            var avisoIds = ordenes.Select(o => o.AvisoSapId).OfType<string>().Distinct().ToList();
+            var avisos = new Dictionary<string, AvisoDisponibilidad>();
+            foreach (var lote in avisoIds.Chunk(TamanoLote))
+            {
+                foreach (var a in await db.StgSapAvisos.AsNoTracking().Where(a => lote.Contains(a.AvisoSapId)).ToListAsync())
+                    avisos[a.AvisoSapId] = new AvisoDisponibilidad(a.Parada, a.InicioAveria, a.FinAveria);
+            }
+
+            return ordenes
+                .Where(o => legadoPorEquipoSap.ContainsKey(o.EquipoSapId!))
+                .Select(o => CalculadoraDisponibilidad.Ventana(new OrdenDisponibilidad(
+                    o.OrdenSapId, legadoPorEquipoSap[o.EquipoSapId!], o.ClaseOrden, o.EstadoOrden, o.FechaCreacion,
+                    o.FechaInicioReal, o.FechaFinReal, o.FechaCierre,
+                    o.AvisoSapId != null && avisos.TryGetValue(o.AvisoSapId, out var av) ? av : null), reglas, ahora))
+                .OfType<VentanaFueraServicio>()
+                .ToLookup(v => v.CodigoLegado, StringComparer.OrdinalIgnoreCase);
+        }
+
         private async Task<int> CalcularDisponibilidadAsync(ContextoCalculo c, string corridaId)
         {
-            var requeridos = new Dictionary<(string, string), int>();
-            foreach (var tipo in await _estructura.GetTiposReporteAsync())
-            {
-                foreach (var g in (await _estructura.GetEquiposRequeridosAsync(tipo.TipoReporte)).GroupBy(r => r.FamiliaCodigo))
-                    requeridos[(tipo.TipoReporte, g.Key)] = g.Sum(r => r.CantRequerida);
-            }
-
-            var equiposActivosPorFamilia = c.EquiposOracle
-                .Where(e => e.Value.Activo)
-                .GroupBy(e => e.Value.Familia)
-                .ToDictionary(g => g.Key, g => (IReadOnlyCollection<string>)g.Select(e => e.Key).ToList());
-
-            var desde = c.DesdeDisponibilidad;
-            var ordenes = (await _db.StgSapOrdenes.AsNoTracking()
-                    .Where(o => o.EquipoSapId != null
-                                && o.FechaInicioReal != null && o.FechaInicioReal <= c.Hoy
-                                && (o.FechaFinReal == null || o.FechaFinReal >= desde))
-                    .Select(o => new { o.EquipoSapId, o.EstadoOrden, o.FechaInicioReal, o.FechaFinReal })
-                    .ToListAsync())
-                .Where(o => c.LegadoPorEquipoSap.ContainsKey(o.EquipoSapId!))
-                .Select(o => new OrdenDisponibilidad(c.LegadoPorEquipoSap[o.EquipoSapId!], o.EstadoOrden, o.FechaInicioReal, o.FechaFinReal))
-                .ToList();
-
+            var hoy = c.Ahora.Date;
+            var ventanas = await VentanasAsync(_db, c.Equipos.LegadoPorEquipoSap, c.Reglas, c.DesdeDisponibilidad.AddDays(-7), c.Ahora);
             var ahora = Ahora;
-            var diaria = CalculadoraDisponibilidad.CalcularDiaria(
-                equiposActivosPorFamilia, requeridos, ordenes, c.EstadosFueraServicio, desde, c.Hoy, c.Hoy);
-            foreach (var d in diaria)
-            {
-                d.CorridaId = corridaId;
-                d.GeneradoEn = ahora;
-            }
+            var diariaTotal = new List<CalcDisponibilidadDiaria>();
+            var semanalTotal = new List<CalcDisponibilidadSemanal>();
+            var borrar = new List<(int ReporteId, DateTime Desde, List<int> Semanas)>();
 
-            var semanal = CalculadoraDisponibilidad.AgregarSemanal(diaria);
-            foreach (var s in semanal)
+            foreach (var config in await _estructura.GetConfigsDisponibilidadAsync())
             {
-                s.CorridaId = corridaId;
-                s.GeneradoEn = ahora;
+                // Semanas del calendario del reporte que caen en la ventana de recálculo.
+                var semanas = config.Semanas.Where(s => s.FechaFin >= c.DesdeDisponibilidad && s.FechaInicio <= hoy).ToList();
+                if (semanas.Count == 0)
+                    continue;
+                borrar.Add((config.ReporteId, semanas[0].FechaInicio, semanas.Select(s => s.NoSemana).ToList()));
+
+                foreach (var asignacion in config.Asignaciones)
+                {
+                    // Cuentan los equipos activos en Oracle y en SAP.
+                    var equipos = asignacion.Equipos.Where(c.Equipos.CuentaParaDisponibilidad).ToList();
+
+                    foreach (var semana in semanas)
+                    {
+                        var dias = new List<CalcDisponibilidadDiaria>();
+                        for (var dia = semana.FechaInicio; dia <= semana.FechaFin && dia <= hoy; dia = dia.AddDays(1))
+                        {
+                            var d = CalculadoraDisponibilidad.CalcularDia(config.ReporteId, asignacion, equipos, config.HorasActivas, ventanas, dia);
+                            d.CorridaId = corridaId;
+                            d.GeneradoEn = ahora;
+                            dias.Add(d);
+                        }
+                        if (dias.Count == 0)
+                            continue;
+                        diariaTotal.AddRange(dias);
+                        var s = CalculadoraDisponibilidad.AgregarSemana(config.ReporteId, asignacion.AsignacionId, semana, dias);
+                        s.CorridaId = corridaId;
+                        s.GeneradoEn = ahora;
+                        semanalTotal.Add(s);
+                    }
+                }
             }
 
             await ReemplazarAsync(async () =>
             {
-                await _db.CalcDisponibilidadDiaria.Where(d => d.Fecha >= desde).ExecuteDeleteAsync();
-                await _db.CalcDisponibilidadSemanal.Where(s => s.FechaInicioSemana >= desde).ExecuteDeleteAsync();
-                _db.CalcDisponibilidadDiaria.AddRange(diaria);
-                _db.CalcDisponibilidadSemanal.AddRange(semanal);
+                foreach (var (reporteId, desde, numeros) in borrar)
+                {
+                    await _db.CalcDisponibilidadDiaria.Where(d => d.ReporteId == reporteId && d.Fecha >= desde).ExecuteDeleteAsync();
+                    await _db.CalcDisponibilidadSemanal.Where(s => s.ReporteId == reporteId && numeros.Contains(s.NoSemana)).ExecuteDeleteAsync();
+                }
+                _db.CalcDisponibilidadDiaria.AddRange(diariaTotal);
+                _db.CalcDisponibilidadSemanal.AddRange(semanalTotal);
             });
-            return diaria.Count;
+            return diariaTotal.Count;
         }
 
         private async Task<int> CalcularAvanceAsync(ContextoCalculo c, string corridaId)
@@ -425,50 +468,29 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
             var clases = c.ClasesAvance.ToList();
             var ordenes = await _db.StgSapOrdenes.AsNoTracking()
                 .Where(o => o.EquipoSapId != null && clases.Contains(o.ClaseOrden))
-                .Select(o => new
-                {
-                    o.EquipoSapId,
-                    o.EstadoOrden,
-                    o.FechaCreacion,
-                    o.FechaInicioPlan,
-                    o.FechaFinReal,
-                    HhPlan = o.Operaciones.Sum(op => (decimal?)op.TrabajoPlanHh) ?? 0m,
-                    HhReal = o.Operaciones.Sum(op => (decimal?)op.TrabajoRealHh) ?? 0m
-                })
+                .Include(o => o.Operaciones)
                 .ToListAsync();
-
-            // Orden → familia, vía código legado.
-            var ordenesConFamilia = ordenes
-                .Where(o => c.LegadoPorEquipoSap.TryGetValue(o.EquipoSapId!, out var legado) && c.EquiposOracle.ContainsKey(legado))
-                .Select(o => new { Orden = o, Familia = c.EquiposOracle[c.LegadoPorEquipoSap[o.EquipoSapId!]].Familia })
-                .ToList();
 
             var ahora = Ahora;
             var resultado = new List<CalcAvanceSemanal>();
-            foreach (var programa in await _estructura.GetProgramasAsync())
+            foreach (var reporte in await _estructura.GetConfigsAvanceAsync())
             {
-                var curva = (await _estructura.GetCurvaPlaneadaAsync(programa.AnioPrograma)).ToLookup(s => s.FamiliaCodigo);
-                foreach (var familia in await _estructura.GetFamiliasAsync(programa.AnioPrograma))
+                foreach (var familia in reporte.Familias)
                 {
-                    // Pertenece al programa la orden planificada (o creada) dentro de la ventana de la
-                    // familia, con un mes de margen previo para las que se adelantan.
-                    var ordenesFamilia = ordenesConFamilia
-                        .Where(x => x.Familia == familia.FamiliaCodigo)
-                        .Select(x => x.Orden)
-                        .Where(o => (o.FechaInicioPlan ?? o.FechaCreacion) is { } f
-                                    && f >= familia.FechaEstInicio.AddDays(-30) && f <= familia.FechaEstFin)
-                        .Select(o => new OrdenAvance(o.FechaFinReal, c.EstadosCerrados.Contains(o.EstadoOrden), o.HhPlan, o.HhReal))
+                    var delPrograma = ordenes.Where(o => ReglasPortal.EsDelPrograma(o, c.Equipos, reporte, familia.FamiliaCodigo, c.Reglas)).ToList();
+                    var ordenesAvance = delPrograma.Select(o => new OrdenAvance(o.OrdenSapId, ReglasPortal.CierreSiCerrada(o, c.Reglas))).ToList();
+                    var actividades = delPrograma.SelectMany(o => o.Operaciones)
+                        .Select(op => new ActividadAvance(ReglasPortal.DiasActividad(op), ReglasPortal.Terminada(op), op.Programada))
                         .ToList();
 
-                    resultado.AddRange(CalculadoraAvance.Calcular(
-                        programa.AnioPrograma, familia.FamiliaCodigo, curva[familia.FamiliaCodigo], ordenesFamilia, c.Formula, c.Hoy));
+                    var filas = CalculadoraAvance.Calcular(reporte.ReporteId, familia.FamiliaCodigo, familia.Semanas, c.BasePlan, ordenesAvance, actividades);
+                    foreach (var f in filas)
+                    {
+                        f.CorridaId = corridaId;
+                        f.GeneradoEn = ahora;
+                    }
+                    resultado.AddRange(filas);
                 }
-            }
-
-            foreach (var r in resultado)
-            {
-                r.CorridaId = corridaId;
-                r.GeneradoEn = ahora;
             }
 
             await ReemplazarAsync(async () =>
@@ -479,7 +501,7 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
             return resultado.Count;
         }
 
-        /// <summary>Borra y vuelve a insertar resultados en una sola transacción: o queda todo nuevo o todo como estaba.</summary>
+        /// <summary>Borra y vuelve a insertar en una sola transacción: o queda todo nuevo o todo como estaba.</summary>
         private async Task ReemplazarAsync(Func<Task> borrarYAgregar)
         {
             await using var transaccion = await _db.Database.BeginTransactionAsync();

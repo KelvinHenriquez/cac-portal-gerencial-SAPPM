@@ -5,8 +5,8 @@ namespace PortalGerencialBackEnd.Infrastructure.Integraciones.Local
 {
     /// <summary>
     /// DataSourceMode=Local (sección 9): "SAP" sin SAP. Arma el universo de SAP con
-    /// <see cref="SimuladorSap"/> a partir de la estructura de Oracle (local) y lo filtra por
-    /// fecha de modificación igual que lo harían los módulos RFC del Anexo A.
+    /// <see cref="SimuladorSap"/> a partir de la estructura de Oracle (local) y lo filtra por fecha
+    /// de modificación igual que lo harían los módulos RFC del Anexo A v2.
     /// </summary>
     public class SapLocalSeedClient : ISapExtractionClient
     {
@@ -26,16 +26,12 @@ namespace PortalGerencialBackEnd.Infrastructure.Integraciones.Local
                 return _datos;
 
             var equipos = await _structureSource.GetEquiposFamiliaAsync();
-            var familias = new List<SimuladorSap.FamiliaPrograma>();
-            foreach (var programa in await _structureSource.GetProgramasAsync())
-            {
-                familias.AddRange((await _structureSource.GetFamiliasAsync(programa.AnioPrograma))
-                    .Select(f => new SimuladorSap.FamiliaPrograma(f.FamiliaCodigo, f.FechaEstInicio, f.FechaEstFin)));
-            }
+            var programas = (await _structureSource.GetConfigsAvanceAsync())
+                .SelectMany(r => r.Familias.Select(f => new SimuladorSap.ProgramaFamilia(r.ReporteId, f.FamiliaCodigo, f.FechaEstInicio, f.FechaEstFin)));
 
             _datos = SimuladorSap.Generar(
                 equipos.Select(e => new SimuladorSap.EquipoOracle(e.CodigoLegado, e.Descripcion, e.FamiliaCodigo, e.Activo)),
-                familias,
+                programas,
                 _timeProvider.GetLocalNow().DateTime);
             return _datos;
         }
@@ -46,10 +42,13 @@ namespace PortalGerencialBackEnd.Infrastructure.Integraciones.Local
         public async Task<List<OrdenSapDto>> GetOrdenesModificadasDesdeAsync(DateTime desde, CancellationToken ct = default) =>
             (await DatosAsync()).Ordenes.Where(o => o.FechaModificacion.Date >= desde.Date).ToList();
 
+        public async Task<List<OperacionSapDto>> GetOperacionesModificadasDesdeAsync(DateTime desde, CancellationToken ct = default) =>
+            (await DatosAsync()).Operaciones.Where(o => o.FechaModificacion.Date >= desde.Date).ToList();
+
+        public async Task<List<AvisoSapDto>> GetAvisosModificadosDesdeAsync(DateTime desde, CancellationToken ct = default) =>
+            (await DatosAsync()).Avisos.Where(a => a.FechaModificacion.Date >= desde.Date).ToList();
+
         public async Task<List<HistorialEstadoDto>> GetHistorialEstadosDesdeAsync(DateTime desde, CancellationToken ct = default) =>
             (await DatosAsync()).Historial.Where(h => h.FechaHoraCambio.Date >= desde.Date).ToList();
-
-        public async Task<List<OperacionHorasDto>> GetHorasModificadasDesdeAsync(DateTime desde, CancellationToken ct = default) =>
-            (await DatosAsync()).Operaciones.Where(o => o.Modificacion.Date >= desde.Date).Select(o => o.Operacion).ToList();
     }
 }

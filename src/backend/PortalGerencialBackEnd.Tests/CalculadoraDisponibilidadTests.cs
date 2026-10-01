@@ -1,121 +1,166 @@
 using PortalGerencialBackEnd.Core.Calculo;
-using PortalGerencialBackEnd.Core.Entities.Calculo;
+using PortalGerencialBackEnd.Core.Constants;
+using PortalGerencialBackEnd.Core.Dtos.Estructura;
 
 namespace PortalGerencialBackEnd.Tests;
 
 public class CalculadoraDisponibilidadTests
 {
-    private static readonly HashSet<string> FueraServicio = new(StringComparer.OrdinalIgnoreCase) { "Liberado", "En Proceso" };
-    private static readonly DateTime Hoy = new(2026, 10, 1);
+    private static readonly DateTime Ahora = new(2026, 10, 1, 17, 30, 0);
+    private static readonly DateTime Dia = new(2026, 9, 30);
 
-    private static List<CalcDisponibilidadDiaria> Calcular(
-        IEnumerable<OrdenDisponibilidad> ordenes, int requerido = 4, int equipos = 4,
-        DateTime? desde = null, DateTime? hasta = null)
-    {
-        var activos = new Dictionary<string, IReadOnlyCollection<string>>
+    private static readonly ReglasVentana Reglas = new(
+        ClasesIncluidas: new HashSet<string>(),
+        InicioEnCreacion: true,
+        CorrectivasSegunAviso: true,
+        EstadosCerrados: new HashSet<string> { "Cerrada" },
+        EstadosExcluidos: new HashSet<string> { "Anulada" },
+        TipoPorClase: new Dictionary<string, string>
         {
-            ["TRACTORES"] = Enumerable.Range(1, equipos).Select(i => $"TR-{i:D3}").ToList()
-        };
-        var requeridos = new Dictionary<(string, string), int> { [("CS-P30", "TRACTORES")] = requerido };
-        return CalculadoraDisponibilidad.CalcularDiaria(
-            activos, requeridos, ordenes, FueraServicio, desde ?? Hoy.AddDays(-9), hasta ?? Hoy, Hoy);
+            ["ZC01"] = TiposOrden.Correctiva,
+            ["ZC02"] = TiposOrden.Preventivo,
+            ["ZC03"] = TiposOrden.Planificada
+        });
+
+    private static OrdenDisponibilidad Orden(string legado, string clase, string estado, DateTime creacion,
+        DateTime? cierre = null, AvisoDisponibilidad? aviso = null, DateTime? inicioReal = null) =>
+        new($"OT-{legado}-{creacion:HHmm}", legado, clase, estado, creacion, inicioReal, null, cierre, aviso);
+
+    private static readonly AsignacionDto Asignacion = new()
+    {
+        AsignacionId = 1, Nombre = "Prueba", CantRequerida = 4, DispCompPct = 100,
+        Equipos = new List<string> { "E1", "E2", "E3", "E4" }
+    };
+
+    private static ILookup<string, VentanaFueraServicio> Ventanas(params OrdenDisponibilidad[] ordenes) =>
+        ordenes.Select(o => CalculadoraDisponibilidad.Ventana(o, Reglas, Ahora)).OfType<VentanaFueraServicio>().ToLookup(v => v.CodigoLegado);
+
+    [Fact]
+    public void Una_orden_creada_ya_deja_el_equipo_fuera_desde_su_creacion()
+    {
+        var v = CalculadoraDisponibilidad.Ventana(Orden("E1", "ZC03", "Creada", Dia.AddHours(9)), Reglas, Ahora);
+        Assert.NotNull(v);
+        Assert.Equal(Dia.AddHours(9), v!.Desde);
+        Assert.Equal(Ahora, v.Hasta);
     }
 
     [Fact]
-    public void Orden_cerrada_cuenta_en_los_dias_que_duro_aunque_hoy_este_cerrada()
+    public void Con_inicio_real_como_regla_una_orden_sin_iniciar_no_cuenta()
     {
-        var orden = new OrdenDisponibilidad("TR-001", "Cerrado tecnicamente", new DateTime(2026, 9, 24), new DateTime(2026, 9, 26));
-        var dias = Calcular(new[] { orden }).ToDictionary(d => d.Fecha);
-
-        Assert.Equal(0, dias[new DateTime(2026, 9, 23)].EqFueraServicio);
-        Assert.Equal(1, dias[new DateTime(2026, 9, 24)].EqFueraServicio);
-        Assert.Equal(1, dias[new DateTime(2026, 9, 26)].EqFueraServicio);
-        Assert.Equal(0, dias[new DateTime(2026, 9, 27)].EqFueraServicio);
+        var reglas = Reglas with { InicioEnCreacion = false };
+        Assert.Null(CalculadoraDisponibilidad.Ventana(Orden("E1", "ZC03", "Liberada", Dia), reglas, Ahora));
     }
 
     [Fact]
-    public void Orden_abierta_en_estado_fuera_de_servicio_cuenta_hasta_hoy()
+    public void Una_orden_cerrada_cuenta_hasta_su_cierre_tecnico()
     {
-        var orden = new OrdenDisponibilidad("TR-001", "En Proceso", new DateTime(2026, 9, 28), null);
-        var dias = Calcular(new[] { orden });
-
-        Assert.All(dias.Where(d => d.Fecha >= new DateTime(2026, 9, 28)), d => Assert.Equal(1, d.EqFueraServicio));
-        Assert.All(dias.Where(d => d.Fecha < new DateTime(2026, 9, 28)), d => Assert.Equal(0, d.EqFueraServicio));
+        var v = CalculadoraDisponibilidad.Ventana(Orden("E1", "ZC02", "Cerrada", Dia.AddHours(8), cierre: Dia.AddHours(14)), Reglas, Ahora);
+        Assert.Equal(6, (v!.Hasta - v.Desde).TotalHours);
     }
 
     [Fact]
-    public void Orden_sin_inicio_real_o_abierta_en_otro_estado_no_cuenta()
+    public void Anuladas_y_clases_no_incluidas_no_cuentan()
     {
-        var ordenes = new[]
-        {
-            new OrdenDisponibilidad("TR-001", "Liberado", null, null),
-            new OrdenDisponibilidad("TR-002", "Pendiente", new DateTime(2026, 9, 28), null)
-        };
-        Assert.All(Calcular(ordenes), d => Assert.Equal(0, d.EqFueraServicio));
+        Assert.Null(CalculadoraDisponibilidad.Ventana(Orden("E1", "ZC01", "Anulada", Dia), Reglas, Ahora));
+        var soloCorrectivas = Reglas with { ClasesIncluidas = new HashSet<string> { "ZC01" } };
+        Assert.Null(CalculadoraDisponibilidad.Ventana(Orden("E1", "ZC03", "Creada", Dia), soloCorrectivas, Ahora));
     }
 
     [Fact]
-    public void Dos_ordenes_del_mismo_equipo_el_mismo_dia_cuentan_un_solo_equipo()
+    public void Correctiva_cuyo_aviso_no_indica_parada_no_deja_el_equipo_fuera()
     {
-        var ordenes = new[]
-        {
-            new OrdenDisponibilidad("TR-001", "En Proceso", new DateTime(2026, 9, 30), null),
-            new OrdenDisponibilidad("TR-001", "Cerrado tecnicamente", new DateTime(2026, 9, 29), new DateTime(2026, 10, 1))
-        };
-        var hoy = Calcular(ordenes).Single(d => d.Fecha == Hoy);
-
-        Assert.Equal(1, hoy.EqFueraServicio);
-        Assert.Equal(3, hoy.EqDisponible);
+        var sinParada = Orden("E1", "ZC01", "En Proceso", Dia, aviso: new AvisoDisponibilidad(false, null, null));
+        Assert.Null(CalculadoraDisponibilidad.Ventana(sinParada, Reglas, Ahora));
     }
 
     [Fact]
-    public void La_disponibilidad_se_topa_en_100()
+    public void Correctiva_con_parada_cuenta_del_inicio_al_fin_de_la_averia()
     {
-        // 4 equipos disponibles para 2 requeridos = 200%, se muestra 100%.
-        var dia = Calcular(Array.Empty<OrdenDisponibilidad>(), requerido: 2).First();
-        Assert.Equal(100m, dia.DispRealPct);
-        Assert.Equal(100m, dia.DispPotencialPct);
+        var conParada = Orden("E1", "ZC01", "Cerrada", Dia.AddHours(10), cierre: Dia.AddDays(2),
+            aviso: new AvisoDisponibilidad(true, Dia.AddHours(7), Dia.AddHours(15)));
+        var v = CalculadoraDisponibilidad.Ventana(conParada, Reglas, Ahora)!;
+        Assert.Equal(Dia.AddHours(7), v.Desde);
+        Assert.Equal(Dia.AddHours(15), v.Hasta);
+        Assert.Equal(TiposOrden.Correctiva, v.Tipo);
     }
 
     [Fact]
-    public void Porcentajes_real_y_potencial()
+    public void El_dia_es_el_promedio_de_las_fotos_horarias()
     {
-        var ordenes = new[] { new OrdenDisponibilidad("TR-001", "En Proceso", Hoy, null) };
-        var hoy = Calcular(ordenes, requerido: 4, equipos: 4).Single(d => d.Fecha == Hoy);
+        // E1 fuera de 00:00 a 12:00: en 12 de las 24 fotos hay 3 de 4 disponibles.
+        var ventanas = Ventanas(Orden("E1", "ZC02", "Cerrada", Dia, cierre: Dia.AddHours(12)));
+        var r = CalculadoraDisponibilidad.CalcularDia(53, Asignacion, Asignacion.Equipos, Enumerable.Range(0, 24).ToList(), ventanas, Dia);
 
-        Assert.Equal(75m, hoy.DispRealPct);      // 3 de 4 requeridos
-        Assert.Equal(75m, hoy.DispPotencialPct); // 3 de 4 equipos
+        Assert.Equal(24, r.HorasMedidas);
+        Assert.Equal(3.5m, r.EqDisponibleProm);
+        Assert.Equal(87.5m, r.DispRealPct);       // (12 × 75 + 12 × 100) / 24
+        Assert.Equal(96m, r.HrsDia);              // 4 equipos × 24 h
+        Assert.Equal(12m, r.HrsOtPreventivo);
+        Assert.Equal(96m, r.HrsRealEfec);         // la preventiva no resta: solo la correctiva
     }
 
     [Fact]
-    public void Sin_requeridos_la_familia_no_esta_en_falta()
+    public void Solo_se_mide_en_las_horas_activas_del_reporte()
     {
-        Assert.Equal(100m, CalculadoraDisponibilidad.Porcentaje(0, 0));
+        // E1 fuera de 00:00 a 06:00; si el reporte mide de 6 a 18, no se nota.
+        var ventanas = Ventanas(Orden("E1", "ZC02", "Cerrada", Dia, cierre: Dia.AddHours(6)));
+        var r = CalculadoraDisponibilidad.CalcularDia(52, Asignacion, Asignacion.Equipos, Enumerable.Range(6, 13).ToList(), ventanas, Dia);
+        Assert.Equal(100m, r.DispRealPct);
+        Assert.Equal(13, r.HorasMedidas);
     }
 
     [Fact]
-    public void Total_de_familias_no_deja_que_el_sobrante_de_una_tape_la_falta_de_otra()
+    public void Real_efectivo_es_hrs_al_dia_menos_correctivas()
     {
-        // Cosechadoras 11 de 10 (sobra 1), Camiones 21 de 25 (faltan 4).
-        var pct = CalculadoraDisponibilidad.PorcentajeTotal(new[] { (11m, 10), (21m, 25) });
+        var ventanas = Ventanas(
+            Orden("E1", "ZC01", "Cerrada", Dia.AddHours(2), cierre: Dia.AddHours(12)),   // 10 h correctiva (sin aviso)
+            Orden("E2", "ZC03", "Cerrada", Dia, cierre: Dia.AddHours(5)));              // 5 h planificada
+        var r = CalculadoraDisponibilidad.CalcularDia(53, Asignacion, Asignacion.Equipos, new[] { 12 }, ventanas, Dia);
+        Assert.Equal(10m, r.HrsOtCorrectiva);
+        Assert.Equal(5m, r.HrsOtPlanificada);
+        Assert.Equal(86m, r.HrsRealEfec);
+    }
 
+    [Fact]
+    public void Si_hay_dos_ordenes_a_la_vez_la_hora_cuenta_una_vez_con_prioridad_a_la_correctiva()
+    {
+        var ventanas = Ventanas(
+            Orden("E1", "ZC03", "Cerrada", Dia, cierre: Dia.AddHours(10)),
+            Orden("E1", "ZC01", "Cerrada", Dia.AddHours(4), cierre: Dia.AddHours(6)));
+        var (plan, prev, corr) = CalculadoraDisponibilidad.HorasPorTipo(new[] { "E1" }, ventanas, Dia);
+        Assert.Equal(2m, corr);
+        Assert.Equal(8m, plan);
+        Assert.Equal(0m, prev);
+    }
+
+    [Fact]
+    public void Potencial_no_tiene_tope_y_disponibilidad_si()
+    {
+        // 113 disponibles para 112 requeridos, como la fila Todas de la captura de Oracle.
+        Assert.Equal(100m, CalculadoraDisponibilidad.Porcentaje(113, 112));
+        Assert.Equal(100.89m, CalculadoraDisponibilidad.PorcentajeSinTope(113, 112));
+    }
+
+    [Fact]
+    public void Total_de_asignaciones_no_deja_que_el_sobrante_de_una_tape_la_falta_de_otra()
+    {
         // 10 + 21 cubiertos de 35 requeridos = 88.57 %, no (11 + 21) / 35 = 91.43 %.
-        Assert.Equal(88.57m, pct);
+        Assert.Equal(88.57m, CalculadoraDisponibilidad.PorcentajeTotal(new[] { (11m, 10), (21m, 25) }));
     }
 
     [Fact]
-    public void Agregado_semanal_promedia_y_guarda_el_peor_dia()
+    public void La_semana_promedia_sus_dias_y_suma_las_horas()
     {
-        // Lunes 21 a domingo 27 de septiembre de 2026 (semana ISO 39), TR-001 fuera el 24 y 25.
-        var orden = new OrdenDisponibilidad("TR-001", "Cerrado tecnicamente", new DateTime(2026, 9, 24), new DateTime(2026, 9, 25));
-        var diaria = Calcular(new[] { orden }, desde: new DateTime(2026, 9, 21), hasta: new DateTime(2026, 9, 27));
+        var ventanas = Ventanas(Orden("E1", "ZC01", "Cerrada", Dia, cierre: Dia.AddDays(1)));
+        var dias = Enumerable.Range(0, 3)
+            .Select(i => CalculadoraDisponibilidad.CalcularDia(53, Asignacion, Asignacion.Equipos, Enumerable.Range(0, 24).ToList(), ventanas, Dia.AddDays(i - 1)))
+            .ToList();
+        var semana = CalculadoraDisponibilidad.AgregarSemana(53, 1,
+            new SemanaCalendarioDto { NoSemana = 18, FechaInicio = Dia.AddDays(-1), FechaFin = Dia.AddDays(5) }, dias);
 
-        var semana = Assert.Single(CalculadoraDisponibilidad.AgregarSemanal(diaria));
-        Assert.Equal(39, semana.SemanaIso);
-        Assert.Equal(new DateTime(2026, 9, 21), semana.FechaInicioSemana);
-        Assert.Equal(7, semana.DiasCalculados);
+        Assert.Equal(3, semana.DiasCalculados);
         Assert.Equal(75m, semana.DispRealMinPct);
-        Assert.Equal(Math.Round((5 * 100m + 2 * 75m) / 7, 2), semana.DispRealPct);
-        Assert.Equal(3, semana.EqDisponibleMin);
+        Assert.Equal(Math.Round((100m + 75m + 100m) / 3, 2), semana.DispRealPct);
+        Assert.Equal(24m, semana.HrsOtCorrectiva);
     }
 }
