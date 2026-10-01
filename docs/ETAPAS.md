@@ -12,7 +12,7 @@ montando todos los reportes y tableros gerenciales, incluida el área industrial
 | 2 | Modelo de datos `_pgpm` + estructura de Oracle Forms simulada (familias, curva, requeridos, umbrales, equipos) | **Hecha** |
 | 3 | SAP simulado + Background Service de extracción y recálculo + bitácora + equipos sin clasificar | **Hecha** |
 | 4 | Pantalla Disponibilidad de Maquinaria | **Hecha** |
-| 5 | Pantalla Avance de Reparación | Pendiente |
+| 5 | Pantalla Avance de Reparación | **Hecha** |
 | 6 | Frescura de datos, monitoreo, alerta > 24 h, pruebas del cálculo | Pendiente |
 | 7 | Integración real: DDL en Oracle de CAC, vistas reales, cliente RFC con NCo | Bloqueada por pendientes externos |
 | 0 | Sprint 0: validar el cálculo con exports reales de SAP ([lista de exports](SPRINT0_EXPORTS_SAP.md)) | Esperando los exports |
@@ -106,6 +106,19 @@ Vistas de producción con los huecos a llenar: [oracle/vistas_produccion.sql](or
 - Drill-down por semana: los 7 días con sus números y las órdenes de cada día.
 - Funciona en teléfono: la tabla se desplaza dentro de su marco con la columna Familia fija.
 
+## Pantalla Avance de Reparación (Etapa 5)
+
+- Selector de programa (de `VW_ESTRUCTURA_FAMILIAS_PGPM`). Columnas = semanas de calendario del
+  programa completo (lunes a domingo, hasta el 10/12); cada familia llena las de su ventana.
+- Por familia: Cant. Eq., Inicio, Fin, Total Programado y Total Ejecutado **a la fecha del último
+  cálculo**, Diferencia en puntos. Semanas pasadas y la actual: Prog. y Real lado a lado; futuras:
+  solo Prog. La tabla abre desplazada hasta la semana actual.
+- Curva en "S" (programado vs. real) de la familia elegida; por defecto, la más atrasada.
+- Colores de atraso (supuesto, la spec no los define): verde al día o adelantado, naranja hasta 5
+  puntos de atraso, rojo más de 5 (`TOLERANCIA_ATRASO` en el frontend).
+- No se incluyó el selector "referencia de plan (Real Ejecutado)" ni la columna "Prog. Cierre"
+  de la sección 8.3 hasta saber qué significan en el reporte de Oracle (ver pendientes).
+
 ## Datos reales de SAP
 
 Para desarrollar (etapas 3 a 6) **no hacen falta exports de SAP**: el cliente SAP simulado genera
@@ -135,6 +148,9 @@ Responsable: **Kelvin (DBA)**
 - [ ] Fecha de arranque de SAP PM (para elegir el período del Sprint 0 y `SAP.FECHA_CARGA_INICIAL`).
 - [ ] Criterio numérico de aceptación del Sprint 0.
 - [x] Fila "Todas (Promedio)": total disponible / total requerido (30/09/2026).
+- [ ] Avance (sección 8.3): ¿qué es la columna "Prog. Cierre" y qué opciones tiene el selector
+      "referencia de plan (Real Ejecutado)" en el reporte de Oracle?
+- [ ] Avance: ¿la tolerancia de 5 puntos para naranja/rojo está bien, o taller usa otra?
 
 Responsable: **ABAP** (en curso, ~2 días desde el 30/09)
 - [ ] Módulos RFC del Anexo A, campo real del código legado, retención de JCDS.

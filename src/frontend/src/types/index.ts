@@ -131,6 +131,57 @@ export interface DetalleSemanaDto {
   dias: DiaDisponibilidadDto[];
 }
 
+// ---- Avance de Reparación (sección 8.3)
+
+export interface ProgramaDto {
+  anioPrograma: string;
+  fechaInicio: string;
+  fechaFin: string;
+  cantFamilias: number;
+}
+
+export type MomentoSemana = "PASADA" | "ACTUAL" | "FUTURA";
+
+export interface SemanaAvanceDto {
+  lunes: string;
+  domingo: string;
+  semanaIso: number;
+  momento: MomentoSemana;
+}
+
+export interface CeldaAvanceDto {
+  enVentana: boolean;
+  noSemana: number | null;
+  progPct: number | null;
+  realPct: number | null;
+}
+
+export interface FilaAvanceDto {
+  familiaCodigo: string;
+  familiaNombre: string;
+  cantEquipo: number;
+  fechaEstInicio: string;
+  fechaEstFin: string;
+  totalProgramadoPct: number;
+  totalEjecutadoPct: number;
+  diferenciaPct: number;
+  totalOrdenes: number;
+  ordenesCerradas: number;
+  hhPlan: number;
+  hhReal: number;
+  semanas: CeldaAvanceDto[];
+}
+
+export interface ReporteAvanceDto {
+  anioPrograma: string;
+  fechaInicio: string;
+  fechaFin: string;
+  fechaCorte: string | null;
+  formulaReal: string;
+  semanas: SemanaAvanceDto[];
+  familias: FilaAvanceDto[];
+}
+
 export interface ApiError {
   statusCode: number;
   errorMessage: string;
