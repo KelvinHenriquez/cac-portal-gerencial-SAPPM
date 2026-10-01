@@ -96,9 +96,10 @@ Vistas de producción con los huecos a llenar: [oracle/vistas_produccion.sql](or
 - Columnas actuales (Cant. Equipo, Eq. Requerido, Eq. Disponible, Disponibilidad %, Potencial %)
   = último día calculado. Columnas semanales = promedio de los días de la semana ISO, con el peor
   día y los días calculados en el tooltip. Semáforo coloreado al leer, con los umbrales vigentes.
-- **Fila "Todas (Promedio)"**: cantidades sumadas y porcentajes como promedio simple de las
-  familias (así se lee la etiqueta del reporte de Oracle). Si en Oracle es un promedio ponderado
-  (disponibles totales / requeridos totales), se cambia en `ReporteDisponibilidadService`.
+- **Fila "Todas (Promedio)"** (decidido el 30/09/2026): total disponible / total requerido, "porque
+  así es menos engañoso". De cada familia se cuentan como máximo sus requeridos, para que el
+  sobrante de una (p. ej. 11 cosechadoras para 10) no tape la falta de otra. Potencial % = total
+  disponible / total de equipos.
 - Drill-down por familia: equipos con su estado (fuera de servicio con las órdenes que lo detienen,
   disponible, inactivo, o "no está en SAP" cuando el código legado de Oracle no aparece en SAP),
   más los requeridos por asignación.
@@ -133,8 +134,7 @@ Responsable: **Kelvin (DBA)**
       en `PARAMETRO_PGPM`).
 - [ ] Fecha de arranque de SAP PM (para elegir el período del Sprint 0 y `SAP.FECHA_CARGA_INICIAL`).
 - [ ] Criterio numérico de aceptación del Sprint 0.
-- [ ] La fila "Todas (Promedio)" del reporte de Oracle, ¿es promedio simple de las familias o
-      disponibles totales / requeridos totales?
+- [x] Fila "Todas (Promedio)": total disponible / total requerido (30/09/2026).
 
 Responsable: **ABAP** (en curso, ~2 días desde el 30/09)
 - [ ] Módulos RFC del Anexo A, campo real del código legado, retención de JCDS.

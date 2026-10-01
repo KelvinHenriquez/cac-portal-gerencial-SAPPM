@@ -97,6 +97,7 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
                             DispRealPct = s.DispRealPct,
                             DispRealMinPct = s.DispRealMinPct,
                             EqDisponibleProm = s.EqDisponibleProm,
+                            EqRequerido = s.EqRequerido,
                             DiasCalculados = s.DiasCalculados,
                             Semaforo = Color(s.DispRealPct)
                         }
@@ -107,7 +108,10 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
 
             if (reporte.Familias.Count > 0)
             {
-                var promedioReal = Math.Round(reporte.Familias.Average(f => f.DispRealPct), 2);
+                // Total disponible / total requerido (decisión del 30/09/2026), con el sobrante de
+                // cada familia recortado: los equipos de más en una familia no tapan la falta en otra.
+                var totalReal = CalculadoraDisponibilidad.PorcentajeTotal(
+                    reporte.Familias.Select(f => ((decimal)f.EqDisponible, f.EqRequerido)));
                 reporte.Promedio = new FilaDisponibilidadDto
                 {
                     FamiliaCodigo = "TODAS",
@@ -116,22 +120,23 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
                     EqRequerido = reporte.Familias.Sum(f => f.EqRequerido),
                     EqDisponible = reporte.Familias.Sum(f => f.EqDisponible),
                     EqFueraServicio = reporte.Familias.Sum(f => f.EqFueraServicio),
-                    DispRealPct = promedioReal,
-                    DispPotencialPct = Math.Round(reporte.Familias.Average(f => f.DispPotencialPct), 2),
-                    Semaforo = Color(promedioReal),
+                    DispRealPct = totalReal,
+                    DispPotencialPct = CalculadoraDisponibilidad.Porcentaje(
+                        reporte.Familias.Sum(f => f.EqDisponible), reporte.Familias.Sum(f => f.CantEquipo)),
+                    Semaforo = Color(totalReal),
                     Semanas = columnas.Select((c, i) =>
                     {
-                        var celdas = reporte.Familias.Select(f => f.Semanas[i]).Where(s => s.DispRealPct != null).ToList();
+                        var celdas = reporte.Familias.Select(f => f.Semanas[i]).Where(s => s.EqDisponibleProm != null).ToList();
                         if (celdas.Count == 0)
                             return new CeldaSemanaDto { AnioIso = c.AnioIso, SemanaIso = c.SemanaIso };
-                        var pct = Math.Round(celdas.Average(s => s.DispRealPct!.Value), 2);
+                        var pct = CalculadoraDisponibilidad.PorcentajeTotal(celdas.Select(s => (s.EqDisponibleProm!.Value, s.EqRequerido)));
                         return new CeldaSemanaDto
                         {
                             AnioIso = c.AnioIso,
                             SemanaIso = c.SemanaIso,
                             DispRealPct = pct,
-                            DispRealMinPct = celdas.Min(s => s.DispRealMinPct),
                             EqDisponibleProm = celdas.Sum(s => s.EqDisponibleProm),
+                            EqRequerido = celdas.Sum(s => s.EqRequerido),
                             DiasCalculados = celdas.Max(s => s.DiasCalculados),
                             Semaforo = Color(pct)
                         };

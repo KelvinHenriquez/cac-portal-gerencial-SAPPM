@@ -119,5 +119,20 @@ namespace PortalGerencialBackEnd.Core.Calculo
         /// </summary>
         public static decimal Porcentaje(int parte, int total) =>
             total <= 0 ? 100m : Math.Min(100m, Math.Round(100m * parte / total, 2));
+
+        /// <summary>
+        /// Disponibilidad de un grupo de familias: total disponible / total requerido, contando de
+        /// cada familia como máximo sus requeridos. Así 11 cosechadoras para 10 requeridas no tapan
+        /// 2 camiones que faltan (decisión del 30/09/2026: "menos engañoso").
+        /// </summary>
+        public static decimal PorcentajeTotal(IEnumerable<(decimal Disponibles, int Requeridos)> familias)
+        {
+            var lista = familias.ToList();
+            var requeridos = lista.Sum(f => f.Requeridos);
+            if (requeridos <= 0)
+                return 100m;
+            var cubiertos = lista.Sum(f => Math.Min(f.Disponibles, f.Requeridos));
+            return Math.Min(100m, Math.Round(100m * cubiertos / requeridos, 2));
+        }
     }
 }

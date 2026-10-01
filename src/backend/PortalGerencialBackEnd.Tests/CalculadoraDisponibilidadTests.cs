@@ -94,6 +94,16 @@ public class CalculadoraDisponibilidadTests
     }
 
     [Fact]
+    public void Total_de_familias_no_deja_que_el_sobrante_de_una_tape_la_falta_de_otra()
+    {
+        // Cosechadoras 11 de 10 (sobra 1), Camiones 21 de 25 (faltan 4).
+        var pct = CalculadoraDisponibilidad.PorcentajeTotal(new[] { (11m, 10), (21m, 25) });
+
+        // 10 + 21 cubiertos de 35 requeridos = 88.57 %, no (11 + 21) / 35 = 91.43 %.
+        Assert.Equal(88.57m, pct);
+    }
+
+    [Fact]
     public void Agregado_semanal_promedia_y_guarda_el_peor_dia()
     {
         // Lunes 21 a domingo 27 de septiembre de 2026 (semana ISO 39), TR-001 fuera el 24 y 25.

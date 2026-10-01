@@ -275,8 +275,9 @@ export default function DisponibilidadPage() {
           <Box sx={{ px: 2, py: 1.5, borderTop: 1, borderColor: "divider" }}>
             <Typography variant="caption" color="text.secondary" component="p">
               Disponibilidad % = equipos disponibles / equipos requeridos (máximo 100%). Potencial % = equipos disponibles /
-              total de equipos de la familia. Cada semana muestra el promedio de sus días; la fila &quot;Todas&quot; promedia
-              las familias.
+              total de equipos de la familia. Cada semana muestra el promedio de sus días. La fila &quot;Todas&quot; es el total
+              disponible / total requerido, contando de cada familia como máximo sus requeridos (lo que sobra en una no
+              compensa lo que falta en otra).
             </Typography>
           </Box>
         </Paper>

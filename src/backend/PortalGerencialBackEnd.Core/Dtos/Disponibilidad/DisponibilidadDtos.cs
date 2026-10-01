@@ -14,7 +14,11 @@ namespace PortalGerencialBackEnd.Core.Dtos.Disponibilidad
         public List<SemanaColumnaDto> Semanas { get; set; } = new();
         public List<FilaDisponibilidadDto> Familias { get; set; } = new();
 
-        /// <summary>Fila "Todas (Promedio)": cantidades sumadas; porcentajes = promedio simple de las familias.</summary>
+        /// <summary>
+        /// Fila "Todas (Promedio)": cantidades sumadas; Disponibilidad % = total disponible / total
+        /// requerido, contando de cada familia como máximo sus requeridos (el sobrante de una no
+        /// compensa la falta de otra). Potencial % = total disponible / total de equipos.
+        /// </summary>
         public FilaDisponibilidadDto? Promedio { get; set; }
     }
 
@@ -50,6 +54,7 @@ namespace PortalGerencialBackEnd.Core.Dtos.Disponibilidad
 
         public decimal? DispRealMinPct { get; set; }
         public decimal? EqDisponibleProm { get; set; }
+        public int EqRequerido { get; set; }
         public int DiasCalculados { get; set; }
         public string? Semaforo { get; set; }
     }

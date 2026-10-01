@@ -50,6 +50,7 @@ export interface CeldaSemanaDto {
   dispRealPct: number | null;
   dispRealMinPct: number | null;
   eqDisponibleProm: number | null;
+  eqRequerido: number;
   diasCalculados: number;
   semaforo: ColorSemaforo | null;
 }
