@@ -40,6 +40,14 @@ services:
       - ASPNETCORE_HTTPS_PORT=
       - DOTNET_RUNNING_IN_CONTAINER=true
       - DataSourceMode=Local
+      # Alerta de datos desactualizados (sección 11): en local va a Mailpit, que no envía nada
+      # afuera; los correos se ven en http://localhost:8025.
+      - Alertas__Destinatarios=gerencia.taller@cac.local
+      - Alertas__UrlPortal=http://localhost:3002
+      - Alertas__Smtp__Host=mailpit
+      - Alertas__Smtp__Puerto=1025
+      - Alertas__Smtp__UsarSsl=false
+      - Alertas__Smtp__Remitente=portal-gerencial@cac.local
     ports:
       - "5402:5218"
     volumes:
@@ -55,6 +63,16 @@ services:
     depends_on:
       oracle:
         condition: service_healthy
+    networks:
+      - portalgerencial-dev
+    restart: unless-stopped
+
+  # Servidor de correo de prueba: atrapa los correos de alerta y los muestra en una bandeja web.
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: portalgerencial-mailpit-dev
+    ports:
+      - "8025:8025"
     networks:
       - portalgerencial-dev
     restart: unless-stopped

@@ -11,6 +11,7 @@ using PortalGerencialBackEnd.Infrastructure.Integraciones;
 using PortalGerencialBackEnd.Infrastructure.Integraciones.Local;
 using PortalGerencialBackEnd.Infrastructure.Integraciones.Produccion;
 using PortalGerencialBackEnd.Infrastructure.Jobs;
+using PortalGerencialBackEnd.Infrastructure.Monitoreo;
 using PortalGerencialBackEnd.Infrastructure.Persistence.Context;
 using PortalGerencialBackEnd.Infrastructure.Persistence.Interceptors;
 using PortalGerencialBackEnd.Infrastructure.Persistence.Repositories;
@@ -68,6 +69,11 @@ namespace PortalGerencialBackEnd.Infrastructure.DependencyInjection
             services.AddScoped<ISistemaService, SistemaService>();
             services.AddScoped<IProcesoActualizacionService, ProcesoActualizacionService>();
             services.AddHostedService<ActualizacionProgramadaService>();
+
+            // Alerta de frescura (sección 11).
+            services.Configure<AlertasSettings>(configuration.GetSection("Alertas"));
+            services.AddSingleton<EnvioCorreo>();
+            services.AddHostedService<MonitoreoFrescuraService>();
 
             // Reportes (solo leen resultados calculados y staging).
             services.AddScoped<IReporteDisponibilidadService, ReporteDisponibilidadService>();

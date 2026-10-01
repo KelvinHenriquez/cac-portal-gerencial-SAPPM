@@ -49,6 +49,11 @@ namespace PortalGerencialBackEnd.API.Controllers
             return Ok(corrida);
         }
 
+        /// <summary>Alertas de frescura enviadas (o intentadas), de la más reciente a la más vieja.</summary>
+        [HttpGet("alertas")]
+        public async Task<ActionResult<List<AlertaDto>>> GetAlertas([FromQuery] int cantidad = 10) =>
+            Ok(await _sistema.GetAlertasAsync(cantidad));
+
         [HttpGet("equipos-sin-clasificar")]
         public async Task<ActionResult<List<EquipoSinClasificarDto>>> GetEquiposSinClasificar() =>
             Ok(await _sistema.GetEquiposSinClasificarAsync());

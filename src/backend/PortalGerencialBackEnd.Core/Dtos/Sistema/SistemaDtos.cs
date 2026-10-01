@@ -17,6 +17,23 @@ namespace PortalGerencialBackEnd.Core.Dtos.Sistema
         /// <summary>Si la corrida más reciente falló: cuándo y por qué (los datos mostrados son de la anterior OK).</summary>
         public DateTime? UltimoErrorFecha { get; set; }
         public string? UltimoErrorMensaje { get; set; }
+
+        /// <summary>LOCAL (SAP simulado) o PRODUCTION (RFC real).</summary>
+        public string Modo { get; set; } = default!;
+
+        public bool JobHabilitado { get; set; }
+
+        /// <summary>Próxima corrida diaria programada (JOB.HORA_CORRIDA_DIARIA).</summary>
+        public DateTime? ProximaCorrida { get; set; }
+    }
+
+    public class AlertaDto
+    {
+        public string Tipo { get; set; } = default!;
+        public DateTime Fecha { get; set; }
+        public string? Destinatarios { get; set; }
+        public bool Enviada { get; set; }
+        public string? Error { get; set; }
     }
 
     public class PasoCorridaDto

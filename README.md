@@ -39,6 +39,7 @@ docker exec portalgerencial-oracle-dev bash -c "echo exit | sqlplus -s / as sysd
 | Frontend | http://localhost:3002 |
 | API + Swagger | http://localhost:5402/swagger |
 | Oracle Free | `localhost:1522/FREEPDB1` (SQL Developer, DBeaver, etc.) |
+| Mailpit (correos de alerta de prueba) | http://localhost:8025 |
 
 Los puertos no chocan con TPresto (3000/5400/5432) ni con Pago en Efectivo (3001/5401/5433).
 

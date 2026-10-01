@@ -20,6 +20,14 @@ services:
       Oracle__VersionSql: ${ORACLE_VERSION_SQL:-19}
       Database__AplicarMigracionesAlArrancar: ${APLICAR_MIGRACIONES:-true}
       Job__Habilitado: ${JOB_HABILITADO:-true}
+      Alertas__Destinatarios: ${ALERTA_DESTINATARIOS:-}
+      Alertas__UrlPortal: ${PUBLIC_URL}
+      Alertas__Smtp__Host: ${SMTP_HOST:-}
+      Alertas__Smtp__Puerto: ${SMTP_PUERTO:-587}
+      Alertas__Smtp__UsarSsl: ${SMTP_SSL:-true}
+      Alertas__Smtp__Usuario: ${SMTP_USUARIO:-}
+      Alertas__Smtp__Password: ${SMTP_PASSWORD:-}
+      Alertas__Smtp__Remitente: ${SMTP_REMITENTE:-portal-gerencial@cac.com.do}
       Jwt__Key: ${JWT_KEY}
       Jwt__Issuer: ${PUBLIC_URL}
       Jwt__Audience: PortalGerencialApi

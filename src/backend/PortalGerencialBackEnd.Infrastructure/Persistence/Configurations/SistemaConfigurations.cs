@@ -25,6 +25,21 @@ namespace PortalGerencialBackEnd.Infrastructure.Persistence.Configurations
         }
     }
 
+    public class AlertaEnviadaConfiguration : IEntityTypeConfiguration<AlertaEnviada>
+    {
+        public void Configure(EntityTypeBuilder<AlertaEnviada> b)
+        {
+            b.ToTable("ALERTA_ENVIADA_PGPM");
+            b.HasKey(x => x.Id).HasName("PK_ALERTA_ENVIADA_PGPM");
+            b.Property(x => x.Id).ValueGeneratedOnAdd();
+            b.Property(x => x.Tipo).HasMaxLength(40);
+            b.Property(x => x.Destinatarios).HasMaxLength(1000);
+            b.Property(x => x.Asunto).HasMaxLength(200);
+            b.Property(x => x.Error).HasMaxLength(2000);
+            b.HasIndex(x => new { x.Tipo, x.Fecha }).HasDatabaseName("IX_ALERTA_TIPO_FECHA_PGPM");
+        }
+    }
+
     public class ParametroConfiguration : IEntityTypeConfiguration<Parametro>
     {
         private static readonly DateTime Sembrado = new(2026, 9, 30);

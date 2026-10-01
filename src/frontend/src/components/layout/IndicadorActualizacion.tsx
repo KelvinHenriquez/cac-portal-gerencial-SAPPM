@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { Chip, Tooltip, CircularProgress, useMediaQuery } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { IconAlertTriangle, IconCircleCheck } from "@tabler/icons-react";
-import { sistemaService } from "@/services/sistema/sistemaService";
+import { EVENTO_DATOS_ACTUALIZADOS, sistemaService } from "@/services/sistema/sistemaService";
 import { EstadoActualizacionDto } from "@/types";
 
 const REFRESCO_MS = 5 * 60 * 1000;
@@ -35,9 +35,12 @@ export default function IndicadorActualizacion() {
         .catch(() => activo && setEstado(null));
     cargar();
     const intervalo = setInterval(cargar, REFRESCO_MS);
+    // Tras "Actualizar ahora" no hay que esperar los 5 minutos del refresco.
+    window.addEventListener(EVENTO_DATOS_ACTUALIZADOS, cargar);
     return () => {
       activo = false;
       clearInterval(intervalo);
+      window.removeEventListener(EVENTO_DATOS_ACTUALIZADOS, cargar);
     };
   }, []);
 

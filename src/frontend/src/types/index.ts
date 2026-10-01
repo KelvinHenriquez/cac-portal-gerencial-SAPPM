@@ -24,6 +24,48 @@ export interface EstadoActualizacionDto {
   corridaEnCurso: boolean;
   ultimoErrorFecha: string | null;
   ultimoErrorMensaje: string | null;
+  modo: "LOCAL" | "PRODUCTION";
+  jobHabilitado: boolean;
+  proximaCorrida: string | null;
+}
+
+export type EstadoCorrida = "OK" | "ERROR" | "EN_CURSO";
+
+export interface PasoCorridaDto {
+  fuente: string;
+  estado: EstadoCorrida;
+  inicio: string;
+  fin: string | null;
+  registrosProcesados: number | null;
+  fechaCorteDesde: string | null;
+  errorMensaje: string | null;
+}
+
+export interface CorridaDto {
+  corridaId: string;
+  origen: string | null;
+  inicio: string;
+  fin: string | null;
+  estado: EstadoCorrida;
+  pasos: PasoCorridaDto[];
+}
+
+export interface EquipoSinClasificarDto {
+  equipoSapId: string;
+  codigoLegado: string | null;
+  descripcion: string | null;
+  puestoTrabajo: string | null;
+  motivo: "SIN_CODIGO_LEGADO" | "CODIGO_NO_EXISTE_EN_ORACLE";
+  cantOrdenes: number;
+  detectadoEn: string;
+}
+
+export interface AlertaDto {
+  tipo: string;
+  fecha: string;
+  destinatarios: string | null;
+  enviada: boolean;
+  error: string | null;
 }
 
 // ---- Estructura (Oracle)

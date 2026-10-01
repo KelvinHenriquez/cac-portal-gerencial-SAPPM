@@ -20,5 +20,6 @@ namespace PortalGerencialBackEnd.Core.Interfaces.Services
         Task<List<CorridaDto>> GetCorridasAsync(int cantidad);
         Task<CorridaDto?> GetCorridaAsync(string corridaId);
         Task<List<EquipoSinClasificarDto>> GetEquiposSinClasificarAsync();
+        Task<List<AlertaDto>> GetAlertasAsync(int cantidad);
     }
 }

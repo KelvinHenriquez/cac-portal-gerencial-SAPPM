@@ -13,7 +13,8 @@ montando todos los reportes y tableros gerenciales, incluida el área industrial
 | 3 | SAP simulado + Background Service de extracción y recálculo + bitácora + equipos sin clasificar | **Hecha** |
 | 4 | Pantalla Disponibilidad de Maquinaria | **Hecha** |
 | 5 | Pantalla Avance de Reparación | **Hecha** |
-| 6 | Frescura de datos, monitoreo, alerta > 24 h, pruebas del cálculo | Pendiente |
+| 5b | Alinear Avance con el reporte de Oracle (capturas del 30/09/2026) | Pendiente de respuestas |
+| 6 | Frescura de datos, monitoreo, alerta > 24 h, pruebas del cálculo | **Hecha** |
 | 7 | Integración real: DDL en Oracle de CAC, vistas reales, cliente RFC con NCo | Bloqueada por pendientes externos |
 | 0 | Sprint 0: validar el cálculo con exports reales de SAP ([lista de exports](SPRINT0_EXPORTS_SAP.md)) | Esperando los exports |
 | 8 | Despliegue en el servidor Docker | Después de la 7 |
@@ -119,6 +120,40 @@ Vistas de producción con los huecos a llenar: [oracle/vistas_produccion.sql](or
 - No se incluyó el selector "referencia de plan (Real Ejecutado)" ni la columna "Prog. Cierre"
   de la sección 8.3 hasta saber qué significan en el reporte de Oracle (ver pendientes).
 
+## Estado de actualización y alertas (Etapa 6)
+
+- Pantalla Sistema → Estado de actualización: última actualización y si está al día, próxima
+  corrida automática, origen de los datos de SAP (simulado o RFC), última alerta; botón
+  "Actualizar ahora"; bitácora de las últimas 20 corridas con el detalle de cada paso (registros,
+  fecha de corte del delta, error); equipos sin clasificar con el motivo.
+- Alerta por correo (sección 11): se revisa cada hora; si pasan más de `MONITOREO.HORAS_ALERTA`
+  horas sin una corrida exitosa, se envía un correo a `Alertas:Destinatarios`, una vez por problema
+  y repitiendo cada 24 h mientras siga. Cada intento queda en `ALERTA_ENVIADA_PGPM` (también si
+  no hay SMTP configurado). En local los correos van a Mailpit (http://localhost:8025); probado.
+
+## Lo que muestran las capturas del reporte de Oracle (30/09/2026) — Etapa 5b
+
+Verificado contra los números de las capturas:
+- Las columnas semanales muestran el **% de cada semana, no el acumulado**: Real % en las semanas
+  pasadas y la actual (resaltada), Prog. % en las futuras. Total Ejec. = suma de los Real %.
+- **T. Prog.** = total de la curva (100, o menos si la curva está incompleta: Tractores 97.67).
+- **Prog. Cierre** = programado acumulado hasta la semana anterior.
+- **Prog. Act.** = programado para la semana actual.
+- **Pend. Ant.** = máx(0, Prog. Cierre − ejecutado hasta la semana anterior). Cabezales:
+  66.67 − 56.31 = 10.35.
+- **T. Pend. R.** = máx(0, Pend. Ant. + Prog. Act. − Real de la semana actual). Cabezales:
+  10.35 + 5.55 − 0 = 15.90; Cosechadoras: 0 + 4.55 − 0.03 = 4.52.
+- **El avance real se mide por actividades**, no por horas ni por órdenes cerradas: cada orden
+  tiene ~202 actividades agrupadas por sistema (Componentes Genéricos, Eléctrico, Estructura,
+  Potencia, Tracción), y Avance % = Días Act. Terminadas / Días Act. Programadas (355.26 / 603.12
+  = 59 %). Esto cambia lo que hay que traer de SAP (actividades con su duración, fecha de
+  terminación y sistema) y la fórmula provisional actual.
+- Hay un drill-down "Análisis de Avance": por equipo (orden, estado, fechas reales, actividades
+  totales/terminadas, días programados/terminados, avance %) y por sistema.
+- Selectores: Período (zafra, p. ej. "30: 2025-2026") → Reporte (programa); Tipo Calen.
+  (Semanal); Ref. Plan. (Real Programado / Real No Programado / Real Ejecutado); Porcentaje o
+  Actividad.
+
 ## Datos reales de SAP
 
 Para desarrollar (etapas 3 a 6) **no hacen falta exports de SAP**: el cliente SAP simulado genera
@@ -148,8 +183,7 @@ Responsable: **Kelvin (DBA)**
 - [ ] Fecha de arranque de SAP PM (para elegir el período del Sprint 0 y `SAP.FECHA_CARGA_INICIAL`).
 - [ ] Criterio numérico de aceptación del Sprint 0.
 - [x] Fila "Todas (Promedio)": total disponible / total requerido (30/09/2026).
-- [ ] Avance (sección 8.3): ¿qué es la columna "Prog. Cierre" y qué opciones tiene el selector
-      "referencia de plan (Real Ejecutado)" en el reporte de Oracle?
+- [x] Avance: "Prog. Cierre" y opciones de "Ref. Plan." — resuelto con las capturas (ver arriba).
 - [ ] Avance: ¿la tolerancia de 5 puntos para naranja/rojo está bien, o taller usa otra?
 
 Responsable: **ABAP** (en curso, ~2 días desde el 30/09)

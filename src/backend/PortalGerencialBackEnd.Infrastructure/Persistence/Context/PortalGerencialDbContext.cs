@@ -36,6 +36,7 @@ namespace PortalGerencialBackEnd.Infrastructure.Persistence.Context
         // Sistema
         public DbSet<LogExtraccion> LogExtracciones => Set<LogExtraccion>();
         public DbSet<Parametro> Parametros => Set<Parametro>();
+        public DbSet<AlertaEnviada> AlertasEnviadas => Set<AlertaEnviada>();
 
         // Vistas de estructura (solo lectura)
         public DbSet<VwUmbralSemaforo> VwUmbralesSemaforo => Set<VwUmbralSemaforo>();

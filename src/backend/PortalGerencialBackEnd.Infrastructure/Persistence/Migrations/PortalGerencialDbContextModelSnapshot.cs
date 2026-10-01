@@ -22,6 +22,58 @@ namespace PortalGerencialBackEnd.Infrastructure.Persistence.Migrations
 
             OracleModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("PortalGerencialBackEnd.Core.Entities.AlertaEnviada", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("NUMBER(19)")
+                        .HasColumnName("ID");
+
+                    OraclePropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("Asunto")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .IsUnicode(false)
+                        .HasColumnType("VARCHAR2(200)")
+                        .HasColumnName("ASUNTO");
+
+                    b.Property<string>("Destinatarios")
+                        .HasMaxLength(1000)
+                        .IsUnicode(false)
+                        .HasColumnType("VARCHAR2(1000)")
+                        .HasColumnName("DESTINATARIOS");
+
+                    b.Property<bool>("Enviada")
+                        .HasColumnType("NUMBER(1)")
+                        .HasColumnName("ENVIADA");
+
+                    b.Property<string>("Error")
+                        .HasMaxLength(2000)
+                        .IsUnicode(false)
+                        .HasColumnType("VARCHAR2(2000)")
+                        .HasColumnName("ERROR");
+
+                    b.Property<DateTime>("Fecha")
+                        .HasColumnType("TIMESTAMP(7)")
+                        .HasColumnName("FECHA");
+
+                    b.Property<string>("Tipo")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .IsUnicode(false)
+                        .HasColumnType("VARCHAR2(40)")
+                        .HasColumnName("TIPO");
+
+                    b.HasKey("Id")
+                        .HasName("PK_ALERTA_ENVIADA_PGPM");
+
+                    b.HasIndex("Tipo", "Fecha")
+                        .HasDatabaseName("IX_ALERTA_TIPO_FECHA_PGPM");
+
+                    b.ToTable("ALERTA_ENVIADA_PGPM", (string)null);
+                });
+
             modelBuilder.Entity("PortalGerencialBackEnd.Core.Entities.Calculo.CalcAvanceSemanal", b =>
                 {
                     b.Property<string>("FamiliaCodigo")

@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using PortalGerencialBackEnd.Core.Constants;
+using PortalGerencialBackEnd.Core.Enums;
 using PortalGerencialBackEnd.Core.Dtos.Sistema;
 using PortalGerencialBackEnd.Core.Entities;
 using PortalGerencialBackEnd.Core.Interfaces.Services;
@@ -14,12 +16,16 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
         private readonly PortalGerencialDbContext _db;
         private readonly CoordinadorCorridas _coordinador;
         private readonly TimeProvider _time;
+        private readonly string _modo;
+        private readonly bool _jobHabilitado;
 
-        public SistemaService(PortalGerencialDbContext db, CoordinadorCorridas coordinador, TimeProvider time)
+        public SistemaService(PortalGerencialDbContext db, CoordinadorCorridas coordinador, TimeProvider time, IConfiguration configuration)
         {
             _db = db;
             _coordinador = coordinador;
             _time = time;
+            _modo = (configuration.GetValue<DataSourceMode?>("DataSourceMode") ?? DataSourceMode.Local).ToString().ToUpperInvariant();
+            _jobHabilitado = configuration.GetValue("Job:Habilitado", true);
         }
 
         public async Task<EstadoActualizacionDto> GetEstadoActualizacionAsync()
@@ -50,9 +56,28 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
                 CorridaEnCurso = _coordinador.EnCurso,
                 // Solo interesa si el error es posterior al último éxito: si no, ya se recuperó.
                 UltimoErrorFecha = ultimoError != null && (ultimaOk == null || ultimoError.Inicio > ultimaOk) ? ultimoError.Inicio : null,
-                UltimoErrorMensaje = ultimoError != null && (ultimaOk == null || ultimoError.Inicio > ultimaOk) ? ultimoError.ErrorMensaje : null
+                UltimoErrorMensaje = ultimoError != null && (ultimaOk == null || ultimoError.Inicio > ultimaOk) ? ultimoError.ErrorMensaje : null,
+                Modo = _modo,
+                JobHabilitado = _jobHabilitado,
+                ProximaCorrida = _jobHabilitado
+                    ? ActualizacionProgramadaService.ProximaCorrida(ahora, parametros.Hora(ClavesParametro.HoraCorridaDiaria, new TimeSpan(5, 0, 0)))
+                    : null
             };
         }
+
+        public Task<List<AlertaDto>> GetAlertasAsync(int cantidad) =>
+            _db.AlertasEnviadas.AsNoTracking()
+                .OrderByDescending(a => a.Fecha)
+                .Take(Math.Clamp(cantidad, 1, 100))
+                .Select(a => new AlertaDto
+                {
+                    Tipo = a.Tipo,
+                    Fecha = a.Fecha,
+                    Destinatarios = a.Destinatarios,
+                    Enviada = a.Enviada,
+                    Error = a.Error
+                })
+                .ToListAsync();
 
         public async Task<List<CorridaDto>> GetCorridasAsync(int cantidad)
         {

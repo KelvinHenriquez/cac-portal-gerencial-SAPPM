@@ -121,10 +121,14 @@ namespace PortalGerencialBackEnd.Infrastructure.Jobs
             }
 
             var ahora = _time.GetLocalNow().DateTime;
+            return ProximaCorrida(ahora, hora) - ahora;
+        }
+
+        /// <summary>Próxima vez que toca la corrida diaria a la hora <paramref name="hora"/>.</summary>
+        public static DateTime ProximaCorrida(DateTime ahora, TimeSpan hora)
+        {
             var proxima = ahora.Date + hora;
-            if (proxima <= ahora)
-                proxima = proxima.AddDays(1);
-            return proxima - ahora;
+            return proxima <= ahora ? proxima.AddDays(1) : proxima;
         }
     }
 }
