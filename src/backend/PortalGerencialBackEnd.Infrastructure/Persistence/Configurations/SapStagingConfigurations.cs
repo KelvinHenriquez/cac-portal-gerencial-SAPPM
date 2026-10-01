@@ -59,15 +59,13 @@ namespace PortalGerencialBackEnd.Infrastructure.Persistence.Configurations
         public void Configure(EntityTypeBuilder<StgSapOperacionHoras> b)
         {
             b.ToTable("STG_SAP_OPERACION_HORAS_PGPM");
-            b.HasKey(x => x.Id).HasName("PK_STG_OPER_HORAS_PGPM");
-            b.Property(x => x.Id).ValueGeneratedOnAdd();
+            b.HasKey(x => new { x.OrdenSapId, x.Operacion }).HasName("PK_STG_OPER_HORAS_PGPM");
             b.Property(x => x.OrdenSapId).HasMaxLength(20);
             b.Property(x => x.Operacion).HasMaxLength(10);
             b.Property(x => x.TrabajoPlanHh).HasPrecision(12, 2).HasDefaultValue(0m);
             b.Property(x => x.TrabajoRealHh).HasPrecision(12, 2).HasDefaultValue(0m);
             b.Property(x => x.ActualizadoEn).HasDefaultValueSql("SYSTIMESTAMP");
 
-            b.HasIndex(x => new { x.OrdenSapId, x.Operacion }).IsUnique().HasDatabaseName("UQ_STG_OPER_HORAS_PGPM");
             b.HasOne(x => x.Orden).WithMany(o => o.Operaciones)
                 .HasForeignKey(x => x.OrdenSapId)
                 .HasConstraintName("FK_STG_OPER_ORDEN_PGPM")

@@ -25,9 +25,15 @@ montando todos los reportes y tableros gerenciales, incluida el área industrial
   de negocio (hoy: Centro de Servicios; a futuro: Área Industrial).
 - **Base del código:** copiado de `C:\cac-pagos-efectivo` (que ya traía el UI/UX y la arquitectura
   de TPresto sin el dominio de préstamos), y luego se quitó el dominio de pagos.
-- **Base de datos local: Oracle Free en Docker, no Postgres.** Producción es Oracle, así que se usa
-  el mismo motor, el mismo provider de EF y el mismo SQL en ambos ambientes. Además permite probar el
-  login real (sección 4.3) con usuarios nombrados locales. No requiere instalar nada fuera de Docker.
+- **Base de datos local: Oracle 11g XE en Docker** (al principio Oracle Free 23; se cambió el
+  01/10/2026 al saber que producción es **Oracle 11.2.0.4**). Mismo motor y misma generación que
+  producción: cualquier cosa que solo exista desde 12c falla en desarrollo. Permite además probar
+  el login real (sección 4.3) con usuarios nombrados locales.
+- **Reglas por ser Oracle 11g:** sin columnas IDENTITY ni `DEFAULT seq.NEXTVAL` (los Id son llaves
+  naturales o GUID generados por la aplicación); sin `Take`/`First`/`Skip` en consultas a la base
+  (EF los traduce a `FETCH FIRST`, que no existe en 11g: se recorta en memoria o con ROWNUM);
+  nombres de objetos de 30 caracteres o menos. El driver ODP.NET 23 conecta a 11g (probado con XE
+  11.2.0.2); el provider de EF se configura en compatibilidad 19 porque no tiene opción 11.
 - **DataSourceMode** ahora solo decide de dónde salen los datos de SAP (simulado o RFC real). La
   estructura de Oracle Forms se lee siempre por las vistas `_pgpm`; en local apuntan al esquema
   simulado `SISTEMA_OT`.
@@ -174,7 +180,7 @@ Responsable: **Kelvin (DBA)**
 - [ ] Nombres reales de las tablas del Sistema de Órdenes de Trabajo: familias, curva por semana,
       equipos requeridos, umbrales — **y la tabla de equipos (Objeto Técnico / Ficha) con su familia**,
       que la spec no lista pero hace falta para el cruce por código legado y el detalle por familia.
-- [ ] Versión del Oracle de producción (`SELECT banner FROM v$version`) para fijar `Oracle:VersionSql`.
+- [x] Versión del Oracle de producción: **11.2.0.4** (01/10/2026). Ver reglas por ser 11g arriba.
 - [x] En la curva planeada, `ACTIVIDAD_PCT` es el % de cada semana (no acumulado); el portal lo
       acumula. Confirmado el 30/09/2026.
 - [ ] Fórmulas de "Disponibilidad Comp. %" y "Total Ejec. %" (idealmente el PL/SQL original).

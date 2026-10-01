@@ -4,7 +4,6 @@
 -- tablas reales: mismos nombres de vista y mismas columnas, para que el código no cambie.
 -- Llevan sufijo _pgpm porque son objetos que crea el portal.
 -- =====================================================================================
-ALTER SESSION SET CONTAINER = FREEPDB1;
 
 -- Tipos de reporte de disponibilidad y sus umbrales de semáforo (Paso 1).
 CREATE OR REPLACE VIEW PGPM.VW_UMBRALES_SEMAFORO_PGPM AS

@@ -6,7 +6,11 @@ namespace PortalGerencialBackEnd.Core.Entities
     /// </summary>
     public class LogExtraccion
     {
-        public long Id { get; set; }
+        /// <summary>
+        /// GUID generado por la aplicación. Sin columnas IDENTITY ni DEFAULT seq.NEXTVAL: el Oracle de
+        /// producción es 11g y esas dos cosas existen recién desde 12c.
+        /// </summary>
+        public string Id { get; set; } = Guid.NewGuid().ToString();
 
         /// <summary>Agrupa los pasos (extracciones y cálculos) de una misma corrida.</summary>
         public string CorridaId { get; set; } = default!;

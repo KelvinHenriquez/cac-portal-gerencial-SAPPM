@@ -1,6 +1,6 @@
 -- =====================================================================================
--- Oracle Free local (solo desarrollo). Corre UNA vez, la primera vez que se crea el
--- volumen del contenedor portalgerencial-oracle-dev, como SYSDBA.
+-- Oracle local (solo desarrollo). Corre UNA vez, la primera vez que se crea el
+-- volumen del contenedor portalgerencial-oracle-dev (Oracle 11g XE), como SYSDBA.
 --
 -- Simula los tres tipos de usuario que habrá en el Oracle real de CAC:
 --   PGPM        -> usuario técnico del portal, dueño de los objetos _pgpm (sección 3).
@@ -10,7 +10,6 @@
 --   GERENTE1..  -> usuarios nombrados con los que la gente entra hoy a Oracle Forms y con los
 --                  que entrará al portal (sección 4.3). Solo necesitan CREATE SESSION.
 -- =====================================================================================
-ALTER SESSION SET CONTAINER = FREEPDB1;
 
 -- Perfil parecido al DEFAULT de Oracle: 10 intentos fallidos bloquean la cuenta. El portal
 -- frena a los 5 (Login:MaxIntentosFallidos) para no llegar nunca a este bloqueo.

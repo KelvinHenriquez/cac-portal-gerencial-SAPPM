@@ -6,7 +6,8 @@ namespace PortalGerencialBackEnd.Core.Entities
     /// </summary>
     public class AlertaEnviada
     {
-        public long Id { get; set; }
+        /// <summary>GUID generado por la aplicación (Oracle 11g no tiene IDENTITY).</summary>
+        public string Id { get; set; } = Guid.NewGuid().ToString();
 
         /// <summary>DATOS_DESACTUALIZADOS (por ahora el único tipo).</summary>
         public string Tipo { get; set; } = default!;

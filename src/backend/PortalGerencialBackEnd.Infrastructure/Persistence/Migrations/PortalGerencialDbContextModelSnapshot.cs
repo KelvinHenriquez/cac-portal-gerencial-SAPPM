@@ -24,12 +24,11 @@ namespace PortalGerencialBackEnd.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("PortalGerencialBackEnd.Core.Entities.AlertaEnviada", b =>
                 {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("NUMBER(19)")
+                    b.Property<string>("Id")
+                        .HasMaxLength(36)
+                        .IsUnicode(false)
+                        .HasColumnType("VARCHAR2(36)")
                         .HasColumnName("ID");
-
-                    OraclePropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
 
                     b.Property<string>("Asunto")
                         .IsRequired()
@@ -541,12 +540,11 @@ namespace PortalGerencialBackEnd.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("PortalGerencialBackEnd.Core.Entities.LogExtraccion", b =>
                 {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("NUMBER(19)")
+                    b.Property<string>("Id")
+                        .HasMaxLength(36)
+                        .IsUnicode(false)
+                        .HasColumnType("VARCHAR2(36)")
                         .HasColumnName("ID");
-
-                    OraclePropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
 
                     b.Property<string>("CorridaId")
                         .IsRequired()
@@ -801,32 +799,23 @@ namespace PortalGerencialBackEnd.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("PortalGerencialBackEnd.Core.Entities.Sap.StgSapOperacionHoras", b =>
                 {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("NUMBER(19)")
-                        .HasColumnName("ID");
+                    b.Property<string>("OrdenSapId")
+                        .HasMaxLength(20)
+                        .IsUnicode(false)
+                        .HasColumnType("VARCHAR2(20)")
+                        .HasColumnName("ORDEN_SAP_ID");
 
-                    OraclePropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+                    b.Property<string>("Operacion")
+                        .HasMaxLength(10)
+                        .IsUnicode(false)
+                        .HasColumnType("VARCHAR2(10)")
+                        .HasColumnName("OPERACION");
 
                     b.Property<DateTime>("ActualizadoEn")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TIMESTAMP(7)")
                         .HasColumnName("ACTUALIZADO_EN")
                         .HasDefaultValueSql("SYSTIMESTAMP");
-
-                    b.Property<string>("Operacion")
-                        .IsRequired()
-                        .HasMaxLength(10)
-                        .IsUnicode(false)
-                        .HasColumnType("VARCHAR2(10)")
-                        .HasColumnName("OPERACION");
-
-                    b.Property<string>("OrdenSapId")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .IsUnicode(false)
-                        .HasColumnType("VARCHAR2(20)")
-                        .HasColumnName("ORDEN_SAP_ID");
 
                     b.Property<decimal>("TrabajoPlanHh")
                         .ValueGeneratedOnAdd()
@@ -842,12 +831,8 @@ namespace PortalGerencialBackEnd.Infrastructure.Persistence.Migrations
                         .HasDefaultValue(0m)
                         .HasColumnName("TRABAJO_REAL_HH");
 
-                    b.HasKey("Id")
+                    b.HasKey("OrdenSapId", "Operacion")
                         .HasName("PK_STG_OPER_HORAS_PGPM");
-
-                    b.HasIndex("OrdenSapId", "Operacion")
-                        .IsUnique()
-                        .HasDatabaseName("UQ_STG_OPER_HORAS_PGPM");
 
                     b.ToTable("STG_SAP_OPERACION_HORAS_PGPM", (string)null);
                 });

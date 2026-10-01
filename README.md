@@ -21,7 +21,7 @@ Requisito: Docker Desktop. Nada más — Oracle corre en un contenedor.
 docker compose -f docker-compose.dev.yml up -d
 ```
 
-La primera vez descarga la imagen de Oracle Free (~1.5 GB) y corre los scripts de
+La primera vez descarga la imagen de Oracle 11g XE (la misma generación que el Oracle de producción, 11.2.0.4) y corre los scripts de
 [db/oracle/init/](db/oracle/init/): usuarios, el esquema `SISTEMA_OT` que simula las tablas de
 configuración de Oracle Forms (familias, curva planeada, equipos requeridos, umbrales y equipos del
 Programa de Reparación 2026) y las vistas `VW_*_PGPM` encima. Las tablas `_pgpm` del portal las
@@ -38,7 +38,7 @@ docker exec portalgerencial-oracle-dev bash -c "echo exit | sqlplus -s / as sysd
 |---|---|
 | Frontend | http://localhost:3002 |
 | API + Swagger | http://localhost:5402/swagger |
-| Oracle Free | `localhost:1522/FREEPDB1` (SQL Developer, DBeaver, etc.) |
+| Oracle Free | `localhost:1522/XE` (SQL Developer, DBeaver, etc.) |
 | Mailpit (correos de alerta de prueba) | http://localhost:8025 |
 
 Los puertos no chocan con TPresto (3000/5400/5432) ni con Pago en Efectivo (3001/5401/5433).

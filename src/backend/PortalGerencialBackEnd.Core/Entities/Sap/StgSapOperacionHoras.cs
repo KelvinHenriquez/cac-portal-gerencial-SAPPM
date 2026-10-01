@@ -6,7 +6,6 @@ namespace PortalGerencialBackEnd.Core.Entities.Sap
     /// </summary>
     public class StgSapOperacionHoras
     {
-        public long Id { get; set; }
         public string OrdenSapId { get; set; } = default!;
         public string Operacion { get; set; } = default!;
         public decimal TrabajoPlanHh { get; set; }

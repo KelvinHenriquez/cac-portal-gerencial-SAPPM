@@ -7,7 +7,6 @@
 --
 -- Datos de prueba: Programa de Reparación 2026 (interzafra), del 1/6/2026 al 10/12/2026.
 -- =====================================================================================
-ALTER SESSION SET CONTAINER = FREEPDB1;
 ALTER SESSION SET CURRENT_SCHEMA = SISTEMA_OT;
 
 -- Tipos de reporte de disponibilidad + umbrales de semáforo (Paso 1 de "Configuración

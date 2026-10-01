@@ -10,7 +10,7 @@ namespace PortalGerencialBackEnd.Infrastructure.Persistence.Context
         {
             var optionsBuilder = new DbContextOptionsBuilder<PortalGerencialDbContext>();
             optionsBuilder.UseOracle(
-                "User Id=PGPM;Password=PgpmLocal2026;Data Source=localhost:1522/FREEPDB1;",
+                "User Id=PGPM;Password=PgpmLocal2026;Data Source=localhost:1522/XE;",
                 o => o.MigrationsHistoryTable(PortalGerencialDbContext.TablaHistorialMigraciones)
                       .UseOracleSQLCompatibility(OracleSQLCompatibility.DatabaseVersion19));
 

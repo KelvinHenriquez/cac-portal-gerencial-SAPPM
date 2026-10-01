@@ -4,11 +4,12 @@ name: portalgerencial-dev
 # Puertos distintos a TPresto (3000/5400/5432) y Pago en Efectivo (3001/5401/5433) para poder
 # correr los tres proyectos a la vez.
 services:
-  # Oracle Free — el mismo motor que producción (sección 9). La primera vez descarga la imagen
-  # (~1.5 GB) y corre db/oracle/init/*.sql para crear los usuarios PGPM, SISTEMA_OT y los
-  # usuarios nombrados de prueba. Conexión desde el host: localhost:1522/FREEPDB1.
+  # Oracle 11g XE — la misma generación que producción (11.2.0.4): así cualquier cosa que solo
+  # exista desde 12c (IDENTITY, FETCH FIRST, nombres de más de 30 caracteres...) falla aquí y no
+  # en el servidor. La primera vez corre db/oracle/init/*.sql para crear los usuarios PGPM,
+  # SISTEMA_OT y los usuarios nombrados de prueba. Conexión desde el host: localhost:1522/XE.
   oracle:
-    image: gvenzl/oracle-free:23-slim-faststart
+    image: gvenzl/oracle-xe:11-slim
     container_name: portalgerencial-oracle-dev
     environment:
       ORACLE_PASSWORD: OracleLocal2026 # SYS/SYSTEM, solo local
@@ -16,7 +17,7 @@ services:
     ports:
       - "1522:1521"
     volumes:
-      - oracle_portalgerencial_dev_data:/opt/oracle/oradata
+      - oracle11_portalgerencial_dev_data:/u01/app/oracle/oradata
       - ./db/oracle/init:/container-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD", "healthcheck.sh"]
@@ -102,7 +103,7 @@ services:
     restart: unless-stopped
 
 volumes:
-  oracle_portalgerencial_dev_data:
+  oracle11_portalgerencial_dev_data:
     driver: local
 
 networks:

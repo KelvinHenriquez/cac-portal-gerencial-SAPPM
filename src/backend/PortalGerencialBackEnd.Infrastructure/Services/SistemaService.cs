@@ -39,10 +39,13 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
                 .Where(l => l.Fuente == FuentesLog.CalcAvance && l.Estado == EstadosLog.Ok)
                 .MaxAsync(l => l.Fin);
 
-            var ultimoError = await _db.LogExtracciones.AsNoTracking()
-                .Where(l => l.Estado == EstadosLog.Error)
-                .OrderByDescending(l => l.Inicio)
-                .FirstOrDefaultAsync();
+            // Sin FirstOrDefault/Take en la base: en Oracle 11g generan FETCH FIRST, que no existe.
+            // Solo interesan los errores posteriores al último éxito, que son pocos.
+            var desdeUltimoOk = ultimaOk ?? DateTime.MinValue;
+            var ultimoError = (await _db.LogExtracciones.AsNoTracking()
+                    .Where(l => l.Estado == EstadosLog.Error && l.Inicio > desdeUltimoOk)
+                    .ToListAsync())
+                .MaxBy(l => l.Inicio);
 
             var ahora = _time.GetLocalNow().DateTime;
             double? horasDesde = ultimaOk == null ? null : Math.Round((ahora - ultimaOk.Value).TotalHours, 1);
@@ -65,10 +68,9 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
             };
         }
 
-        public Task<List<AlertaDto>> GetAlertasAsync(int cantidad) =>
-            _db.AlertasEnviadas.AsNoTracking()
-                .OrderByDescending(a => a.Fecha)
-                .Take(Math.Clamp(cantidad, 1, 100))
+        public async Task<List<AlertaDto>> GetAlertasAsync(int cantidad) =>
+            // Take en memoria (Oracle 11g): son pocas filas, una por día de problema como mucho.
+            (await _db.AlertasEnviadas.AsNoTracking()
                 .Select(a => new AlertaDto
                 {
                     Tipo = a.Tipo,
@@ -77,17 +79,23 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
                     Enviada = a.Enviada,
                     Error = a.Error
                 })
-                .ToListAsync();
+                .ToListAsync())
+            .OrderByDescending(a => a.Fecha)
+            .Take(Math.Clamp(cantidad, 1, 100))
+            .ToList();
 
         public async Task<List<CorridaDto>> GetCorridasAsync(int cantidad)
         {
-            var ids = await _db.LogExtracciones.AsNoTracking()
-                .GroupBy(l => l.CorridaId)
-                .Select(g => new { CorridaId = g.Key, Inicio = g.Min(l => l.Inicio) })
+            // Agrupa en la base (una fila por corrida, ~1 por día) y recorta en memoria: Take en la
+            // base generaría FETCH FIRST, que Oracle 11g no tiene.
+            var ids = (await _db.LogExtracciones.AsNoTracking()
+                    .GroupBy(l => l.CorridaId)
+                    .Select(g => new { CorridaId = g.Key, Inicio = g.Min(l => l.Inicio) })
+                    .ToListAsync())
                 .OrderByDescending(x => x.Inicio)
                 .Take(Math.Clamp(cantidad, 1, 200))
                 .Select(x => x.CorridaId)
-                .ToListAsync();
+                .ToList();
 
             var pasos = await _db.LogExtracciones.AsNoTracking()
                 .Where(l => ids.Contains(l.CorridaId))
@@ -123,7 +131,7 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
 
         private static CorridaDto ACorrida(IGrouping<string, LogExtraccion> pasos)
         {
-            var ordenados = pasos.OrderBy(p => p.Inicio).ThenBy(p => p.Id).ToList();
+            var ordenados = pasos.OrderBy(p => p.Inicio).ToList();
             var estado = ordenados.Any(p => p.Estado == EstadosLog.Error) ? EstadosLog.Error
                 : ordenados.Any(p => p.Estado == EstadosLog.EnCurso) || ordenados.All(p => p.Fuente != FuentesLog.CalcAvance) ? EstadosLog.EnCurso
                 : EstadosLog.Ok;

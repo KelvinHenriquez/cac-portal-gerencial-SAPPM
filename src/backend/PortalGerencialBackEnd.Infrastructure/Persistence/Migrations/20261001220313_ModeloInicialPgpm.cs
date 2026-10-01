@@ -14,6 +14,23 @@ namespace PortalGerencialBackEnd.Infrastructure.Persistence.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
+                name: "ALERTA_ENVIADA_PGPM",
+                columns: table => new
+                {
+                    ID = table.Column<string>(type: "VARCHAR2(36)", unicode: false, maxLength: 36, nullable: false),
+                    TIPO = table.Column<string>(type: "VARCHAR2(40)", unicode: false, maxLength: 40, nullable: false),
+                    FECHA = table.Column<DateTime>(type: "TIMESTAMP(7)", nullable: false),
+                    DESTINATARIOS = table.Column<string>(type: "VARCHAR2(1000)", unicode: false, maxLength: 1000, nullable: true),
+                    ASUNTO = table.Column<string>(type: "VARCHAR2(200)", unicode: false, maxLength: 200, nullable: false),
+                    ENVIADA = table.Column<bool>(type: "NUMBER(1)", nullable: false),
+                    ERROR = table.Column<string>(type: "VARCHAR2(2000)", unicode: false, maxLength: 2000, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ALERTA_ENVIADA_PGPM", x => x.ID);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "CALC_AVANCE_SEMANAL_PGPM",
                 columns: table => new
                 {
@@ -106,8 +123,7 @@ namespace PortalGerencialBackEnd.Infrastructure.Persistence.Migrations
                 name: "LOG_EXTRACCION_PGPM",
                 columns: table => new
                 {
-                    ID = table.Column<long>(type: "NUMBER(19)", nullable: false)
-                        .Annotation("Oracle:Identity", "START WITH 1 INCREMENT BY 1"),
+                    ID = table.Column<string>(type: "VARCHAR2(36)", unicode: false, maxLength: 36, nullable: false),
                     CORRIDA_ID = table.Column<string>(type: "VARCHAR2(36)", unicode: false, maxLength: 36, nullable: false),
                     FUENTE = table.Column<string>(type: "VARCHAR2(30)", unicode: false, maxLength: 30, nullable: false),
                     INICIO = table.Column<DateTime>(type: "TIMESTAMP(7)", nullable: false),
@@ -201,8 +217,6 @@ namespace PortalGerencialBackEnd.Infrastructure.Persistence.Migrations
                 name: "STG_SAP_OPERACION_HORAS_PGPM",
                 columns: table => new
                 {
-                    ID = table.Column<long>(type: "NUMBER(19)", nullable: false)
-                        .Annotation("Oracle:Identity", "START WITH 1 INCREMENT BY 1"),
                     ORDEN_SAP_ID = table.Column<string>(type: "VARCHAR2(20)", unicode: false, maxLength: 20, nullable: false),
                     OPERACION = table.Column<string>(type: "VARCHAR2(10)", unicode: false, maxLength: 10, nullable: false),
                     TRABAJO_PLAN_HH = table.Column<decimal>(type: "DECIMAL(12,2)", precision: 12, scale: 2, nullable: false, defaultValue: 0m),
@@ -211,7 +225,7 @@ namespace PortalGerencialBackEnd.Infrastructure.Persistence.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_STG_OPER_HORAS_PGPM", x => x.ID);
+                    table.PrimaryKey("PK_STG_OPER_HORAS_PGPM", x => new { x.ORDEN_SAP_ID, x.OPERACION });
                     table.ForeignKey(
                         name: "FK_STG_OPER_ORDEN_PGPM",
                         column: x => x.ORDEN_SAP_ID,
@@ -225,14 +239,21 @@ namespace PortalGerencialBackEnd.Infrastructure.Persistence.Migrations
                 columns: new[] { "CLAVE", "ACTUALIZADO_EN", "DESCRIPCION", "VALOR" },
                 values: new object[,]
                 {
+                    { "AVANCE.FORMULA_REAL", new DateTime(2026, 9, 30, 0, 0, 0, 0, DateTimeKind.Unspecified), "Fórmula provisional del % real de avance (pendiente 'Total Ejec. %'): HH_ORDENES_CERRADAS u ORDENES_CERRADAS.", "HH_ORDENES_CERRADAS" },
                     { "AVANCE.PROGRAMA_VIGENTE", new DateTime(2026, 9, 30, 0, 0, 0, 0, DateTimeKind.Unspecified), "Programa de reparación que se abre por defecto en Avance de Reparación.", "2026" },
                     { "JOB.DIAS_RECALCULO_DISPONIBILIDAD", new DateTime(2026, 9, 30, 0, 0, 0, 0, DateTimeKind.Unspecified), "Días hacia atrás que se recalcula la disponibilidad diaria en cada corrida.", "120" },
                     { "JOB.HORA_CORRIDA_DIARIA", new DateTime(2026, 9, 30, 0, 0, 0, 0, DateTimeKind.Unspecified), "Hora local (HH:mm) de la corrida diaria del job de extracción y recálculo.", "05:00" },
                     { "MONITOREO.HORAS_ALERTA", new DateTime(2026, 9, 30, 0, 0, 0, 0, DateTimeKind.Unspecified), "Horas sin una corrida exitosa a partir de las cuales se alerta (sección 11).", "24" },
                     { "SAP.CLASES_ORDEN_AVANCE", new DateTime(2026, 9, 30, 0, 0, 0, 0, DateTimeKind.Unspecified), "Clases de orden (separadas por coma) que cuentan para Avance de Reparación (sección 4.2).", "ZC03" },
                     { "SAP.ESTADOS_CERRADOS", new DateTime(2026, 9, 30, 0, 0, 0, 0, DateTimeKind.Unspecified), "Estados de orden que cuentan como orden terminada para el avance de reparación.", "Cerrado tecnicamente,Cerrado" },
-                    { "SAP.ESTADOS_FUERA_SERVICIO", new DateTime(2026, 9, 30, 0, 0, 0, 0, DateTimeKind.Unspecified), "Estados de orden que dejan al equipo fuera de servicio (pendiente de confirmar con taller, sección 6.1).", "Liberado,En Proceso" }
+                    { "SAP.ESTADOS_FUERA_SERVICIO", new DateTime(2026, 9, 30, 0, 0, 0, 0, DateTimeKind.Unspecified), "Estados de orden que dejan al equipo fuera de servicio (pendiente de confirmar con taller, sección 6.1).", "Liberado,En Proceso" },
+                    { "SAP.FECHA_CARGA_INICIAL", new DateTime(2026, 9, 30, 0, 0, 0, 0, DateTimeKind.Unspecified), "Fecha (yyyy-MM-dd) desde la que se extrae de SAP en la primera corrida.", "2026-01-01" }
                 });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ALERTA_TIPO_FECHA_PGPM",
+                table: "ALERTA_ENVIADA_PGPM",
+                columns: new[] { "TIPO", "FECHA" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_CALC_AVANCE_PROG_PGPM",
@@ -270,12 +291,6 @@ namespace PortalGerencialBackEnd.Infrastructure.Persistence.Migrations
                 columns: new[] { "ORDEN_SAP_ID", "FECHA_HORA_CAMBIO" });
 
             migrationBuilder.CreateIndex(
-                name: "UQ_STG_OPER_HORAS_PGPM",
-                table: "STG_SAP_OPERACION_HORAS_PGPM",
-                columns: new[] { "ORDEN_SAP_ID", "OPERACION" },
-                unique: true);
-
-            migrationBuilder.CreateIndex(
                 name: "IX_STG_ORDEN_CLASE_PGPM",
                 table: "STG_SAP_ORDEN_PGPM",
                 column: "CLASE_ORDEN");
@@ -294,6 +309,9 @@ namespace PortalGerencialBackEnd.Infrastructure.Persistence.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "ALERTA_ENVIADA_PGPM");
+
             migrationBuilder.DropTable(
                 name: "CALC_AVANCE_SEMANAL_PGPM");
 

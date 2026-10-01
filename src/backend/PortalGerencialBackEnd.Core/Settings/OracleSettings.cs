@@ -17,8 +17,10 @@ namespace PortalGerencialBackEnd.Core.Settings
         public string? Esquema { get; set; }
 
         /// <summary>
-        /// Versión de SQL que genera el provider de EF (19, 21 o 23). Debe coincidir con la versión
-        /// del Oracle de producción — pendiente de confirmar con el DBA.
+        /// Versión de SQL que genera el provider de EF (19, 21 o 23; no tiene opción para 11g).
+        /// Producción es 11.2.0.4: se deja en 19 y el código evita lo que solo existe desde 12c
+        /// (IDENTITY, Take/First traducidos a FETCH FIRST, nombres de más de 30 caracteres). El
+        /// stack local corre Oracle 11g XE para que cualquier desliz falle en desarrollo.
         /// </summary>
         public int VersionSql { get; set; } = 19;
     }

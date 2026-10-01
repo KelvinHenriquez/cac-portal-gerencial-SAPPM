@@ -24,8 +24,9 @@ namespace PortalGerencialBackEnd.Infrastructure.Integraciones
                 .Select(x => new TipoReporteDto { TipoReporte = x.TipoReporte, Descripcion = x.Descripcion })
                 .ToListAsync();
 
-        public Task<UmbralesDto?> GetUmbralesAsync(string tipoReporte) =>
-            _db.VwUmbralesSemaforo
+        // Lista + FirstOrDefault en memoria: FirstOrDefaultAsync en la base genera FETCH FIRST (12c+).
+        public async Task<UmbralesDto?> GetUmbralesAsync(string tipoReporte) =>
+            (await _db.VwUmbralesSemaforo
                 .Where(x => x.TipoReporte == tipoReporte)
                 .Select(x => new UmbralesDto
                 {
@@ -33,7 +34,8 @@ namespace PortalGerencialBackEnd.Infrastructure.Integraciones
                     UmbralRojo = x.UmbralRojo,
                     UmbralNaranja = x.UmbralNaranja
                 })
-                .FirstOrDefaultAsync();
+                .ToListAsync())
+            .FirstOrDefault();
 
         public Task<List<ProgramaDto>> GetProgramasAsync() =>
             _db.VwEstructuraFamilias

@@ -11,7 +11,7 @@ namespace PortalGerencialBackEnd.Infrastructure.Persistence.Configurations
         {
             b.ToTable("LOG_EXTRACCION_PGPM");
             b.HasKey(x => x.Id).HasName("PK_LOG_EXTRACCION_PGPM");
-            b.Property(x => x.Id).ValueGeneratedOnAdd();
+            b.Property(x => x.Id).HasMaxLength(36).ValueGeneratedNever();
             b.Property(x => x.CorridaId).HasMaxLength(36);
             b.Property(x => x.Fuente).HasMaxLength(30);
             b.Property(x => x.Estado).HasMaxLength(20);
@@ -31,7 +31,7 @@ namespace PortalGerencialBackEnd.Infrastructure.Persistence.Configurations
         {
             b.ToTable("ALERTA_ENVIADA_PGPM");
             b.HasKey(x => x.Id).HasName("PK_ALERTA_ENVIADA_PGPM");
-            b.Property(x => x.Id).ValueGeneratedOnAdd();
+            b.Property(x => x.Id).HasMaxLength(36).ValueGeneratedNever();
             b.Property(x => x.Tipo).HasMaxLength(40);
             b.Property(x => x.Destinatarios).HasMaxLength(1000);
             b.Property(x => x.Asunto).HasMaxLength(200);
