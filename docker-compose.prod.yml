@@ -19,6 +19,7 @@ services:
       Oracle__Esquema: ${ORACLE_ESQUEMA:-}
       Oracle__VersionSql: ${ORACLE_VERSION_SQL:-19}
       Database__AplicarMigracionesAlArrancar: ${APLICAR_MIGRACIONES:-true}
+      Job__Habilitado: ${JOB_HABILITADO:-true}
       Jwt__Key: ${JWT_KEY}
       Jwt__Issuer: ${PUBLIC_URL}
       Jwt__Audience: PortalGerencialApi

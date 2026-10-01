@@ -637,6 +637,20 @@ namespace PortalGerencialBackEnd.Infrastructure.Persistence.Migrations
                             ActualizadoEn = new DateTime(2026, 9, 30, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             Descripcion = "Programa de reparación que se abre por defecto en Avance de Reparación.",
                             Valor = "2026"
+                        },
+                        new
+                        {
+                            Clave = "AVANCE.FORMULA_REAL",
+                            ActualizadoEn = new DateTime(2026, 9, 30, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Descripcion = "Fórmula provisional del % real de avance (pendiente 'Total Ejec. %'): HH_ORDENES_CERRADAS u ORDENES_CERRADAS.",
+                            Valor = "HH_ORDENES_CERRADAS"
+                        },
+                        new
+                        {
+                            Clave = "SAP.FECHA_CARGA_INICIAL",
+                            ActualizadoEn = new DateTime(2026, 9, 30, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Descripcion = "Fecha (yyyy-MM-dd) desde la que se extrae de SAP en la primera corrida.",
+                            Valor = "2026-01-01"
                         });
                 });
 

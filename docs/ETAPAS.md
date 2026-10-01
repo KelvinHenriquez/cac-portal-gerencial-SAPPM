@@ -10,11 +10,12 @@ montando todos los reportes y tableros gerenciales, incluida el área industrial
 |---|---|---|
 | 1 | Esqueleto: copia de Pago en Efectivo sin su dominio, Oracle Free local, login contra Oracle, shell del portal | **Hecha** |
 | 2 | Modelo de datos `_pgpm` + estructura de Oracle Forms simulada (familias, curva, requeridos, umbrales, equipos) | **Hecha** |
-| 3 | SAP simulado + Background Service de extracción y recálculo + bitácora + equipos sin clasificar | Pendiente |
+| 3 | SAP simulado + Background Service de extracción y recálculo + bitácora + equipos sin clasificar | **Hecha** |
 | 4 | Pantalla Disponibilidad de Maquinaria | Pendiente |
 | 5 | Pantalla Avance de Reparación | Pendiente |
 | 6 | Frescura de datos, monitoreo, alerta > 24 h, pruebas del cálculo | Pendiente |
-| 7 | Integración real: DDL en Oracle de CAC, vistas reales, cliente RFC con NCo, Sprint 0 | Bloqueada por pendientes externos |
+| 7 | Integración real: DDL en Oracle de CAC, vistas reales, cliente RFC con NCo | Bloqueada por pendientes externos |
+| 0 | Sprint 0: validar el cálculo con exports reales de SAP ([lista de exports](SPRINT0_EXPORTS_SAP.md)) | Esperando los exports |
 | 8 | Despliegue en el servidor Docker | Después de la 7 |
 
 ## Decisiones tomadas (30/09/2026)
@@ -64,6 +65,30 @@ Vistas de producción con los huecos a llenar: [oracle/vistas_produccion.sql](or
 - Vistas: `VW_CURVA_PLANEADA_PGPM` lleva `FAMILIA_CODIGO` (la curva es por familia) y hay una
   quinta vista, `VW_EQUIPOS_FAMILIA_PGPM` (equipo → familia por código legado).
 
+## Job de actualización y reglas de cálculo (Etapa 3)
+
+- **Cuándo corre:** todos los días a la hora de `JOB.HORA_CORRIDA_DIARIA` (05:00), y además al
+  arrancar la API si hoy todavía no hubo una corrida exitosa. Se puede correr a mano con
+  `POST /api/sistema/corridas` (luego con un botón en la pantalla de Estado de actualización). Nunca
+  corren dos a la vez. `Job:Habilitado=false` lo apaga.
+- **Pasos:** equipos → órdenes → historial de estados → horas (cada uno con delta desde la última
+  extracción OK de esa fuente, con un día de solape) → equipos sin clasificar → disponibilidad
+  (últimos `JOB.DIAS_RECALCULO_DISPONIBILIDAD` días) → avance. Cada paso queda en
+  `LOG_EXTRACCION_PGPM`. Si uno falla, la corrida se detiene y los resultados anteriores quedan
+  intactos; el encabezado lo avisa (probado rompiendo una vista a propósito).
+- **Ajuste a la regla de la sección 6.1:** una orden con fecha fin real cuenta como indisponibilidad
+  entre inicio y fin real **sin importar su estado actual**. El estado (Liberado / En Proceso) solo
+  se usa para las órdenes que todavía no tienen fecha fin: cuentan hasta hoy. Si se mirara solo el
+  estado actual, cerrar técnicamente una orden borraría su indisponibilidad del pasado.
+- **% real de avance (provisional mientras se confirma "Total Ejec. %"):** horas planificadas de las
+  órdenes ZC03 cerradas técnicamente / horas planificadas de todas las ZC03 de la familia en el
+  programa (`AVANCE.FORMULA_REAL=HH_ORDENES_CERRADAS`). Alternativa ya programada:
+  `ORDENES_CERRADAS` (cantidad). Una orden pertenece al programa si su inicio planificado cae en
+  la ventana de la familia (con 30 días de margen previo).
+- **SAP simulado:** determinista (mismo día, mismos datos) y las órdenes avanzan solas con los
+  días. Incluye brechas reales: ~5 % de reparaciones terminadas sin cierre técnico y ~15 % de
+  órdenes sin horas confirmadas, más 3 equipos que solo existen en SAP.
+
 ## Datos reales de SAP
 
 Para desarrollar (etapas 3 a 6) **no hacen falta exports de SAP**: el cliente SAP simulado genera
@@ -72,8 +97,8 @@ entran en dos momentos:
 
 1. **Sprint 0 (validación temprana, sección 6.3):** un export de SAP de 2-3 familias en un período
    ya cerrado, para comparar la disponibilidad derivada contra lo que taller sabe que pasó. Se
-   puede hacer apenas termine la Etapa 3, sin esperar el RFC. La lista exacta de transacciones y
-   columnas se entrega en ese momento.
+   puede hacer ya, sin esperar el RFC: lista exacta de transacciones y columnas en
+   [SPRINT0_EXPORTS_SAP.md](SPRINT0_EXPORTS_SAP.md).
 2. **Producción (Etapa 7):** los datos llegan solos por RFC; no hay Excel en el flujo normal.
 
 ## Pendientes
@@ -85,10 +110,12 @@ Responsable: **Kelvin (DBA)**
       equipos requeridos, umbrales — **y la tabla de equipos (Objeto Técnico / Ficha) con su familia**,
       que la spec no lista pero hace falta para el cruce por código legado y el detalle por familia.
 - [ ] Versión del Oracle de producción (`SELECT banner FROM v$version`) para fijar `Oracle:VersionSql`.
-- [ ] En la curva planeada, ¿`ACTIVIDAD_PCT` es el % de cada semana o ya viene acumulado? El portal
-      asume que es por semana y lo acumula.
+- [x] En la curva planeada, `ACTIVIDAD_PCT` es el % de cada semana (no acumulado); el portal lo
+      acumula. Confirmado el 30/09/2026.
 - [ ] Fórmulas de "Disponibilidad Comp. %" y "Total Ejec. %" (idealmente el PL/SQL original).
-- [ ] Set exacto de estados SAP que cuentan como "fuera de servicio".
+- [ ] Set exacto de estados SAP que cuentan como "fuera de servicio" (hoy: `Liberado,En Proceso`
+      en `PARAMETRO_PGPM`).
+- [ ] Fecha de arranque de SAP PM (para elegir el período del Sprint 0 y `SAP.FECHA_CARGA_INICIAL`).
 - [ ] Criterio numérico de aceptación del Sprint 0.
 
 Responsable: **ABAP** (en curso, ~2 días desde el 30/09)

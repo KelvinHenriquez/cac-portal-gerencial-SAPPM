@@ -1,12 +1,16 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using PortalGerencialBackEnd.Core.Enums;
 using PortalGerencialBackEnd.Core.Interfaces.Common;
 using PortalGerencialBackEnd.Core.Interfaces.Integraciones;
 using PortalGerencialBackEnd.Core.Interfaces.Repositories;
 using PortalGerencialBackEnd.Core.Interfaces.Services;
 using PortalGerencialBackEnd.Core.Settings;
 using PortalGerencialBackEnd.Infrastructure.Integraciones;
+using PortalGerencialBackEnd.Infrastructure.Integraciones.Local;
+using PortalGerencialBackEnd.Infrastructure.Integraciones.Produccion;
+using PortalGerencialBackEnd.Infrastructure.Jobs;
 using PortalGerencialBackEnd.Infrastructure.Persistence.Context;
 using PortalGerencialBackEnd.Infrastructure.Persistence.Interceptors;
 using PortalGerencialBackEnd.Infrastructure.Persistence.Repositories;
@@ -49,6 +53,21 @@ namespace PortalGerencialBackEnd.Infrastructure.DependencyInjection
             services.AddScoped<ITokenService, TokenService>();
             services.AddScoped<IOracleCredentialValidator, OracleCredentialValidator>();
             services.AddScoped<IStructureSource, OracleStructureSource>();
+
+            // Sección 9: DataSourceMode solo decide de dónde salen los datos de SAP. Oracle está
+            // en ambos modos.
+            var mode = configuration.GetValue<DataSourceMode?>("DataSourceMode") ?? DataSourceMode.Local;
+            if (mode == DataSourceMode.Local)
+                services.AddScoped<ISapExtractionClient, SapLocalSeedClient>();
+            else
+                services.AddScoped<ISapExtractionClient, SapRfcExtractionClient>();
+
+            // Job de extracción y recálculo (sección 6).
+            services.AddSingleton(TimeProvider.System);
+            services.AddSingleton<CoordinadorCorridas>();
+            services.AddScoped<ISistemaService, SistemaService>();
+            services.AddScoped<IProcesoActualizacionService, ProcesoActualizacionService>();
+            services.AddHostedService<ActualizacionProgramadaService>();
             services.AddSingleton<LoginAttemptLimiter>();
 
             services.Configure<JwtSettings>(configuration.GetSection("Jwt"));

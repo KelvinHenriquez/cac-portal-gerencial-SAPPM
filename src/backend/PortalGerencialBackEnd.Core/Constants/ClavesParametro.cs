@@ -23,5 +23,37 @@ namespace PortalGerencialBackEnd.Core.Constants
 
         /// <summary>Programa de reparación que se abre por defecto en Avance.</summary>
         public const string ProgramaVigente = "AVANCE.PROGRAMA_VIGENTE";
+
+        /// <summary>
+        /// Fórmula provisional del % real de avance mientras se confirma "Total Ejec. %" (sección 6.2):
+        /// HH_ORDENES_CERRADAS = horas plan de las órdenes cerradas / horas plan de todas las órdenes;
+        /// ORDENES_CERRADAS = órdenes cerradas / total de órdenes.
+        /// </summary>
+        public const string FormulaAvanceReal = "AVANCE.FORMULA_REAL";
+
+        /// <summary>Fecha (yyyy-MM-dd) desde la que se extrae de SAP la primera vez que corre el job.</summary>
+        public const string FechaCargaInicial = "SAP.FECHA_CARGA_INICIAL";
+    }
+
+    /// <summary>Fuentes (pasos) que se registran en LOG_EXTRACCION_PGPM.</summary>
+    public static class FuentesLog
+    {
+        public const string SapEquipos = "SAP_EQUIPOS";
+        public const string SapOrdenes = "SAP_ORDENES";
+        public const string SapHistorial = "SAP_HISTORIAL";
+        public const string SapHoras = "SAP_HORAS";
+        public const string CalcSinClasificar = "CALC_SIN_CLASIFICAR";
+        public const string CalcDisponibilidad = "CALC_DISPONIBILIDAD";
+        public const string CalcAvance = "CALC_AVANCE";
+
+        public static readonly string[] Todas =
+            { SapEquipos, SapOrdenes, SapHistorial, SapHoras, CalcSinClasificar, CalcDisponibilidad, CalcAvance };
+    }
+
+    public static class EstadosLog
+    {
+        public const string EnCurso = "EN_CURSO";
+        public const string Ok = "OK";
+        public const string Error = "ERROR";
     }
 }

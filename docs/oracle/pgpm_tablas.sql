@@ -485,3 +485,35 @@ END;
 
 /
 
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "EF_MIGRACIONES_PGPM" WHERE "MigrationId" = N'20261001022352_ParametrosEtapa3';
+IF v_Count = 0 THEN
+
+    BEGIN
+    INSERT INTO "PARAMETRO_PGPM" ("CLAVE", "ACTUALIZADO_EN", "DESCRIPCION", "VALOR")
+    VALUES ('AVANCE.FORMULA_REAL', TO_TIMESTAMP('2026-09-30 00:00:00.0000000', 'YYYY-MM-DD HH24:MI:SS.FF'), 'Fórmula provisional del % real de avance (pendiente ''Total Ejec. %''): HH_ORDENES_CERRADAS u ORDENES_CERRADAS.', 'HH_ORDENES_CERRADAS');
+    INSERT INTO "PARAMETRO_PGPM" ("CLAVE", "ACTUALIZADO_EN", "DESCRIPCION", "VALOR")
+    VALUES ('SAP.FECHA_CARGA_INICIAL', TO_TIMESTAMP('2026-09-30 00:00:00.0000000', 'YYYY-MM-DD HH24:MI:SS.FF'), 'Fecha (yyyy-MM-dd) desde la que se extrae de SAP en la primera corrida.', '2026-01-01');
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "EF_MIGRACIONES_PGPM" WHERE "MigrationId" = N'20261001022352_ParametrosEtapa3';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "EF_MIGRACIONES_PGPM" ("MigrationId", "ProductVersion")
+    VALUES (N''20261001022352_ParametrosEtapa3'', N''8.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+

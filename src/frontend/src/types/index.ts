@@ -16,6 +16,16 @@ export interface LoginResponse {
   passwordPorVencer: boolean;
 }
 
+export interface EstadoActualizacionDto {
+  ultimaActualizacion: string | null;
+  horasDesdeUltimaActualizacion: number | null;
+  desactualizado: boolean;
+  horasAlerta: number;
+  corridaEnCurso: boolean;
+  ultimoErrorFecha: string | null;
+  ultimoErrorMensaje: string | null;
+}
+
 export interface ApiError {
   statusCode: number;
   errorMessage: string;

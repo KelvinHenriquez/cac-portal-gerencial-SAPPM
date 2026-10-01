@@ -88,6 +88,20 @@ namespace PortalGerencialBackEnd.Infrastructure.Persistence.Configurations
                     Valor = "2026",
                     Descripcion = "Programa de reparación que se abre por defecto en Avance de Reparación.",
                     ActualizadoEn = Sembrado
+                },
+                new Parametro
+                {
+                    Clave = ClavesParametro.FormulaAvanceReal,
+                    Valor = "HH_ORDENES_CERRADAS",
+                    Descripcion = "Fórmula provisional del % real de avance (pendiente 'Total Ejec. %'): HH_ORDENES_CERRADAS u ORDENES_CERRADAS.",
+                    ActualizadoEn = Sembrado
+                },
+                new Parametro
+                {
+                    Clave = ClavesParametro.FechaCargaInicial,
+                    Valor = "2026-01-01",
+                    Descripcion = "Fecha (yyyy-MM-dd) desde la que se extrae de SAP en la primera corrida.",
+                    ActualizadoEn = Sembrado
                 });
         }
     }

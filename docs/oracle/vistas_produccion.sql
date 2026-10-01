@@ -32,8 +32,8 @@ SELECT <anio_programa>     AS ANIO_PROGRAMA,     -- VARCHAR2
 FROM   <tabla_familia_definida>;
 
 -- Curva de avance planeado por familia y semana (Paso 3, "Semana Definida Por Familia").
--- ACTIVIDAD_PCT es el % de la actividad total programado para ESA semana (no acumulado):
--- el portal lo acumula. Si en Oracle ya viene acumulado, avisar para ajustar el cálculo.
+-- ACTIVIDAD_PCT es el % de la actividad total programado para ESA semana, no acumulado
+-- (confirmado 30/09/2026): el portal lo acumula.
 CREATE OR REPLACE VIEW VW_CURVA_PLANEADA_PGPM AS
 SELECT <anio_programa>        AS ANIO_PROGRAMA,        -- VARCHAR2
        <familia_codigo>       AS FAMILIA_CODIGO,       -- VARCHAR2

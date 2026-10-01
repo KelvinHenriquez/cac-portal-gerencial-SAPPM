@@ -3,6 +3,7 @@ import { AppBar, Toolbar, Typography, Box, IconButton, useMediaQuery } from "@mu
 import { useTheme, styled } from "@mui/material/styles";
 import { IconMenu2 } from "@tabler/icons-react";
 import { useSidebar, TOPBAR_HEIGHT } from "@/store/SidebarContext";
+import IndicadorActualizacion from "./IndicadorActualizacion";
 
 const AppBarStyled = styled(AppBar)(({ theme }) => ({
   boxShadow: "none",
@@ -11,8 +12,7 @@ const AppBarStyled = styled(AppBar)(({ theme }) => ({
 }));
 
 // Mismo patrón que Header.tsx (vertical) de la plantilla de TPresto: AppBar "sticky" con el
-// toggle del sidebar y el título a la izquierda. La derecha queda reservada para el indicador
-// "Última actualización" (sección 8.4), que llega con la bitácora del job en la Etapa 3.
+// toggle del sidebar y el título a la izquierda, "Última actualización" a la derecha (sección 8.4).
 export default function Header({ titulo }: { titulo: string }) {
   const theme = useTheme();
   const isDesktop = useMediaQuery(theme.breakpoints.up("lg"));
@@ -30,6 +30,8 @@ export default function Header({ titulo }: { titulo: string }) {
         </Typography>
 
         <Box flexGrow={1} />
+
+        <IndicadorActualizacion />
       </Toolbar>
     </AppBarStyled>
   );
