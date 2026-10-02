@@ -108,6 +108,7 @@ export interface FilaDisponibilidadDto {
   asignacion: string;
   negrita: boolean;
   grupo: boolean;
+  esMiembro: boolean;
   cantEquipo: number;
   eqRequerido: number;
   eqDisponible: number;
@@ -182,6 +183,7 @@ export type EstadoEquipo = "DISPONIBLE" | "FUERA_SERVICIO" | "INACTIVO" | "SIN_S
 
 export interface EquipoDetalleDto {
   ficha: string;
+  equipoCodigo: string | null;
   descripcion: string;
   equipoSapId: string | null;
   estado: EstadoEquipo;

@@ -477,7 +477,8 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
             {
                 foreach (var familia in reporte.Familias)
                 {
-                    var delPrograma = ordenes.Where(o => ReglasPortal.EsDelPrograma(o, c.Equipos, reporte, familia.FamiliaCodigo, c.Reglas)).ToList();
+                    var equiposPrograma = ReglasPortal.EquiposDelPrograma(familia, c.Equipos);
+                    var delPrograma = ordenes.Where(o => ReglasPortal.EsDelPrograma(o, c.Equipos, reporte, equiposPrograma, c.Reglas)).ToList();
                     var ordenesAvance = delPrograma.Select(o => new OrdenAvance(o.OrdenSapId, ReglasPortal.CierreSiCerrada(o, c.Reglas))).ToList();
                     var actividades = delPrograma.SelectMany(o => o.Operaciones)
                         .Select(op => new ActividadAvance(ReglasPortal.DiasActividad(op), ReglasPortal.Terminada(op), op.Programada))

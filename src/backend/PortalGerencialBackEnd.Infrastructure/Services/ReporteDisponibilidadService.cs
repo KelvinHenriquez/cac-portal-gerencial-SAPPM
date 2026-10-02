@@ -93,18 +93,30 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
             var semanales = (await _db.CalcDisponibilidadSemanal.AsNoTracking().Where(s => s.ReporteId == reporteId).ToListAsync())
                 .ToDictionary(s => (s.AsignacionId, s.NoSemana));
 
+            // Una fila de grupo va seguida de sus miembros (cada equipo como fila propia) hasta el
+            // próximo grupo: los miembros se muestran, pero "Todas" cuenta solo el grupo.
+            var miembros = new HashSet<int>();
+            var dentroDeGrupo = false;
+            foreach (var a in b.Config.Asignaciones)
+            {
+                if (a.Grupo) dentroDeGrupo = true;
+                else if (dentroDeGrupo) miembros.Add(a.AsignacionId);
+            }
+
             var actuales = new List<(AsignacionDto Asig, int Equipos, int Disponibles)>();
             foreach (var a in b.Config.Asignaciones)
             {
                 var equipos = a.Equipos.Where(b.Mapeo.CuentaParaDisponibilidad).ToList();
                 var foto = CalculadoraDisponibilidad.FotosDelDia(equipos, a.CantRequerida, new[] { instante.Hour }, ventanas, instante.Date).Single();
-                actuales.Add((a, equipos.Count, foto.EqDisponible));
+                if (!miembros.Contains(a.AsignacionId))
+                    actuales.Add((a, equipos.Count, foto.EqDisponible));
                 reporte.Filas.Add(new FilaDisponibilidadDto
                 {
                     AsignacionId = a.AsignacionId,
                     Asignacion = a.Nombre,
                     Negrita = a.Negrita,
                     Grupo = a.Grupo,
+                    EsMiembro = miembros.Contains(a.AsignacionId),
                     CantEquipo = equipos.Count,
                     EqRequerido = a.CantRequerida,
                     EqDisponible = foto.EqDisponible,
@@ -142,6 +154,7 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
                     Semanas = reporte.Semanas.Select(s =>
                     {
                         var celdas = b.Config.Asignaciones
+                            .Where(a => !miembros.Contains(a.AsignacionId))
                             .Select(a => semanales.TryGetValue((a.AsignacionId, s.NoSemana), out var c) ? c : null)
                             .OfType<Core.Entities.Calculo.CalcDisponibilidadSemanal>()
                             .ToList();
@@ -276,6 +289,7 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
                 return new EquipoDetalleDto
                 {
                     Ficha = legado,
+                    EquipoCodigo = oracle?.EquipoCodigo,
                     Descripcion = oracle?.Descripcion ?? legado,
                     EquipoSapId = sapId,
                     Estado = !b.Mapeo.CuentaParaDisponibilidad(legado) ? "INACTIVO"

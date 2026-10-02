@@ -26,8 +26,20 @@ namespace PortalGerencialBackEnd.Infrastructure.Integraciones.Local
                 return _datos;
 
             var equipos = await _structureSource.GetEquiposFamiliaAsync();
+            // La ventana de cada familia sale de las semanas de su plan que tienen actividades (las
+            // fechas estimadas de la familia en Oracle no sirven: son de un día); sus equipos, de las
+            // OT que tiene asignadas.
             var programas = (await _structureSource.GetConfigsAvanceAsync())
-                .SelectMany(r => r.Familias.Select(f => new SimuladorSap.ProgramaFamilia(r.ReporteId, f.FamiliaCodigo, f.FechaEstInicio, f.FechaEstFin)));
+                .SelectMany(r => r.Familias.Select(f =>
+                {
+                    var conPlan = f.Semanas.Where(s => s.Actividad > 0 || s.Dias > 0).ToList();
+                    return new SimuladorSap.ProgramaFamilia(
+                        r.ReporteId,
+                        f.FamiliaCodigo,
+                        conPlan.Count > 0 ? conPlan.Min(s => s.FechaInicio) : f.FechaEstInicio,
+                        conPlan.Count > 0 ? conPlan.Max(s => s.FechaFin) : f.FechaEstFin,
+                        f.Ordenes.Count > 0 ? f.Ordenes.Select(o => o.CodigoLegado).ToHashSet(StringComparer.OrdinalIgnoreCase) : null);
+                }));
 
             _datos = SimuladorSap.Generar(
                 equipos.Select(e => new SimuladorSap.EquipoOracle(e.CodigoLegado, e.Descripcion, e.FamiliaCodigo, e.Activo)),

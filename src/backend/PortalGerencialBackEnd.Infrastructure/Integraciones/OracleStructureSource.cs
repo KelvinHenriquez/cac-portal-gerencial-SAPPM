@@ -112,6 +112,8 @@ namespace PortalGerencialBackEnd.Infrastructure.Integraciones
             var familias = (await _db.VwAvanceFamilias.AsNoTracking().Where(f => ids.Contains(f.ReporteId)).ToListAsync()).ToLookup(f => f.ReporteId);
             var semanas = (await _db.VwAvanceSemanas.AsNoTracking().Where(s => ids.Contains(s.ReporteId)).ToListAsync())
                 .ToLookup(s => (s.ReporteId, s.FamiliaCodigo));
+            var ordenes = (await _db.VwAvanceOts.AsNoTracking().Where(o => ids.Contains(o.ReporteId)).ToListAsync())
+                .ToLookup(o => (o.ReporteId, o.FamiliaCodigo));
 
             return reportes.OrderBy(r => r.ReporteId).Select(r => new ConfigAvanceDto
             {
@@ -139,6 +141,13 @@ namespace PortalGerencialBackEnd.Infrastructure.Integraciones
                         FechaFin = s.FechaFin.Date,
                         Actividad = s.Actividad,
                         Dias = s.Dias
+                    }).ToList(),
+                    Ordenes = ordenes[(r.ReporteId, f.FamiliaCodigo)].OrderBy(o => o.NoOt).Select(o => new OtAsignadaDto
+                    {
+                        NoOt = o.NoOt,
+                        CodigoLegado = o.CodigoLegado.Trim(),
+                        CantActividad = o.CantActividad,
+                        CantDias = o.CantDias
                     }).ToList()
                 }).ToList()
             }).ToList();
@@ -155,6 +164,7 @@ namespace PortalGerencialBackEnd.Infrastructure.Integraciones
                 .Select(x => new EquipoFamiliaDto
                 {
                     CodigoLegado = x.CodigoLegado.Trim(),
+                    EquipoCodigo = x.EquipoCodigo?.Trim(),
                     Descripcion = x.Descripcion,
                     FamiliaCodigo = x.FamiliaCodigo,
                     Activo = Si(x.Activo)

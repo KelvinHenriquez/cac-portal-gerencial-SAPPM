@@ -76,6 +76,16 @@ namespace PortalGerencialBackEnd.Infrastructure.Persistence.Configurations
         }
     }
 
+    public class VwAvanceOtConfiguration : IEntityTypeConfiguration<VwAvanceOt>
+    {
+        public void Configure(EntityTypeBuilder<VwAvanceOt> b)
+        {
+            b.HasNoKey().ToView("VW_AVANCE_OT_PGPM");
+            b.Property(x => x.CantActividad).HasPrecision(10, 2);
+            b.Property(x => x.CantDias).HasPrecision(10, 2);
+        }
+    }
+
     public class VwAvanceSemanaConfiguration : IEntityTypeConfiguration<VwAvanceSemana>
     {
         public void Configure(EntityTypeBuilder<VwAvanceSemana> b)

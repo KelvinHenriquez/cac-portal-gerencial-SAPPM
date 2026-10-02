@@ -3,6 +3,7 @@ namespace PortalGerencialBackEnd.Core.Dtos.Estructura
     public class EquipoFamiliaDto
     {
         public string CodigoLegado { get; set; } = default!;
+        public string? EquipoCodigo { get; set; }
         public string Descripcion { get; set; } = default!;
         public string FamiliaCodigo { get; set; } = default!;
         public bool Activo { get; set; }
@@ -88,6 +89,17 @@ namespace PortalGerencialBackEnd.Core.Dtos.Estructura
         public DateTime FechaEstFin { get; set; }
         public int CantEquipo { get; set; }
         public List<SemanaPlanDto> Semanas { get; set; } = new();
+
+        /// <summary>OT asignadas a la familia en Oracle: sus equipos son los del programa.</summary>
+        public List<OtAsignadaDto> Ordenes { get; set; } = new();
+    }
+
+    public class OtAsignadaDto
+    {
+        public string NoOt { get; set; } = default!;
+        public string CodigoLegado { get; set; } = default!;
+        public decimal CantActividad { get; set; }
+        public decimal CantDias { get; set; }
     }
 
     public class SemanaPlanDto

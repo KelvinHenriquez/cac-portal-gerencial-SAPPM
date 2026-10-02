@@ -15,7 +15,8 @@ montando todos los reportes y tableros gerenciales, incluida el área industrial
 | 5 | Pantalla Avance de Reparación | **Hecha** |
 | 7 | **Alinear ambos reportes con los de Oracle** (capturas y respuestas del 01/10/2026): estructura por período/reporte/asignación, disponibilidad por hora, avance semanal con Prog. Cierre / Pend. Ant. / T. Pend. R., drill-downs como Oracle | **Hecha** |
 | 6 | Frescura de datos, monitoreo, alerta > 24 h, pruebas del cálculo | **Hecha** |
-| 8 | Integración real: DDL en Oracle de CAC, vistas reales, cliente RFC con NCo ([Anexo A v2](ANEXO_A_V2_ABAP.md)) | Bloqueada por pendientes externos |
+| 7b | Ajustes por las respuestas del 02/10/2026: grupos de equipos, OT asignadas a familia, plan por días, disponibilidad solo con correctivas y preventivas | **Hecha** |
+| 8 | Integración real: DDL en Oracle de CAC, vistas reales, cliente RFC con NCo ([Anexo A v2](ANEXO_A_V2_ABAP.md)) | 8a (vistas reales) espera la salida de `explorar_maquinarian.sql`; 8b (RFC) espera al ABAP y a Basis |
 | 0 | Sprint 0: validar el cálculo con exports reales de SAP ([lista de exports](SPRINT0_EXPORTS_SAP.md)) | Esperando los exports |
 | 9 | Despliegue en el servidor Docker | Después de la 8 |
 
@@ -223,6 +224,44 @@ en producción hasta que se decida (sin destinatarios no envía nada, solo regis
 - Todo probado en local contra Oracle 11g XE: corrida completa (~14 s), 40 pruebas automáticas,
   pantallas verificadas en el navegador (escritorio y teléfono).
 
+## Respuestas del 02/10/2026 y lo que cambian (Etapa 7b)
+
+- **% programado por días**, no por cantidad de actividades (`AVANCE.BASE_PLAN=DIAS`).
+- La Fecha Est. de la familia no se usa: el plan es lo distribuido por semana (julio a diciembre).
+- Dentro de su familia todas las órdenes pesan igual (ya era así en la medida por órdenes).
+- **El programa de cada familia son las OT asignadas** ("Órdenes de Trabajo Asignada a Familia"):
+  vista nueva `VW_AVANCE_OT_PGPM`. Una orden de SAP entra al programa si su equipo está entre los
+  asignados; si el reporte no tiene OT asignadas, se cae a la regla anterior (familia + ventana).
+- **Disponibilidad: cuentan correctivas y preventivas** (`DISPONIBILIDAD.CLASES_ORDEN=ZC01,ZC02`).
+  Las predictivas (ZC03) son el programa de reparación del Centro de Servicios y no sacan el
+  equipo de la disponibilidad.
+- Hrs Real Efec. = Hrs al día − correctiva: confirmado. Columnas actuales = última hora medida:
+  confirmado.
+- **Grupo** = equipos de distinta naturaleza que juntos resuelven una operación (p. ej. "Aguacatico
+  Goteo"). La fila de grupo va seguida de las filas de sus equipos: se muestran con sangría y
+  "Todas" cuenta solo el grupo (si no, se contaría doble).
+- La tabla de equipos trae Ficha (`F01168`) y Equipo (`A29017-002`): la vista de equipos suma
+  `EQUIPO_CODIGO` y el detalle de equipos lo muestra.
+- Oracle sigue en paralelo (en teoría): sirve para comparar en el Sprint 0.
+- Tablas reales: están en el esquema **MAQUINARIAN**. Con los nombres de bloques de las pantallas
+  se armó [oracle/explorar_maquinarian.sql](oracle/explorar_maquinarian.sql), que solo consulta el
+  diccionario de datos; lo corre Kelvin con su usuario y con la salida se llenan las vistas reales.
+  El portal no usa su usuario personal ni se conecta a producción desde desarrollo.
+- Verificado en local (base nueva, corrida OK, 41 pruebas): "Detallado P30" con grupos y miembros,
+  Todas 21/21/21; Centro de Servicios Todas 219/191/211; Tractores 40 equipos en el Programa de
+  Reparación y 4 en Nivelación.
+
+## Qué sigue
+
+1. **8a — Vistas reales (depende de Kelvin):** correr `explorar_maquinarian.sql`, guardar la salida
+   en `docs/oracle/exploracion_maquinarian.txt`. Con eso se escribe `vistas_produccion.sql` sin
+   huecos y se prueba contra una copia de esas tablas en el Oracle local.
+2. **Sprint 0 (depende de Kelvin):** exports de SAP de julio a septiembre
+   ([lista](SPRINT0_EXPORTS_SAP.md)). Se construye un importador de Excel como tercera fuente de
+   SAP (además del simulador y el RFC) y se compara contra los reportes de Oracle.
+3. **8b — RFC real (depende del ABAP y de Basis):** cliente NCo contra los 5 módulos del Anexo A v2.
+4. **9 — Despliegue** en el servidor Windows con Docker.
+
 ## Datos reales de SAP
 
 Para desarrollar (etapas 3 a 6) **no hacen falta exports de SAP**: el cliente SAP simulado genera
@@ -238,6 +277,10 @@ entran en dos momentos:
 ## Pendientes
 
 Responsable: **Kelvin (DBA)**
+- [ ] Correr `oracle/explorar_maquinarian.sql` (solo diccionario de datos) y guardar la salida.
+- [ ] ¿Qué código tiene SAP como legado: la Ficha (`F01168`) o el Equipo (`A29017-002`)?
+- [ ] Confirmar que en un reporte con grupos, las filas que siguen al grupo son sus equipos y
+      "Todas" debe contar solo el grupo.
 - [ ] Esquema/tablespace real para los objetos `_pgpm` y usuario técnico del portal con CREATE TABLE,
       CREATE VIEW, CREATE SEQUENCE (o correr el script de migraciones una vez y dejarle solo DML).
 - [ ] Nombres reales de las tablas del Sistema de Órdenes de Trabajo: familias, curva por semana,
@@ -246,21 +289,22 @@ Responsable: **Kelvin (DBA)**
 - [x] Versión del Oracle de producción: **11.2.0.4** (01/10/2026). Ver reglas por ser 11g arriba.
 - [x] En la curva planeada, `ACTIVIDAD_PCT` es el % de cada semana (no acumulado); el portal lo
       acumula. Confirmado el 30/09/2026.
-- [ ] Fórmulas de "Disponibilidad Comp. %" y "Total Ejec. %" (idealmente el PL/SQL original).
-- [ ] Set exacto de estados SAP que cuentan como "fuera de servicio" (hoy: `Liberado,En Proceso`
-      en `PARAMETRO_PGPM`).
+- [x] "Disponibilidad Comp. %" es una meta configurada por asignación; "Total Ejec. %" = suma del real semanal.
+- [x] Fuera de servicio: desde la creación de la orden hasta su cierre técnico; clases ZC01 y ZC02.
 - [x] Fecha de arranque de SAP PM: 01/06/2026, estable desde julio.
 - [ ] Criterio numérico de aceptación del Sprint 0.
 - [x] Fila "Todas (Promedio)": total disponible / total requerido (30/09/2026).
 - [x] Avance: "Prog. Cierre" y opciones de "Ref. Plan." — resuelto con las capturas (ver arriba).
-- [ ] Avance: ¿la tolerancia de 5 puntos para naranja/rojo está bien, o taller usa otra?
+- [x] Avance sin colores de atraso, como Oracle (solo se resalta la semana actual).
 
 Responsable: **ABAP** (en curso, ~2 días desde el 30/09)
-- [ ] Módulos RFC del Anexo A, campo real del código legado, retención de JCDS.
+- [ ] Módulos RFC del Anexo A v2, campo real del código legado, retención de JCDS.
+- [ ] Cómo distinguir en SAP una actividad del plan original (hoja de ruta) de una agregada durante
+      la reparación (probablemente por fecha plan distinta a la del paquete).
 
 Responsable: **Basis / Infraestructura**
-- [ ] Marcar los 4 módulos como Remote-Enabled, usuario de comunicación con S_RFC, firewall al gateway.
+- [ ] Marcar los 5 módulos como Remote-Enabled, usuario de comunicación con S_RFC, firewall al gateway.
 - [ ] Licencia/instalación de SAP .NET Connector (NCo). Ojo: Docker en Windows corre contenedores
       **Linux** por defecto (como en la laptop). Hay que confirmar que NCo corre dentro de un
       contenedor Linux; si no, el job de extracción puede correr como servicio de Windows fuera de
-      Docker, o en un contenedor Windows. Se valida al inicio de la Etapa 7.
+      Docker, o en un contenedor Windows. Se valida al inicio de la Etapa 8b.

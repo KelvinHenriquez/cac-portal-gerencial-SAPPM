@@ -83,13 +83,26 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
                 : Core.Calculo.BasePlan.Actividades;
 
         /// <summary>
-        /// Orden del programa de una familia: su equipo es de la familia (Oracle), no está excluida y
-        /// fue planificada (o creada) dentro de la ventana del reporte, con un mes de margen previo.
+        /// Equipos (códigos legados) del programa de una familia en un reporte: los de las OT que
+        /// Oracle le tiene asignadas. Una misma familia puede estar en varios reportes con equipos
+        /// distintos. Si el reporte no tiene OT asignadas todavía, todos los equipos de la familia.
         /// </summary>
-        public static bool EsDelPrograma(StgSapOrden o, MapeoEquipos m, ConfigAvanceDto reporte, string familia, ReglasVentana reglas)
+        public static HashSet<string> EquiposDelPrograma(FamiliaAvanceDto familia, MapeoEquipos m) =>
+            (familia.Ordenes.Count > 0
+                ? familia.Ordenes.Select(o => o.CodigoLegado)
+                : m.EquiposOracle.Values.Where(e => e.FamiliaCodigo == familia.FamiliaCodigo).Select(e => e.CodigoLegado))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>
+        /// Orden SAP del programa de una familia: su equipo es uno de los del programa, no está
+        /// excluida y fue planificada (o creada) dentro de la ventana del reporte, con un mes de
+        /// margen previo. (Las fechas estimadas de la familia en Oracle no se usan: son de un día.)
+        /// </summary>
+        public static bool EsDelPrograma(StgSapOrden o, MapeoEquipos m, ConfigAvanceDto reporte, ISet<string> equiposPrograma, ReglasVentana reglas)
         {
             var referencia = o.FechaInicioPlan ?? o.FechaCreacion;
-            return m.FamiliaDeEquipoSap(o.EquipoSapId) == familia
+            return o.EquipoSapId != null && m.LegadoPorEquipoSap.TryGetValue(o.EquipoSapId, out var legado)
+                   && equiposPrograma.Contains(legado)
                    && !reglas.EstadosExcluidos.Contains(o.EstadoOrden)
                    && referencia >= reporte.FechaInicio.AddDays(-30)
                    && referencia < reporte.FechaFin.AddDays(1);

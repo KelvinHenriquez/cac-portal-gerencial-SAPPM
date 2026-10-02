@@ -105,6 +105,7 @@ export default function DialogoEquiposAsignacion({
                 <TableHead>
                   <TableRow>
                     <TableCell>Ficha</TableCell>
+                    <TableCell>Equipo</TableCell>
                     <TableCell>Equipo SAP</TableCell>
                     <TableCell>Descripción</TableCell>
                     <TableCell>Estado</TableCell>
@@ -115,6 +116,7 @@ export default function DialogoEquiposAsignacion({
                   {equipos.map((e) => (
                     <TableRow key={e.ficha} hover>
                       <TableCell sx={{ fontWeight: 600, whiteSpace: "nowrap" }}>{e.ficha}</TableCell>
+                      <TableCell sx={{ whiteSpace: "nowrap" }}>{e.equipoCodigo ?? "—"}</TableCell>
                       <TableCell sx={{ fontVariantNumeric: "tabular-nums" }}>{e.equipoSapId ?? "—"}</TableCell>
                       <TableCell>{e.descripcion}</TableCell>
                       <TableCell>
@@ -138,7 +140,7 @@ export default function DialogoEquiposAsignacion({
                   ))}
                   {equipos.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={5} align="center" sx={{ color: "text.secondary", py: 4 }}>
+                      <TableCell colSpan={6} align="center" sx={{ color: "text.secondary", py: 4 }}>
                         Ningún equipo fuera de servicio.
                       </TableCell>
                     </TableRow>

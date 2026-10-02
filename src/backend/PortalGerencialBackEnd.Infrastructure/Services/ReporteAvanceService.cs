@@ -156,9 +156,10 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
             var clases = ReglasPortal.ClasesAvance(parametros).ToList();
             var mapeo = await MapeoEquipos.CargarAsync(_db, _estructura);
 
-            var equiposSap = mapeo.EquiposOracle.Values
-                .Where(e => e.FamiliaCodigo == familiaCodigo && mapeo.EquipoSapPorLegado.ContainsKey(e.CodigoLegado))
-                .Select(e => mapeo.EquipoSapPorLegado[e.CodigoLegado])
+            var equiposPrograma = ReglasPortal.EquiposDelPrograma(familia, mapeo);
+            var equiposSap = equiposPrograma
+                .Where(mapeo.EquipoSapPorLegado.ContainsKey)
+                .Select(legado => mapeo.EquipoSapPorLegado[legado])
                 .ToList();
 
             var ordenes = new List<StgSapOrden>();
@@ -170,7 +171,7 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
                     .ToListAsync());
             }
 
-            return (ordenes.Where(o => ReglasPortal.EsDelPrograma(o, mapeo, config, familiaCodigo, reglas)).ToList(), mapeo, reglas, familia);
+            return (ordenes.Where(o => ReglasPortal.EsDelPrograma(o, mapeo, config, equiposPrograma, reglas)).ToList(), mapeo, reglas, familia);
         }
 
         public async Task<DetalleSemanaAvanceDto> GetDetalleSemanaAsync(int reporteId, string familiaCodigo, int noSemana)

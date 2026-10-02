@@ -38,7 +38,16 @@ namespace PortalGerencialBackEnd.Core.Dtos.Disponibilidad
 
         public string Asignacion { get; set; } = default!;
         public bool Negrita { get; set; }
+
+        /// <summary>Fila de grupo: varios equipos de distinta naturaleza que juntos resuelven una operación.</summary>
         public bool Grupo { get; set; }
+
+        /// <summary>
+        /// Fila de detalle de un grupo (las que le siguen hasta el próximo grupo): sus equipos ya
+        /// están contados en la fila del grupo, así que no entra en "Todas".
+        /// </summary>
+        public bool EsMiembro { get; set; }
+
         public int CantEquipo { get; set; }
         public int EqRequerido { get; set; }
         public int EqDisponible { get; set; }
@@ -131,6 +140,10 @@ namespace PortalGerencialBackEnd.Core.Dtos.Disponibilidad
     public class EquipoDetalleDto
     {
         public string Ficha { get; set; } = default!;
+
+        /// <summary>Código de equipo de Oracle (A29017-002).</summary>
+        public string? EquipoCodigo { get; set; }
+
         public string Descripcion { get; set; } = default!;
         public string? EquipoSapId { get; set; }
 

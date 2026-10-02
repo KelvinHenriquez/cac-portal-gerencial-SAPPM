@@ -12,7 +12,7 @@ using PortalGerencialBackEnd.Infrastructure.Persistence.Context;
 namespace PortalGerencialBackEnd.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(PortalGerencialDbContext))]
-    [Migration("20261001224008_ModeloInicialPgpm")]
+    [Migration("20261002125323_ModeloInicialPgpm")]
     partial class ModeloInicialPgpm
     {
         /// <inheritdoc />
@@ -463,6 +463,45 @@ namespace PortalGerencialBackEnd.Infrastructure.Persistence.Migrations
                     b.ToView("VW_AVANCE_FAMILIA_PGPM", (string)null);
                 });
 
+            modelBuilder.Entity("PortalGerencialBackEnd.Core.Entities.Estructura.VwAvanceOt", b =>
+                {
+                    b.Property<decimal>("CantActividad")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("DECIMAL(10,2)")
+                        .HasColumnName("CANT_ACTIVIDAD");
+
+                    b.Property<decimal>("CantDias")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("DECIMAL(10,2)")
+                        .HasColumnName("CANT_DIAS");
+
+                    b.Property<string>("CodigoLegado")
+                        .IsRequired()
+                        .IsUnicode(false)
+                        .HasColumnType("VARCHAR2(4000)")
+                        .HasColumnName("CODIGO_LEGADO");
+
+                    b.Property<string>("FamiliaCodigo")
+                        .IsRequired()
+                        .IsUnicode(false)
+                        .HasColumnType("VARCHAR2(4000)")
+                        .HasColumnName("FAMILIA_CODIGO");
+
+                    b.Property<string>("NoOt")
+                        .IsRequired()
+                        .IsUnicode(false)
+                        .HasColumnType("VARCHAR2(4000)")
+                        .HasColumnName("NO_OT");
+
+                    b.Property<int>("ReporteId")
+                        .HasColumnType("NUMBER(10)")
+                        .HasColumnName("REPORTE_ID");
+
+                    b.ToTable((string)null);
+
+                    b.ToView("VW_AVANCE_OT_PGPM", (string)null);
+                });
+
             modelBuilder.Entity("PortalGerencialBackEnd.Core.Entities.Estructura.VwAvancePeriodo", b =>
                 {
                     b.Property<string>("Descripcion")
@@ -740,6 +779,11 @@ namespace PortalGerencialBackEnd.Infrastructure.Persistence.Migrations
                         .HasColumnType("VARCHAR2(4000)")
                         .HasColumnName("DESCRIPCION");
 
+                    b.Property<string>("EquipoCodigo")
+                        .IsUnicode(false)
+                        .HasColumnType("VARCHAR2(4000)")
+                        .HasColumnName("EQUIPO_CODIGO");
+
                     b.Property<string>("FamiliaCodigo")
                         .IsRequired()
                         .IsUnicode(false)
@@ -882,8 +926,8 @@ namespace PortalGerencialBackEnd.Infrastructure.Persistence.Migrations
                         {
                             Clave = "DISPONIBILIDAD.CLASES_ORDEN",
                             ActualizadoEn = new DateTime(2026, 10, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Descripcion = "Clases de orden que dejan equipos fuera de servicio, separadas por coma; * = todas. Pendiente: ¿cuentan las ZC03 del programa de reparación?",
-                            Valor = "*"
+                            Descripcion = "Clases de orden que dejan equipos fuera de servicio, separadas por coma; * = todas. Cuentan correctivas y preventivas; las predictivas del programa de reparación (ZC03) no (respuesta del 02/10/2026).",
+                            Valor = "ZC01,ZC02"
                         },
                         new
                         {
@@ -910,8 +954,8 @@ namespace PortalGerencialBackEnd.Infrastructure.Persistence.Migrations
                         {
                             Clave = "AVANCE.BASE_PLAN",
                             ActualizadoEn = new DateTime(2026, 10, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Descripcion = "Con qué se arma el % programado de cada semana: ACTIVIDADES o DIAS del plan de Oracle. Pendiente de confirmar.",
-                            Valor = "ACTIVIDADES"
+                            Descripcion = "Con qué se arma el % programado de cada semana: DIAS (respuesta del 02/10/2026: por actividades puede engañar si hay muchas actividades chicas) o ACTIVIDADES.",
+                            Valor = "DIAS"
                         },
                         new
                         {

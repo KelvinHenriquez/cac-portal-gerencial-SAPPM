@@ -88,4 +88,19 @@ public class SimuladorSapTests
         Assert.Contains(datos.Equipos, e => e.CodigoLegado == null);
         Assert.Contains(datos.Equipos, e => e.CodigoLegado == "TR-900");
     }
+
+    [Fact]
+    public void El_programa_solo_genera_reparaciones_para_los_equipos_de_sus_OT_asignadas()
+    {
+        // La misma familia en un reporte con solo tres de sus equipos (como Tractores en Nivelación).
+        var programas = new List<SimuladorSap.ProgramaFamilia>
+        {
+            new(3, "TRACTORES", new DateTime(2026, 6, 1), new DateTime(2026, 11, 27), new HashSet<string> { "TR-001", "TR-002", "TR-003" })
+        };
+        var datos = SimuladorSap.Generar(Equipos, programas, new DateTime(2026, 12, 31));
+        var legados = datos.Equipos.ToDictionary(e => e.EquipoSapId, e => e.CodigoLegado);
+
+        var conReparacion = datos.Ordenes.Where(o => o.ClaseOrden == "ZC03").Select(o => legados[o.EquipoSapId!]).ToHashSet();
+        Assert.Equal(new HashSet<string?> { "TR-001", "TR-002", "TR-003" }, conReparacion);
+    }
 }

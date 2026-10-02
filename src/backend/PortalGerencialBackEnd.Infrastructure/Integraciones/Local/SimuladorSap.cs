@@ -30,7 +30,11 @@ namespace PortalGerencialBackEnd.Infrastructure.Integraciones.Local
         public static readonly DateTime InicioSap = new(2026, 6, 1);
 
         public record EquipoOracle(string CodigoLegado, string Descripcion, string FamiliaCodigo, bool Activo);
-        public record ProgramaFamilia(int ReporteId, string FamiliaCodigo, DateTime FechaEstInicio, DateTime FechaEstFin);
+        /// <summary>
+        /// Programa de una familia en un reporte de avance: su ventana y los equipos (códigos legados)
+        /// de las OT asignadas; Equipos null = todos los de la familia.
+        /// </summary>
+        public record ProgramaFamilia(int ReporteId, string FamiliaCodigo, DateTime FechaEstInicio, DateTime FechaEstFin, ISet<string>? Equipos = null);
 
         public sealed class Datos
         {
@@ -75,7 +79,7 @@ namespace PortalGerencialBackEnd.Infrastructure.Integraciones.Local
                 if (!e.Activo)
                     continue;
 
-                foreach (var p in programasPorFamilia[e.FamiliaCodigo])
+                foreach (var p in programasPorFamilia[e.FamiliaCodigo].Where(p => p.Equipos == null || p.Equipos.Contains(e.CodigoLegado)))
                     GenerarReparacion(datos, new Random(Semilla($"{e.CodigoLegado}|ZC03|{p.ReporteId}")), indice, equipoSapId, e, puesto, p, ahora);
 
                 GenerarPreventivos(datos, new Random(Semilla($"{e.CodigoLegado}|ZC02")), indice, equipoSapId, puesto, ahora);

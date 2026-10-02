@@ -49,6 +49,7 @@ namespace PortalGerencialBackEnd.Infrastructure.Persistence.Context
         public DbSet<VwAvancePeriodo> VwAvancePeriodos => Set<VwAvancePeriodo>();
         public DbSet<VwAvanceReporte> VwAvanceReportes => Set<VwAvanceReporte>();
         public DbSet<VwAvanceFamilia> VwAvanceFamilias => Set<VwAvanceFamilia>();
+        public DbSet<VwAvanceOt> VwAvanceOts => Set<VwAvanceOt>();
         public DbSet<VwAvanceSemana> VwAvanceSemanas => Set<VwAvanceSemana>();
 
         protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)

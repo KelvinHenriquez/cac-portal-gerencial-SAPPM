@@ -8,7 +8,12 @@ namespace PortalGerencialBackEnd.Core.Entities.Estructura
 
     public class VwEquipoFamilia
     {
+        /// <summary>Ficha del equipo (F01168): el código con que hoy se cruza con SAP.</summary>
         public string CodigoLegado { get; set; } = default!;
+
+        /// <summary>Código de equipo de Oracle (A29017-002).</summary>
+        public string? EquipoCodigo { get; set; }
+
         public string Descripcion { get; set; } = default!;
         public string FamiliaCodigo { get; set; } = default!;
         public string Activo { get; set; } = default!;
@@ -97,6 +102,20 @@ namespace PortalGerencialBackEnd.Core.Entities.Estructura
         public DateTime FechaEstInicio { get; set; }
         public DateTime FechaEstFin { get; set; }
         public int CantEquipo { get; set; }
+    }
+
+    /// <summary>
+    /// "Órdenes de Trabajo Asignada a Familia": las OT de Oracle (y por lo tanto los equipos) que
+    /// forman el programa de esa familia en ese reporte.
+    /// </summary>
+    public class VwAvanceOt
+    {
+        public int ReporteId { get; set; }
+        public string FamiliaCodigo { get; set; } = default!;
+        public string NoOt { get; set; } = default!;
+        public string CodigoLegado { get; set; } = default!;
+        public decimal CantActividad { get; set; }
+        public decimal CantDias { get; set; }
     }
 
     /// <summary>"Semana Definida Por Familia": actividades y días planificados de cada semana.</summary>

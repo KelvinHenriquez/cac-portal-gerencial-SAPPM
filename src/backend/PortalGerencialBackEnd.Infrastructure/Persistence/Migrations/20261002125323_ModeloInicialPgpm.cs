@@ -294,9 +294,9 @@ namespace PortalGerencialBackEnd.Infrastructure.Persistence.Migrations
                 columns: new[] { "CLAVE", "ACTUALIZADO_EN", "DESCRIPCION", "VALOR" },
                 values: new object[,]
                 {
-                    { "AVANCE.BASE_PLAN", new DateTime(2026, 10, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "Con qué se arma el % programado de cada semana: ACTIVIDADES o DIAS del plan de Oracle. Pendiente de confirmar.", "ACTIVIDADES" },
+                    { "AVANCE.BASE_PLAN", new DateTime(2026, 10, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "Con qué se arma el % programado de cada semana: DIAS (respuesta del 02/10/2026: por actividades puede engañar si hay muchas actividades chicas) o ACTIVIDADES.", "DIAS" },
                     { "AVANCE.CLASES_ORDEN", new DateTime(2026, 10, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "Clases de orden (separadas por coma) del programa de reparación que cuentan para Avance.", "ZC03" },
-                    { "DISPONIBILIDAD.CLASES_ORDEN", new DateTime(2026, 10, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "Clases de orden que dejan equipos fuera de servicio, separadas por coma; * = todas. Pendiente: ¿cuentan las ZC03 del programa de reparación?", "*" },
+                    { "DISPONIBILIDAD.CLASES_ORDEN", new DateTime(2026, 10, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "Clases de orden que dejan equipos fuera de servicio, separadas por coma; * = todas. Cuentan correctivas y preventivas; las predictivas del programa de reparación (ZC03) no (respuesta del 02/10/2026).", "ZC01,ZC02" },
                     { "DISPONIBILIDAD.CORRECTIVAS_SEGUN_AVISO", new DateTime(2026, 10, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "S = una correctiva con aviso solo deja el equipo fuera si el aviso indica parada, desde el inicio hasta el fin de la avería.", "S" },
                     { "DISPONIBILIDAD.INICIO_VENTANA", new DateTime(2026, 10, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "Desde cuándo cuenta fuera de servicio: CREACION de la orden (respuesta del 01/10/2026) o INICIO_REAL.", "CREACION" },
                     { "JOB.DIAS_RECALCULO_DISPONIBILIDAD", new DateTime(2026, 10, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "Días hacia atrás que se recalcula la disponibilidad en cada corrida.", "120" },

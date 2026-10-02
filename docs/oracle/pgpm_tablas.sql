@@ -27,7 +27,7 @@ END;
 DECLARE
     v_Count INTEGER;
 BEGIN
-SELECT COUNT(*) INTO v_Count FROM "EF_MIGRACIONES_PGPM" WHERE "MigrationId" = N'20261001224008_ModeloInicialPgpm';
+SELECT COUNT(*) INTO v_Count FROM "EF_MIGRACIONES_PGPM" WHERE "MigrationId" = N'20261002125323_ModeloInicialPgpm';
 IF v_Count = 0 THEN
 
     BEGIN 
@@ -51,7 +51,7 @@ END;
 DECLARE
     v_Count INTEGER;
 BEGIN
-SELECT COUNT(*) INTO v_Count FROM "EF_MIGRACIONES_PGPM" WHERE "MigrationId" = N'20261001224008_ModeloInicialPgpm';
+SELECT COUNT(*) INTO v_Count FROM "EF_MIGRACIONES_PGPM" WHERE "MigrationId" = N'20261002125323_ModeloInicialPgpm';
 IF v_Count = 0 THEN
 
     BEGIN 
@@ -86,7 +86,7 @@ END;
 DECLARE
     v_Count INTEGER;
 BEGIN
-SELECT COUNT(*) INTO v_Count FROM "EF_MIGRACIONES_PGPM" WHERE "MigrationId" = N'20261001224008_ModeloInicialPgpm';
+SELECT COUNT(*) INTO v_Count FROM "EF_MIGRACIONES_PGPM" WHERE "MigrationId" = N'20261002125323_ModeloInicialPgpm';
 IF v_Count = 0 THEN
 
     BEGIN 
@@ -121,7 +121,7 @@ END;
 DECLARE
     v_Count INTEGER;
 BEGIN
-SELECT COUNT(*) INTO v_Count FROM "EF_MIGRACIONES_PGPM" WHERE "MigrationId" = N'20261001224008_ModeloInicialPgpm';
+SELECT COUNT(*) INTO v_Count FROM "EF_MIGRACIONES_PGPM" WHERE "MigrationId" = N'20261002125323_ModeloInicialPgpm';
 IF v_Count = 0 THEN
 
     BEGIN 
@@ -159,7 +159,7 @@ END;
 DECLARE
     v_Count INTEGER;
 BEGIN
-SELECT COUNT(*) INTO v_Count FROM "EF_MIGRACIONES_PGPM" WHERE "MigrationId" = N'20261001224008_ModeloInicialPgpm';
+SELECT COUNT(*) INTO v_Count FROM "EF_MIGRACIONES_PGPM" WHERE "MigrationId" = N'20261002125323_ModeloInicialPgpm';
 IF v_Count = 0 THEN
 
     BEGIN 
@@ -184,7 +184,7 @@ END;
 DECLARE
     v_Count INTEGER;
 BEGIN
-SELECT COUNT(*) INTO v_Count FROM "EF_MIGRACIONES_PGPM" WHERE "MigrationId" = N'20261001224008_ModeloInicialPgpm';
+SELECT COUNT(*) INTO v_Count FROM "EF_MIGRACIONES_PGPM" WHERE "MigrationId" = N'20261002125323_ModeloInicialPgpm';
 IF v_Count = 0 THEN
 
     BEGIN 
@@ -211,7 +211,7 @@ END;
 DECLARE
     v_Count INTEGER;
 BEGIN
-SELECT COUNT(*) INTO v_Count FROM "EF_MIGRACIONES_PGPM" WHERE "MigrationId" = N'20261001224008_ModeloInicialPgpm';
+SELECT COUNT(*) INTO v_Count FROM "EF_MIGRACIONES_PGPM" WHERE "MigrationId" = N'20261002125323_ModeloInicialPgpm';
 IF v_Count = 0 THEN
 
     BEGIN 
@@ -232,7 +232,7 @@ END;
 DECLARE
     v_Count INTEGER;
 BEGIN
-SELECT COUNT(*) INTO v_Count FROM "EF_MIGRACIONES_PGPM" WHERE "MigrationId" = N'20261001224008_ModeloInicialPgpm';
+SELECT COUNT(*) INTO v_Count FROM "EF_MIGRACIONES_PGPM" WHERE "MigrationId" = N'20261002125323_ModeloInicialPgpm';
 IF v_Count = 0 THEN
 
     BEGIN 
@@ -261,7 +261,7 @@ END;
 DECLARE
     v_Count INTEGER;
 BEGIN
-SELECT COUNT(*) INTO v_Count FROM "EF_MIGRACIONES_PGPM" WHERE "MigrationId" = N'20261001224008_ModeloInicialPgpm';
+SELECT COUNT(*) INTO v_Count FROM "EF_MIGRACIONES_PGPM" WHERE "MigrationId" = N'20261002125323_ModeloInicialPgpm';
 IF v_Count = 0 THEN
 
     BEGIN 
@@ -284,7 +284,7 @@ END;
 DECLARE
     v_Count INTEGER;
 BEGIN
-SELECT COUNT(*) INTO v_Count FROM "EF_MIGRACIONES_PGPM" WHERE "MigrationId" = N'20261001224008_ModeloInicialPgpm';
+SELECT COUNT(*) INTO v_Count FROM "EF_MIGRACIONES_PGPM" WHERE "MigrationId" = N'20261002125323_ModeloInicialPgpm';
 IF v_Count = 0 THEN
 
     BEGIN 
@@ -308,7 +308,7 @@ END;
 DECLARE
     v_Count INTEGER;
 BEGIN
-SELECT COUNT(*) INTO v_Count FROM "EF_MIGRACIONES_PGPM" WHERE "MigrationId" = N'20261001224008_ModeloInicialPgpm';
+SELECT COUNT(*) INTO v_Count FROM "EF_MIGRACIONES_PGPM" WHERE "MigrationId" = N'20261002125323_ModeloInicialPgpm';
 IF v_Count = 0 THEN
 
     BEGIN 
@@ -343,7 +343,7 @@ END;
 DECLARE
     v_Count INTEGER;
 BEGIN
-SELECT COUNT(*) INTO v_Count FROM "EF_MIGRACIONES_PGPM" WHERE "MigrationId" = N'20261001224008_ModeloInicialPgpm';
+SELECT COUNT(*) INTO v_Count FROM "EF_MIGRACIONES_PGPM" WHERE "MigrationId" = N'20261002125323_ModeloInicialPgpm';
 IF v_Count = 0 THEN
 
     BEGIN 
@@ -377,16 +377,16 @@ END;
 DECLARE
     v_Count INTEGER;
 BEGIN
-SELECT COUNT(*) INTO v_Count FROM "EF_MIGRACIONES_PGPM" WHERE "MigrationId" = N'20261001224008_ModeloInicialPgpm';
+SELECT COUNT(*) INTO v_Count FROM "EF_MIGRACIONES_PGPM" WHERE "MigrationId" = N'20261002125323_ModeloInicialPgpm';
 IF v_Count = 0 THEN
 
     BEGIN
     INSERT INTO "PARAMETRO_PGPM" ("CLAVE", "ACTUALIZADO_EN", "DESCRIPCION", "VALOR")
-    VALUES ('AVANCE.BASE_PLAN', TO_DATE('2026-10-01 00:00:00', 'YYYY-MM-DD HH24:MI:SS'), 'Con qué se arma el % programado de cada semana: ACTIVIDADES o DIAS del plan de Oracle. Pendiente de confirmar.', 'ACTIVIDADES');
+    VALUES ('AVANCE.BASE_PLAN', TO_DATE('2026-10-01 00:00:00', 'YYYY-MM-DD HH24:MI:SS'), 'Con qué se arma el % programado de cada semana: DIAS (respuesta del 02/10/2026: por actividades puede engañar si hay muchas actividades chicas) o ACTIVIDADES.', 'DIAS');
     INSERT INTO "PARAMETRO_PGPM" ("CLAVE", "ACTUALIZADO_EN", "DESCRIPCION", "VALOR")
     VALUES ('AVANCE.CLASES_ORDEN', TO_DATE('2026-10-01 00:00:00', 'YYYY-MM-DD HH24:MI:SS'), 'Clases de orden (separadas por coma) del programa de reparación que cuentan para Avance.', 'ZC03');
     INSERT INTO "PARAMETRO_PGPM" ("CLAVE", "ACTUALIZADO_EN", "DESCRIPCION", "VALOR")
-    VALUES ('DISPONIBILIDAD.CLASES_ORDEN', TO_DATE('2026-10-01 00:00:00', 'YYYY-MM-DD HH24:MI:SS'), 'Clases de orden que dejan equipos fuera de servicio, separadas por coma; * = todas. Pendiente: ¿cuentan las ZC03 del programa de reparación?', '*');
+    VALUES ('DISPONIBILIDAD.CLASES_ORDEN', TO_DATE('2026-10-01 00:00:00', 'YYYY-MM-DD HH24:MI:SS'), 'Clases de orden que dejan equipos fuera de servicio, separadas por coma; * = todas. Cuentan correctivas y preventivas; las predictivas del programa de reparación (ZC03) no (respuesta del 02/10/2026).', 'ZC01,ZC02');
     INSERT INTO "PARAMETRO_PGPM" ("CLAVE", "ACTUALIZADO_EN", "DESCRIPCION", "VALOR")
     VALUES ('DISPONIBILIDAD.CORRECTIVAS_SEGUN_AVISO', TO_DATE('2026-10-01 00:00:00', 'YYYY-MM-DD HH24:MI:SS'), 'S = una correctiva con aviso solo deja el equipo fuera si el aviso indica parada, desde el inicio hasta el fin de la avería.', 'S');
     INSERT INTO "PARAMETRO_PGPM" ("CLAVE", "ACTUALIZADO_EN", "DESCRIPCION", "VALOR")
@@ -414,7 +414,7 @@ END;
 DECLARE
     v_Count INTEGER;
 BEGIN
-SELECT COUNT(*) INTO v_Count FROM "EF_MIGRACIONES_PGPM" WHERE "MigrationId" = N'20261001224008_ModeloInicialPgpm';
+SELECT COUNT(*) INTO v_Count FROM "EF_MIGRACIONES_PGPM" WHERE "MigrationId" = N'20261002125323_ModeloInicialPgpm';
 IF v_Count = 0 THEN
 
     EXECUTE IMMEDIATE 
@@ -428,7 +428,7 @@ END;
 DECLARE
     v_Count INTEGER;
 BEGIN
-SELECT COUNT(*) INTO v_Count FROM "EF_MIGRACIONES_PGPM" WHERE "MigrationId" = N'20261001224008_ModeloInicialPgpm';
+SELECT COUNT(*) INTO v_Count FROM "EF_MIGRACIONES_PGPM" WHERE "MigrationId" = N'20261002125323_ModeloInicialPgpm';
 IF v_Count = 0 THEN
 
     EXECUTE IMMEDIATE 
@@ -442,7 +442,7 @@ END;
 DECLARE
     v_Count INTEGER;
 BEGIN
-SELECT COUNT(*) INTO v_Count FROM "EF_MIGRACIONES_PGPM" WHERE "MigrationId" = N'20261001224008_ModeloInicialPgpm';
+SELECT COUNT(*) INTO v_Count FROM "EF_MIGRACIONES_PGPM" WHERE "MigrationId" = N'20261002125323_ModeloInicialPgpm';
 IF v_Count = 0 THEN
 
     EXECUTE IMMEDIATE 
@@ -456,7 +456,7 @@ END;
 DECLARE
     v_Count INTEGER;
 BEGIN
-SELECT COUNT(*) INTO v_Count FROM "EF_MIGRACIONES_PGPM" WHERE "MigrationId" = N'20261001224008_ModeloInicialPgpm';
+SELECT COUNT(*) INTO v_Count FROM "EF_MIGRACIONES_PGPM" WHERE "MigrationId" = N'20261002125323_ModeloInicialPgpm';
 IF v_Count = 0 THEN
 
     EXECUTE IMMEDIATE 
@@ -470,7 +470,7 @@ END;
 DECLARE
     v_Count INTEGER;
 BEGIN
-SELECT COUNT(*) INTO v_Count FROM "EF_MIGRACIONES_PGPM" WHERE "MigrationId" = N'20261001224008_ModeloInicialPgpm';
+SELECT COUNT(*) INTO v_Count FROM "EF_MIGRACIONES_PGPM" WHERE "MigrationId" = N'20261002125323_ModeloInicialPgpm';
 IF v_Count = 0 THEN
 
     EXECUTE IMMEDIATE 
@@ -484,7 +484,7 @@ END;
 DECLARE
     v_Count INTEGER;
 BEGIN
-SELECT COUNT(*) INTO v_Count FROM "EF_MIGRACIONES_PGPM" WHERE "MigrationId" = N'20261001224008_ModeloInicialPgpm';
+SELECT COUNT(*) INTO v_Count FROM "EF_MIGRACIONES_PGPM" WHERE "MigrationId" = N'20261002125323_ModeloInicialPgpm';
 IF v_Count = 0 THEN
 
     EXECUTE IMMEDIATE 
@@ -498,7 +498,7 @@ END;
 DECLARE
     v_Count INTEGER;
 BEGIN
-SELECT COUNT(*) INTO v_Count FROM "EF_MIGRACIONES_PGPM" WHERE "MigrationId" = N'20261001224008_ModeloInicialPgpm';
+SELECT COUNT(*) INTO v_Count FROM "EF_MIGRACIONES_PGPM" WHERE "MigrationId" = N'20261002125323_ModeloInicialPgpm';
 IF v_Count = 0 THEN
 
     EXECUTE IMMEDIATE 
@@ -512,7 +512,7 @@ END;
 DECLARE
     v_Count INTEGER;
 BEGIN
-SELECT COUNT(*) INTO v_Count FROM "EF_MIGRACIONES_PGPM" WHERE "MigrationId" = N'20261001224008_ModeloInicialPgpm';
+SELECT COUNT(*) INTO v_Count FROM "EF_MIGRACIONES_PGPM" WHERE "MigrationId" = N'20261002125323_ModeloInicialPgpm';
 IF v_Count = 0 THEN
 
     EXECUTE IMMEDIATE 
@@ -526,7 +526,7 @@ END;
 DECLARE
     v_Count INTEGER;
 BEGIN
-SELECT COUNT(*) INTO v_Count FROM "EF_MIGRACIONES_PGPM" WHERE "MigrationId" = N'20261001224008_ModeloInicialPgpm';
+SELECT COUNT(*) INTO v_Count FROM "EF_MIGRACIONES_PGPM" WHERE "MigrationId" = N'20261002125323_ModeloInicialPgpm';
 IF v_Count = 0 THEN
 
     EXECUTE IMMEDIATE 
@@ -540,7 +540,7 @@ END;
 DECLARE
     v_Count INTEGER;
 BEGIN
-SELECT COUNT(*) INTO v_Count FROM "EF_MIGRACIONES_PGPM" WHERE "MigrationId" = N'20261001224008_ModeloInicialPgpm';
+SELECT COUNT(*) INTO v_Count FROM "EF_MIGRACIONES_PGPM" WHERE "MigrationId" = N'20261002125323_ModeloInicialPgpm';
 IF v_Count = 0 THEN
 
     EXECUTE IMMEDIATE 
@@ -554,7 +554,7 @@ END;
 DECLARE
     v_Count INTEGER;
 BEGIN
-SELECT COUNT(*) INTO v_Count FROM "EF_MIGRACIONES_PGPM" WHERE "MigrationId" = N'20261001224008_ModeloInicialPgpm';
+SELECT COUNT(*) INTO v_Count FROM "EF_MIGRACIONES_PGPM" WHERE "MigrationId" = N'20261002125323_ModeloInicialPgpm';
 IF v_Count = 0 THEN
 
     EXECUTE IMMEDIATE 
@@ -568,12 +568,12 @@ END;
 DECLARE
     v_Count INTEGER;
 BEGIN
-SELECT COUNT(*) INTO v_Count FROM "EF_MIGRACIONES_PGPM" WHERE "MigrationId" = N'20261001224008_ModeloInicialPgpm';
+SELECT COUNT(*) INTO v_Count FROM "EF_MIGRACIONES_PGPM" WHERE "MigrationId" = N'20261002125323_ModeloInicialPgpm';
 IF v_Count = 0 THEN
 
     EXECUTE IMMEDIATE 
     'INSERT INTO "EF_MIGRACIONES_PGPM" ("MigrationId", "ProductVersion")
-    VALUES (N''20261001224008_ModeloInicialPgpm'', N''8.0.11'')'
+    VALUES (N''20261002125323_ModeloInicialPgpm'', N''8.0.11'')'
     ;
  END IF;
 END;
