@@ -28,3 +28,6 @@ docker-data/
 .env.prod
 deploy/certs/*.pem
 deploy/certs/*.key
+
+# Sprint 0: datos reales de SAP y de Oracle, no van a git
+sprint0/

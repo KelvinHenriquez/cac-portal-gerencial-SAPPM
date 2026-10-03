@@ -199,7 +199,7 @@ namespace PortalGerencialBackEnd.Infrastructure.Integraciones.Local
                     ConfFinal = terminada,
                     Programada = a.Programada,
                     // Las de la hoja de ruta las crea el usuario de planificación; las agregadas, el taller.
-                    UsuarioCreacion = a.Programada ? "PLANIFICACION" : $"TALLER{indice % 3 + 1}",
+                    UsuarioCreacion = a.Programada ? "PLANIFICADOR" : $"TALLER{indice % 3 + 1}",
                     FechaModificacion = terminada ? terminaEn : creacion
                 });
             }

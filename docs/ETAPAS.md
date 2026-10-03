@@ -17,7 +17,7 @@ montando todos los reportes y tableros gerenciales, incluida el área industrial
 | 6 | Frescura de datos, monitoreo, alerta > 24 h, pruebas del cálculo | **Hecha** |
 | 7b | Ajustes por las respuestas del 02/10/2026: grupos de equipos, OT asignadas a familia, plan por días, disponibilidad solo con correctivas y preventivas | **Hecha** |
 | 8 | Integración real: DDL en Oracle de CAC, vistas reales, cliente RFC con NCo ([Anexo A v2](ANEXO_A_V2_ABAP.md)) | 8a (vistas reales) espera la salida de `explorar_maquinarian.sql`; 8b (RFC) espera al ABAP y a Basis |
-| 0 | Sprint 0: validar el cálculo con exports reales de SAP ([lista de exports](SPRINT0_EXPORTS_SAP.md)) | Esperando los exports |
+| 0 | Sprint 0: validar el cálculo con exports reales de SAP ([cómo](SPRINT0_EXPORTS_SAP.md)) | Importador y entorno listos (03/10/2026); esperando los exports de SAP y de MAQUINARIAN |
 | 9 | Despliegue en el servidor Docker | Después de la 8 |
 
 ## Decisiones tomadas (30/09/2026)
@@ -282,10 +282,13 @@ en producción hasta que se decida (sin destinatarios no envía nada, solo regis
 
 1. **8a — Vistas reales:** escritas y probadas en local. Falta correr
    `explorar_maquinarian_2.sql` (Kelvin) para cerrar los puntos "VERIFICAR".
-2. **Sprint 0 (depende de Kelvin):** exports de SAP de julio a septiembre
-   ([lista](SPRINT0_EXPORTS_SAP.md)). Se construye un importador de Excel como tercera fuente de
-   SAP (además del simulador y el RFC) y se compara contra los reportes de Oracle.
-3. **8b — RFC real (depende del ABAP y de Basis):** cliente NCo contra los 5 módulos del Anexo A v2.
+2. **Sprint 0:** importador de Excel (`DataSourceMode=Excel`) y entorno aparte
+   (`docker-compose.sprint0.yml`) listos y probados de punta a punta con datos sintéticos. Faltan
+   los exports reales de SAP y de la configuración de MAQUINARIAN ([cómo](SPRINT0_EXPORTS_SAP.md)),
+   y definir la comparación contra los resultados de Oracle cuando llegue el PL/SQL.
+3. **8b — RFC real (depende del ABAP y de Basis):** cliente NCo contra los 5 módulos del Anexo A v2
+   (confirmado RFC, no servicio web, el 03/10/2026). La conversión de estados y números de SAP ya
+   está compartida con el importador (`EstadosSap`).
 4. **9 — Despliegue** en el servidor Windows con Docker.
 
 ## Datos reales de SAP

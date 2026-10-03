@@ -1,0 +1,29 @@
+# Sprint 0: el portal con datos REALES (exports de SAP + configuración de Oracle Forms), en una
+# base Oracle local aparte. No toca la base de desarrollo. Uso (ver docs/SPRINT0_EXPORTS_SAP.md):
+#   docker compose -f docker-compose.dev.yml -f docker-compose.sprint0.yml up -d
+# Para volver al entorno de desarrollo con datos simulados:
+#   docker compose -f docker-compose.dev.yml up -d
+# Los datos reales viven en ./sprint0/ (fuera de git):
+#   sprint0/sap/     exports de SAP (IW39, IH08 o maestro del ABAP, IW37N, IW47, IW29, JCDS)
+#   sprint0/oracle/  export de configuración de MAQUINARIAN en formato INSERT (.sql)
+services:
+  oracle:
+    environment:
+      SPRINT0_ID_EMPRESA: ${SPRINT0_ID_EMPRESA:-1}
+    volumes:
+      - oracle11_portalgerencial_sprint0_data:/u01/app/oracle/oradata
+      - ./db/oracle/sprint0:/container-entrypoint-initdb.d:ro
+      - ./db/oracle/init:/opt/pgpm/init:ro
+      - ./docs/oracle:/opt/pgpm/docs:ro
+      - ./sprint0/oracle:/opt/pgpm/datos:ro
+
+  api:
+    environment:
+      - DataSourceMode=Excel
+      - SapExcel__Carpeta=/sprint0/sap
+    volumes:
+      - ./sprint0/sap:/sprint0/sap:ro
+
+volumes:
+  oracle11_portalgerencial_sprint0_data:
+    driver: local

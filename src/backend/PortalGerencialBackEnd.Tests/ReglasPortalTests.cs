@@ -35,13 +35,13 @@ public class ReglasPortalTests
             OrdenSapId = "4000001",
             Operaciones =
             {
-                new StgSapOperacion { Operacion = "0010", UsuarioCreacion = "PLANIFICACION", Programada = false },
+                new StgSapOperacion { Operacion = "0010", UsuarioCreacion = "PLANIFICADOR", Programada = false },
                 new StgSapOperacion { Operacion = "0020", UsuarioCreacion = "jperez", Programada = true },
                 new StgSapOperacion { Operacion = "0030", UsuarioCreacion = null, Programada = false }
             }
         };
 
-        ReglasPortal.AplicarHojaRuta(new[] { orden }, new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "planificacion" });
+        ReglasPortal.AplicarHojaRuta(new[] { orden }, new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "planificador" });
 
         Assert.Equal(new[] { true, false, false }, orden.Operaciones.Select(o => o.Programada));
     }

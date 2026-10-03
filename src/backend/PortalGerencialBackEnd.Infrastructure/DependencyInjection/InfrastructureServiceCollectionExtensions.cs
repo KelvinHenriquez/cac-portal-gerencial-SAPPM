@@ -10,6 +10,7 @@ using PortalGerencialBackEnd.Core.Settings;
 using PortalGerencialBackEnd.Infrastructure.Integraciones;
 using PortalGerencialBackEnd.Infrastructure.Integraciones.Local;
 using PortalGerencialBackEnd.Infrastructure.Integraciones.Produccion;
+using PortalGerencialBackEnd.Infrastructure.Integraciones.Excel;
 using PortalGerencialBackEnd.Infrastructure.Jobs;
 using PortalGerencialBackEnd.Infrastructure.Monitoreo;
 using PortalGerencialBackEnd.Infrastructure.Persistence.Context;
@@ -60,6 +61,8 @@ namespace PortalGerencialBackEnd.Infrastructure.DependencyInjection
             var mode = configuration.GetValue<DataSourceMode?>("DataSourceMode") ?? DataSourceMode.Local;
             if (mode == DataSourceMode.Local)
                 services.AddScoped<ISapExtractionClient, SapLocalSeedClient>();
+            else if (mode == DataSourceMode.Excel)
+                services.AddScoped<ISapExtractionClient, SapExcelExtractionClient>();
             else
                 services.AddScoped<ISapExtractionClient, SapRfcExtractionClient>();
 

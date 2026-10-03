@@ -9,7 +9,9 @@
 -- db/oracle/init/03_vistas_pgpm.sql).
 --
 -- Antes de correrlo:
---   1. Confirmar la empresa de CAC (sección 6 de explorar_maquinarian_2.sql) y ajustar el DEFINE.
+--   1. Confirmar la empresa de CAC (sección 6 de explorar_maquinarian_2.sql): SQL Developer la
+--      pide una sola vez al correr (variable ID_EMPRESA); también se puede fijar antes con
+--      DEFINE ID_EMPRESA = <n>.
 --   2. Revisar los puntos marcados "VERIFICAR" con la salida de explorar_maquinarian_2.sql.
 --   3. El dueño de las vistas necesita GRANT SELECT directo (no por rol); como MAQUINARIAN o DBA:
 --        GRANT SELECT ON MAQUINARIAN.MA_MAESTRO_EQUIPOS        TO <esquema_portal>;
@@ -31,7 +33,7 @@
 -- (empresa, área de servicio, tipo de reporte); el portal usa un solo número:
 -- REPORTE_ID = ID_AREA_SERVICIO * 1000 + ID_TIPO_REPORTE.
 -- =====================================================================================
-DEFINE ID_EMPRESA = 1   -- VERIFICAR: empresa de CAC
+SET DEFINE ON
 
 -- Equipos (Ficha) con su familia: cruce SAP <-> Oracle por la Ficha, que SAP guarda como código
 -- legado en FLEET_NUM (KEY_NUM en Z_PM_MF_WS_MAESTRO_EQUIPO).
@@ -42,7 +44,7 @@ SELECT e.FICHA                     AS CODIGO_LEGADO,   -- "F01168"
        TO_CHAR(e.ID_FAMILIA)       AS FAMILIA_CODIGO,
        CASE WHEN UPPER(e.ESTADO) = 'ACTIVO' THEN 'S' ELSE 'N' END AS ACTIVO   -- VERIFICAR valores (sección 10)
 FROM   MAQUINARIAN.MA_MAESTRO_EQUIPOS e
-WHERE  e.ID_EMPRESA = &ID_EMPRESA
+WHERE  e.ID_EMPRESA = &&ID_EMPRESA
 AND    e.FICHA IS NOT NULL;
 
 -- =============================================================== disponibilidad
@@ -56,14 +58,14 @@ SELECT c.ID_AREA_SERVICIO * 1000 + c.ID_TIPO_REPORTE AS REPORTE_ID,
        NVL(c.VALOR_COMP2, 0)                          AS UMBRAL_NARANJA,
        CASE WHEN UPPER(c.ESTADO) = 'ACTIVO' THEN 'S' ELSE 'N' END AS ACTIVO
 FROM   MAQUINARIAN.MA_CONFIG_DISPONIBILIDAD c
-WHERE  c.ID_EMPRESA = &ID_EMPRESA;
+WHERE  c.ID_EMPRESA = &&ID_EMPRESA;
 
 -- Paso 2: semanas del reporte. VERIFICAR (sección 8) que NO_SEMANA no se repite dentro de un reporte.
 CREATE OR REPLACE VIEW VW_DISP_SEMANA_PGPM AS
 SELECT s.ID_AREA_SERVICIO * 1000 + s.ID_TIPO_REPORTE AS REPORTE_ID,
        s.NO_SEMANA, s.ID_MES AS MES, s.FECHA_INICIO, s.FECHA_FIN
 FROM   MAQUINARIAN.MA_CONFIG_SEMANA_DISP s
-WHERE  s.ID_EMPRESA = &ID_EMPRESA;
+WHERE  s.ID_EMPRESA = &&ID_EMPRESA;
 
 -- Paso 3: horas del día en que se mide (0 a 23). HORA es texto: VERIFICAR el formato (sección 8);
 -- aquí se asume '12:00 AM' / '01:00 PM'.
@@ -72,7 +74,7 @@ SELECT h.ID_AREA_SERVICIO * 1000 + h.ID_TIPO_REPORTE AS REPORTE_ID,
        TO_NUMBER(TO_CHAR(TO_DATE(TRIM(h.HORA), 'HH:MI AM', 'NLS_DATE_LANGUAGE=AMERICAN'), 'HH24')) AS HORA,
        CASE WHEN UPPER(NVL(h.ESTADO, 'ACTIVO')) = 'ACTIVO' THEN 'S' ELSE 'N' END AS ACTIVO
 FROM   MAQUINARIAN.MA_CONFIG_HORA_DISP h
-WHERE  h.ID_EMPRESA = &ID_EMPRESA;
+WHERE  h.ID_EMPRESA = &&ID_EMPRESA;
 
 -- Paso 4: asignaciones (filas del reporte). Un grupo junta equipos de distinta naturaleza que
 -- juntos generan su disponibilidad. El portal toma como "incluida en el grupo" a la fila que no es
@@ -89,7 +91,7 @@ SELECT a.ID_AREA_SERVICIO * 1000 + a.ID_TIPO_REPORTE AS REPORTE_ID,
        CASE WHEN UPPER(a.IND_NEGRITA) IN ('SI', 'S') THEN 'S' ELSE 'N' END AS NEGRITA,
        CASE WHEN UPPER(a.IND_GRUPO)   IN ('SI', 'S') THEN 'S' ELSE 'N' END AS GRUPO
 FROM   MAQUINARIAN.MA_EQUIPOS_REQ_X_FAMILIA a
-WHERE  a.ID_EMPRESA = &ID_EMPRESA;
+WHERE  a.ID_EMPRESA = &&ID_EMPRESA;
 
 -- Equipos de cada asignación ("Detalle de Equipos Asignados"). La ficha se toma del maestro
 -- (por IDENTIFICADOR) por si cambió después de configurar el reporte.
@@ -99,7 +101,7 @@ SELECT d.ID_AREA_SERVICIO * 1000 + d.ID_TIPO_REPORTE AS REPORTE_ID,
        NVL(e.FICHA, d.FICHA)                          AS CODIGO_LEGADO
 FROM   MAQUINARIAN.MA_DEQUIPOS_REQ_X_FAMILIA d
 LEFT JOIN MAQUINARIAN.MA_MAESTRO_EQUIPOS e ON e.IDENTIFICADOR = d.IDENTIFICADOR
-WHERE  d.ID_EMPRESA = &ID_EMPRESA
+WHERE  d.ID_EMPRESA = &&ID_EMPRESA
 AND    NVL(e.FICHA, d.FICHA) IS NOT NULL;
 
 -- =============================================================== avance
@@ -108,8 +110,8 @@ AND    NVL(e.FICHA, d.FICHA) IS NOT NULL;
 CREATE OR REPLACE VIEW VW_AVANCE_PERIODO_PGPM AS
 SELECT p.ID_PERIODO AS PERIODO_ID, p.DESCRIPCION AS DESCRIPCION
 FROM   PG_PERIODO p
-WHERE  p.ID_EMPRESA = &ID_EMPRESA
-AND    p.ID_PERIODO IN (SELECT ID_PERIODO FROM MAQUINARIAN.MA_ENC_CONFIG_AVANCE WHERE ID_EMPRESA = &ID_EMPRESA);
+WHERE  p.ID_EMPRESA = &&ID_EMPRESA
+AND    p.ID_PERIODO IN (SELECT ID_PERIODO FROM MAQUINARIAN.MA_ENC_CONFIG_AVANCE WHERE ID_EMPRESA = &&ID_EMPRESA);
 
 -- Reporte de avance ("Programa de Reparación 2026", ...) con las fechas de su calendario.
 CREATE OR REPLACE VIEW VW_AVANCE_REPORTE_PGPM AS
@@ -126,7 +128,7 @@ JOIN   MAQUINARIAN.MA_ENC_SEMANA_OT s
       AND s.ID_AREA_SERVICIO = e.ID_AREA AND s.CORRELATIVO = e.ID_TIPO_SEMANA
 LEFT JOIN MAQUINARIAN.MA_TIPO_ORDEN_TRABAJO t
        ON t.ID_EMPRESA = e.ID_EMPRESA AND t.ID_TIPO_OT = e.ID_TIPO_OT
-WHERE  e.ID_EMPRESA = &ID_EMPRESA;
+WHERE  e.ID_EMPRESA = &&ID_EMPRESA;
 
 -- Familias del reporte. FAMILIA_CODIGO es el ID_FAMILIA (el mismo del maestro de equipos).
 CREATE OR REPLACE VIEW VW_AVANCE_FAMILIA_PGPM AS
@@ -142,7 +144,7 @@ JOIN   MAQUINARIAN.MA_ENC_CONFIG_AVANCE e ON e.ID_EMPRESA = d.ID_EMPRESA AND e.C
 JOIN   MAQUINARIAN.MA_ENC_SEMANA_OT s
        ON s.ID_EMPRESA = e.ID_EMPRESA AND s.ID_PERIODO = e.ID_PERIODO
       AND s.ID_AREA_SERVICIO = e.ID_AREA AND s.CORRELATIVO = e.ID_TIPO_SEMANA
-WHERE  d.ID_EMPRESA = &ID_EMPRESA;
+WHERE  d.ID_EMPRESA = &&ID_EMPRESA;
 
 -- "Órdenes de Trabajo Asignada a Familia": MA_OT_CONFIG_AVANCE tiene una fila por actividad de
 -- cada OT; aquí se resume a una fila por OT con su equipo, actividades y días. El portal cruza con
@@ -158,7 +160,7 @@ FROM   MAQUINARIAN.MA_OT_CONFIG_AVANCE o
 JOIN   MAQUINARIAN.MA_DET_CONFIG_AVANCE d
        ON d.ID_EMPRESA = o.ID_EMPRESA AND d.CORRELATIVO = o.CORRELATIVO AND d.DCORRELATIVO = o.DCORRELATIVO
 JOIN   MAQUINARIAN.MA_MAESTRO_EQUIPOS e ON e.IDENTIFICADOR = o.IDENTIFICADOR_EQUIPO
-WHERE  o.ID_EMPRESA = &ID_EMPRESA
+WHERE  o.ID_EMPRESA = &&ID_EMPRESA
 AND    e.FICHA IS NOT NULL
 GROUP BY o.CORRELATIVO, d.ID_FAMILIA, o.NO_ORDEN_TRABAJO;
 
@@ -181,4 +183,4 @@ JOIN   MAQUINARIAN.MA_DET_SEMANA_OT w
        ON w.ID_EMPRESA = e.ID_EMPRESA AND w.ID_PERIODO = sd.ID_PERIODO
       AND w.ID_AREA_SERVICIO = e.ID_AREA AND w.CORRELATIVO = e.ID_TIPO_SEMANA
       AND w.ID_MES = sd.ID_MES AND w.NO_SEMANA = sd.NO_SEMANA
-WHERE  sd.ID_EMPRESA = &ID_EMPRESA;
+WHERE  sd.ID_EMPRESA = &&ID_EMPRESA;
