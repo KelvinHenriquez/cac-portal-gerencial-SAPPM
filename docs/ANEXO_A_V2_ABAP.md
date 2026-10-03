@@ -1,5 +1,7 @@
 # Anexo A v2 — Módulos RFC para el Portal Gerencial SAP PM (para el ABAP)
 
+> **Reemplazado por la especificación narrativa [ANEXO_A_V3_ABAP.md](ANEXO_A_V3_ABAP.md) (03/10/2026).**
+
 **Fecha:** 01/10/2026. Reemplaza al Anexo A de la especificación original.
 
 **Qué cambió y por qué:** al revisar los reportes actuales de Oracle (Disponibilidad y Avance de

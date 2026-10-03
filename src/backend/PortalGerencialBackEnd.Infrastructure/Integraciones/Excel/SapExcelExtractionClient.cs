@@ -60,6 +60,9 @@ namespace PortalGerencialBackEnd.Infrastructure.Integraciones.Excel
         private static readonly string[] FinOperacion = { "FSEDD", "Fecha de fin más temprana", "Fin más temprano", "Fecha fin más temprana", "Fin programado" };
         private static readonly string[] HoraFinOperacion = { "FSEDZ", "Hora de fin más temprana", "Hora fin más temprana" };
         private static readonly string[] FinRealOperacion = { "IEDD", "Fecha de fin real", "Fin real", "Fecha fin real" };
+        private static readonly string[] PrimeraConf = { "FECHA_PRIMERA_CONF" };
+        private static readonly string[] UltimaConf = { "FECHA_ULTIMA_CONF" };
+        private static readonly string[] ConfFinal = { "CONF_FINAL" };
         private static readonly string[] CreadoPor = { "ERNAM", "Creado por", "Autor" };
         private static readonly string[] Sistema = { "SISTEMA" };
         private static readonly string[] Subsistema = { "SUBSISTEMA" };
@@ -334,7 +337,7 @@ namespace PortalGerencialBackEnd.Infrastructure.Integraciones.Excel
                 .Where(x => x.Orden != null && x.Op != null)
                 .GroupBy(x => (x.Orden!, x.Op!))
                 .ToDictionary(g => g.Key, g => g.Select(x => x.Fila).ToList());
-            if (confirmaciones == null)
+            if (confirmaciones == null && !tablas.Any(t => t.Tiene(UltimaConf)))
                 datos.Mensajes.Add("No vinieron las confirmaciones (IW47): la semana de cada actividad terminada sale de su fecha de fin real.");
 
             foreach (var f in tablas.SelectMany(t => t.Filas))
@@ -358,9 +361,11 @@ namespace PortalGerencialBackEnd.Infrastructure.Integraciones.Excel
                 }
                 else
                 {
+                    // Sin IW47: el módulo del ABAP trae las fechas ya resumidas; IW37N solo la fecha de fin real.
                     real = Horas(f.Numero(TrabajoReal), f.Texto(UnidadTrabajoReal) ?? f.Texto(UnidadTrabajo));
-                    primera = ultima = real > 0 ? f.Fecha(FinRealOperacion) : null;
-                    final = real > 0 && ultima != null;
+                    ultima = real > 0 ? f.Fecha(UltimaConf) ?? f.Fecha(FinRealOperacion) : null;
+                    primera = real > 0 ? f.Fecha(PrimeraConf) ?? ultima : null;
+                    final = f.Valor(ConfFinal) != null ? f.Marca(ConfFinal) : real > 0 && ultima != null;
                 }
 
                 datos.Operaciones.Add(new OperacionSapDto

@@ -181,4 +181,26 @@ public class SapExcelImportTests : IDisposable
     {
         Assert.Equal(esperado, EstadosSap.Derivar(sistema, usuario));
     }
+
+    [Fact]
+    public void Lee_las_operaciones_tal_como_las_devuelve_el_modulo_del_ABAP()
+    {
+        Xlsx("ordenes.xlsx", null, new[] { "AUFNR", "AUART", "EQUNR", "STATUS_SISTEMA", "ERDAT", "ERFZEIT", "FECHA_TECO", "HORA_TECO" },
+            new object?[] { "000004000300", "ZC03", "10001234", "CTEC", "01.08.2026", "07:30:00", "20.08.2026", "17:05:00" });
+        Xlsx("operaciones.xlsx", null, new[] { "AUFNR", "VORNR", "LTXA1", "ARBEI", "ARBEH", "ISMNW_TOTAL", "FSAVD", "FSEDD", "FECHA_PRIMERA_CONF", "FECHA_ULTIMA_CONF", "CONF_FINAL", "ERNAM" },
+            new object?[] { "000004000300", "0010", "Revisar motor", "8", "H", "7,5", "03.08.2026", "05.08.2026", "04.08.2026", "06.08.2026", "X", "PLANIFICADOR" });
+
+        var d = SapExcelExtractionClient.LeerCarpeta(_carpeta, new DateTime(2026, 10, 3));
+
+        var orden = d.Ordenes.Single();
+        Assert.Equal("4000300", orden.OrdenSapId);
+        Assert.Equal(new DateTime(2026, 8, 1, 7, 30, 0), orden.FechaCreacion);
+        Assert.Equal(new DateTime(2026, 8, 20, 17, 5, 0), orden.FechaCierre);
+        var op = d.Operaciones.Single();
+        Assert.Equal(7.5m, op.TrabajoRealHh);
+        Assert.Equal(new DateTime(2026, 8, 4), op.FechaPrimeraConf);
+        Assert.Equal(new DateTime(2026, 8, 6), op.FechaUltimaConf);
+        Assert.True(op.ConfFinal);
+        Assert.DoesNotContain(d.Mensajes, m => m.Contains("IW47"));
+    }
 }
