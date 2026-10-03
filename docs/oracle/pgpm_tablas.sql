@@ -624,3 +624,33 @@ END;
 
 /
 
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "EF_MIGRACIONES_PGPM" WHERE "MigrationId" = N'20261003120303_BasePorcentajeDisponibilidad';
+IF v_Count = 0 THEN
+
+    BEGIN
+    INSERT INTO "PARAMETRO_PGPM" ("CLAVE", "ACTUALIZADO_EN", "DESCRIPCION", "VALOR")
+    VALUES ('DISPONIBILIDAD.BASE_PORCENTAJE', TO_DATE('2026-10-01 00:00:00', 'YYYY-MM-DD HH24:MI:SS'), 'Base del % de disponibilidad: REQUERIDOS (disponibles / requeridos, topado en 100) o EQUIPOS (disponibles / equipos de la asignación, como el PL/SQL de Oracle PR_DISPONIBILIDAD_EQUIPOS).', 'REQUERIDOS');
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "EF_MIGRACIONES_PGPM" WHERE "MigrationId" = N'20261003120303_BasePorcentajeDisponibilidad';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "EF_MIGRACIONES_PGPM" ("MigrationId", "ProductVersion")
+    VALUES (N''20261003120303_BasePorcentajeDisponibilidad'', N''8.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+

@@ -949,6 +949,13 @@ namespace PortalGerencialBackEnd.Infrastructure.Persistence.Migrations
                         },
                         new
                         {
+                            Clave = "DISPONIBILIDAD.BASE_PORCENTAJE",
+                            ActualizadoEn = new DateTime(2026, 10, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Descripcion = "Base del % de disponibilidad: REQUERIDOS (disponibles / requeridos, topado en 100) o EQUIPOS (disponibles / equipos de la asignación, como el PL/SQL de Oracle PR_DISPONIBILIDAD_EQUIPOS).",
+                            Valor = "REQUERIDOS"
+                        },
+                        new
+                        {
                             Clave = "SAP.USUARIOS_HOJA_RUTA",
                             ActualizadoEn = new DateTime(2026, 10, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             Descripcion = "Usuarios SAP (separados por coma) que crean las operaciones de la hoja de ruta (Real Programado); las creadas por otros usuarios son agregadas (Real No Programado). \"-\" = sin definir: se usa la marca que traiga SAP (respuesta del 02/10/2026).",

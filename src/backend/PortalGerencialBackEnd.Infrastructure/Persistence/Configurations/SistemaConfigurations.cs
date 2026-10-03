@@ -74,6 +74,8 @@ namespace PortalGerencialBackEnd.Infrastructure.Persistence.Configurations
                     "S = una correctiva con aviso solo deja el equipo fuera si el aviso indica parada, desde el inicio hasta el fin de la avería."),
                 P(ClavesParametro.ClasesOrdenAvance, "ZC03",
                     "Clases de orden (separadas por coma) del programa de reparación que cuentan para Avance."),
+                P(ClavesParametro.BasePorcentajeDisponibilidad, "REQUERIDOS",
+                    "Base del % de disponibilidad: REQUERIDOS (disponibles / requeridos, topado en 100) o EQUIPOS (disponibles / equipos de la asignación, como el PL/SQL de Oracle PR_DISPONIBILIDAD_EQUIPOS)."),
                 P(ClavesParametro.UsuariosHojaRuta, "-",
                     "Usuarios SAP (separados por coma) que crean las operaciones de la hoja de ruta (Real Programado); las creadas por otros usuarios son agregadas (Real No Programado). \"-\" = sin definir: se usa la marca que traiga SAP (respuesta del 02/10/2026)."),
                 P(ClavesParametro.BasePlanAvance, "DIAS",

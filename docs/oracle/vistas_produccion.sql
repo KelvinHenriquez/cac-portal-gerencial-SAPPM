@@ -9,10 +9,11 @@
 -- db/oracle/init/03_vistas_pgpm.sql).
 --
 -- Antes de correrlo:
---   1. Confirmar la empresa de CAC (sección 6 de explorar_maquinarian_2.sql): SQL Developer la
---      pide una sola vez al correr (variable ID_EMPRESA); también se puede fijar antes con
---      DEFINE ID_EMPRESA = <n>.
---   2. Revisar los puntos marcados "VERIFICAR" con la salida de explorar_maquinarian_2.sql.
+--   1. La empresa de CAC es la 30 (explorar_maquinarian_2.sql, sección 6). SQL Developer la pide
+--      una sola vez al correr (variable ID_EMPRESA); también se puede fijar antes con
+--      DEFINE ID_EMPRESA = 30.
+--   2. Ajustado el 03/10/2026 con la salida de explorar_maquinarian_2.sql y el PL/SQL de Oracle
+--      (PR_DISPONIBILIDAD_EQUIPOS, PR_ACTUALIZAR_CONFIG_AVANCE): mismas exclusiones que Oracle.
 --   3. El dueño de las vistas necesita GRANT SELECT directo (no por rol); como MAQUINARIAN o DBA:
 --        GRANT SELECT ON MAQUINARIAN.MA_MAESTRO_EQUIPOS        TO <esquema_portal>;
 --        GRANT SELECT ON MAQUINARIAN.MA_CONFIG_DISPONIBILIDAD  TO <esquema_portal>;
@@ -27,6 +28,7 @@
 --        GRANT SELECT ON MAQUINARIAN.MA_ENC_SEMANA_OT          TO <esquema_portal>;
 --        GRANT SELECT ON MAQUINARIAN.MA_DET_SEMANA_OT          TO <esquema_portal>;
 --        GRANT SELECT ON MAQUINARIAN.MA_TIPO_ORDEN_TRABAJO     TO <esquema_portal>;
+--        GRANT SELECT ON MAQUINARIAN.MA_MST_FAMILIA            TO <esquema_portal>;
 --        GRANT SELECT ON <dueño>.PG_PERIODO                    TO <esquema_portal>;
 --
 -- Llaves: en Oracle Forms los reportes de disponibilidad se identifican por
@@ -36,16 +38,23 @@
 SET DEFINE ON
 
 -- Equipos (Ficha) con su familia: cruce SAP <-> Oracle por la Ficha, que SAP guarda como código
--- legado en FLEET_NUM (KEY_NUM en Z_PM_MF_WS_MAESTRO_EQUIPO).
+-- legado en FLEET_NUM (KEY_NUM en Z_PM_MF_WS_MAESTRO_EQUIPO). ESTADO es ACTIVO / INACTIVO.
+-- Hay ~50 fichas repetidas en el maestro: se queda una por ficha, la activa primero. Las fichas
+-- terminadas en "000" (C01000, G01000...) no son equipos: Oracle las excluye del conteo.
 CREATE OR REPLACE VIEW VW_EQUIPOS_FAMILIA_PGPM AS
-SELECT e.FICHA                     AS CODIGO_LEGADO,   -- "F01168"
-       e.EQUIPO                    AS EQUIPO_CODIGO,   -- "A29017-002"
-       e.DESCRIPCION               AS DESCRIPCION,
-       TO_CHAR(e.ID_FAMILIA)       AS FAMILIA_CODIGO,
-       CASE WHEN UPPER(e.ESTADO) = 'ACTIVO' THEN 'S' ELSE 'N' END AS ACTIVO   -- VERIFICAR valores (sección 10)
-FROM   MAQUINARIAN.MA_MAESTRO_EQUIPOS e
-WHERE  e.ID_EMPRESA = &&ID_EMPRESA
-AND    e.FICHA IS NOT NULL;
+SELECT CODIGO_LEGADO, EQUIPO_CODIGO, DESCRIPCION, FAMILIA_CODIGO, ACTIVO
+FROM  (SELECT e.FICHA                AS CODIGO_LEGADO,   -- "F01168"
+              e.EQUIPO               AS EQUIPO_CODIGO,   -- "A29017-002"
+              e.DESCRIPCION          AS DESCRIPCION,
+              TO_CHAR(e.ID_FAMILIA)  AS FAMILIA_CODIGO,
+              CASE WHEN UPPER(e.ESTADO) = 'ACTIVO' THEN 'S' ELSE 'N' END AS ACTIVO,
+              ROW_NUMBER() OVER (PARTITION BY e.FICHA
+                                 ORDER BY CASE WHEN UPPER(e.ESTADO) = 'ACTIVO' THEN 0 ELSE 1 END, e.IDENTIFICADOR DESC) AS N
+       FROM   MAQUINARIAN.MA_MAESTRO_EQUIPOS e
+       WHERE  e.ID_EMPRESA = &&ID_EMPRESA
+       AND    e.FICHA IS NOT NULL
+       AND    SUBSTR(e.FICHA, 4, 3) <> '000')
+WHERE  N = 1;
 
 -- =============================================================== disponibilidad
 
@@ -60,18 +69,18 @@ SELECT c.ID_AREA_SERVICIO * 1000 + c.ID_TIPO_REPORTE AS REPORTE_ID,
 FROM   MAQUINARIAN.MA_CONFIG_DISPONIBILIDAD c
 WHERE  c.ID_EMPRESA = &&ID_EMPRESA;
 
--- Paso 2: semanas del reporte. VERIFICAR (sección 8) que NO_SEMANA no se repite dentro de un reporte.
+-- Paso 2: semanas del reporte (NO_SEMANA no se repite dentro de un reporte: sección 8).
 CREATE OR REPLACE VIEW VW_DISP_SEMANA_PGPM AS
 SELECT s.ID_AREA_SERVICIO * 1000 + s.ID_TIPO_REPORTE AS REPORTE_ID,
        s.NO_SEMANA, s.ID_MES AS MES, s.FECHA_INICIO, s.FECHA_FIN
 FROM   MAQUINARIAN.MA_CONFIG_SEMANA_DISP s
 WHERE  s.ID_EMPRESA = &&ID_EMPRESA;
 
--- Paso 3: horas del día en que se mide (0 a 23). HORA es texto: VERIFICAR el formato (sección 8);
--- aquí se asume '12:00 AM' / '01:00 PM'.
+-- Paso 3: horas del día en que se mide (0 a 23). HORA es texto de 24 h con un espacio delante
+-- (' 00:00' ... ' 23:00', sección 8).
 CREATE OR REPLACE VIEW VW_DISP_HORA_PGPM AS
 SELECT h.ID_AREA_SERVICIO * 1000 + h.ID_TIPO_REPORTE AS REPORTE_ID,
-       TO_NUMBER(TO_CHAR(TO_DATE(TRIM(h.HORA), 'HH:MI AM', 'NLS_DATE_LANGUAGE=AMERICAN'), 'HH24')) AS HORA,
+       TO_NUMBER(SUBSTR(TRIM(h.HORA), 1, INSTR(TRIM(h.HORA), ':') - 1)) AS HORA,
        CASE WHEN UPPER(NVL(h.ESTADO, 'ACTIVO')) = 'ACTIVO' THEN 'S' ELSE 'N' END AS ACTIVO
 FROM   MAQUINARIAN.MA_CONFIG_HORA_DISP h
 WHERE  h.ID_EMPRESA = &&ID_EMPRESA;
@@ -91,7 +100,9 @@ SELECT a.ID_AREA_SERVICIO * 1000 + a.ID_TIPO_REPORTE AS REPORTE_ID,
        CASE WHEN UPPER(a.IND_NEGRITA) IN ('SI', 'S') THEN 'S' ELSE 'N' END AS NEGRITA,
        CASE WHEN UPPER(a.IND_GRUPO)   IN ('SI', 'S') THEN 'S' ELSE 'N' END AS GRUPO
 FROM   MAQUINARIAN.MA_EQUIPOS_REQ_X_FAMILIA a
-WHERE  a.ID_EMPRESA = &&ID_EMPRESA;
+WHERE  a.ID_EMPRESA = &&ID_EMPRESA
+-- Oracle no mide las filas sin requeridos
+AND    NVL(a.CANT_REQ, 0) <> 0;
 
 -- Equipos de cada asignación ("Detalle de Equipos Asignados"). La ficha se toma del maestro
 -- (por IDENTIFICADOR) por si cambió después de configurar el reporte.
@@ -102,11 +113,14 @@ SELECT d.ID_AREA_SERVICIO * 1000 + d.ID_TIPO_REPORTE AS REPORTE_ID,
 FROM   MAQUINARIAN.MA_DEQUIPOS_REQ_X_FAMILIA d
 LEFT JOIN MAQUINARIAN.MA_MAESTRO_EQUIPOS e ON e.IDENTIFICADOR = d.IDENTIFICADOR
 WHERE  d.ID_EMPRESA = &&ID_EMPRESA
-AND    NVL(e.FICHA, d.FICHA) IS NOT NULL;
+AND    NVL(e.FICHA, d.FICHA) IS NOT NULL
+-- misma exclusión que PR_DISPONIBILIDAD_EQUIPOS
+AND    SUBSTR(NVL(d.FICHA, '00000'), 4, 3) <> '000';
 
 -- =============================================================== avance
 
--- Período de reparación ("30: 2025-2026"). VERIFICAR dueño y columnas de PG_PERIODO (sección 13).
+-- Período de reparación ("30: 2025-2026"). PG_PERIODO no está en MAQUINARIAN: el DBA crea un
+-- sinónimo PG_PERIODO en el esquema del portal apuntando a la tabla real (VERIFICAR columnas).
 CREATE OR REPLACE VIEW VW_AVANCE_PERIODO_PGPM AS
 SELECT p.ID_PERIODO AS PERIODO_ID, p.DESCRIPCION AS DESCRIPCION
 FROM   PG_PERIODO p
@@ -130,12 +144,14 @@ LEFT JOIN MAQUINARIAN.MA_TIPO_ORDEN_TRABAJO t
        ON t.ID_EMPRESA = e.ID_EMPRESA AND t.ID_TIPO_OT = e.ID_TIPO_OT
 WHERE  e.ID_EMPRESA = &&ID_EMPRESA;
 
--- Familias del reporte. FAMILIA_CODIGO es el ID_FAMILIA (el mismo del maestro de equipos).
+-- Familias del reporte. Ojo: aquí ID_FAMILIA es del maestro MA_MST_FAMILIA (como en
+-- PR_RES_CONFIG_SEMANA), no del MA_FAMILIA por área que usa el maestro de equipos: los equipos
+-- de cada familia salen de las OT asignadas (VW_AVANCE_OT_PGPM), no del código de familia.
 CREATE OR REPLACE VIEW VW_AVANCE_FAMILIA_PGPM AS
 SELECT d.CORRELATIVO                                  AS REPORTE_ID,
        NVL(d.ORDEN, d.DCORRELATIVO)                   AS ORDEN,
        TO_CHAR(d.ID_FAMILIA)                          AS FAMILIA_CODIGO,
-       d.DESCRIPCION                                  AS FAMILIA_NOMBRE,
+       NVL(INITCAP(f.DESCRIPCION), d.DESCRIPCION)     AS FAMILIA_NOMBRE,
        NVL(d.FECHA_EST_INICIO, s.FECHA_INICIO)        AS FECHA_EST_INICIO,
        NVL(d.FECHA_EST_FIN, s.FECHA_FIN)              AS FECHA_EST_FIN,
        NVL(d.CANT_EQUIPO, 0)                          AS CANT_EQUIPO
@@ -144,18 +160,20 @@ JOIN   MAQUINARIAN.MA_ENC_CONFIG_AVANCE e ON e.ID_EMPRESA = d.ID_EMPRESA AND e.C
 JOIN   MAQUINARIAN.MA_ENC_SEMANA_OT s
        ON s.ID_EMPRESA = e.ID_EMPRESA AND s.ID_PERIODO = e.ID_PERIODO
       AND s.ID_AREA_SERVICIO = e.ID_AREA AND s.CORRELATIVO = e.ID_TIPO_SEMANA
+LEFT JOIN MAQUINARIAN.MA_MST_FAMILIA f ON f.ID_EMPRESA = d.ID_EMPRESA AND f.ID_FAMILIA = d.ID_FAMILIA
 WHERE  d.ID_EMPRESA = &&ID_EMPRESA;
 
 -- "Órdenes de Trabajo Asignada a Familia": MA_OT_CONFIG_AVANCE tiene una fila por actividad de
 -- cada OT; aquí se resume a una fila por OT con su equipo, actividades y días. El portal cruza con
--- SAP por la ficha del equipo (el número de OT es el de Oracle). VERIFICAR SELECCIONADO (sección 12).
+-- SAP por la ficha del equipo (el número de OT es el de Oracle). Actividades y días: solo las
+-- marcadas SELECCIONADO = 'S', como cuenta Oracle el real programado.
 CREATE OR REPLACE VIEW VW_AVANCE_OT_PGPM AS
 SELECT o.CORRELATIVO                    AS REPORTE_ID,
        TO_CHAR(d.ID_FAMILIA)            AS FAMILIA_CODIGO,
        TO_CHAR(o.NO_ORDEN_TRABAJO)      AS NO_OT,
        MAX(e.FICHA)                     AS CODIGO_LEGADO,
-       COUNT(*)                         AS CANT_ACTIVIDAD,
-       NVL(SUM(o.DIAS_ESTIMADOS), 0)    AS CANT_DIAS
+       COUNT(CASE WHEN o.SELECCIONADO = 'S' THEN 1 END)                     AS CANT_ACTIVIDAD,
+       NVL(SUM(CASE WHEN o.SELECCIONADO = 'S' THEN o.DIAS_ESTIMADOS END), 0) AS CANT_DIAS
 FROM   MAQUINARIAN.MA_OT_CONFIG_AVANCE o
 JOIN   MAQUINARIAN.MA_DET_CONFIG_AVANCE d
        ON d.ID_EMPRESA = o.ID_EMPRESA AND d.CORRELATIVO = o.CORRELATIVO AND d.DCORRELATIVO = o.DCORRELATIVO

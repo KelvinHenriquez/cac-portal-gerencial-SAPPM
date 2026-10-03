@@ -3,7 +3,7 @@
 # (docs/oracle/vistas_produccion.sql), sobre la réplica de MAQUINARIAN.
 sqlplus -s / as sysdba <<SQL
 ALTER SESSION SET CURRENT_SCHEMA = PGPM;
-DEFINE ID_EMPRESA = ${SPRINT0_ID_EMPRESA:-1}
+DEFINE ID_EMPRESA = ${SPRINT0_ID_EMPRESA:-30}
 @/opt/pgpm/docs/vistas_produccion.sql
 SELECT object_name, status FROM dba_objects WHERE owner = 'PGPM' AND object_type = 'VIEW' ORDER BY 1;
 EXIT

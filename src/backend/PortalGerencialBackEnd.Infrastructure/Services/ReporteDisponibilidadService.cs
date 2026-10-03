@@ -104,7 +104,7 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
             foreach (var a in b.Config.Asignaciones)
             {
                 var equipos = a.Equipos.Where(b.Mapeo.CuentaParaDisponibilidad).ToList();
-                var foto = CalculadoraDisponibilidad.FotosDelDia(equipos, a.CantRequerida, new[] { instante.Hour }, ventanas, instante.Date).Single();
+                var foto = CalculadoraDisponibilidad.FotosDelDia(equipos, a.CantRequerida, new[] { instante.Hour }, ventanas, instante.Date, b.Reglas.BaseEquipos).Single();
                 if (!miembros.Contains(a.AsignacionId))
                     actuales.Add((a, equipos.Count, foto.EqDisponible));
                 reporte.Filas.Add(new FilaDisponibilidadDto
@@ -138,7 +138,7 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
 
             if (actuales.Count > 0)
             {
-                var totalPct = CalculadoraDisponibilidad.PorcentajeTotal(actuales.Select(x => ((decimal)x.Disponibles, x.Asig.CantRequerida)));
+                var totalPct = CalculadoraDisponibilidad.PorcentajeTotal(actuales.Select(x => ((decimal)x.Disponibles, x.Asig.CantRequerida, x.Equipos)), b.Reglas.BaseEquipos);
                 reporte.Todas = new FilaDisponibilidadDto
                 {
                     Asignacion = "Todas (Promedio)",
@@ -158,7 +158,7 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
                             .ToList();
                         if (celdas.Count == 0)
                             return new CeldaSemanaDto { NoSemana = s.NoSemana };
-                        var pct = CalculadoraDisponibilidad.PorcentajeTotal(celdas.Select(c => (c.EqDisponibleProm, c.EqRequerido)));
+                        var pct = CalculadoraDisponibilidad.PorcentajeTotal(celdas.Select(c => (c.EqDisponibleProm, c.EqRequerido, c.CantEquipo)), b.Reglas.BaseEquipos);
                         return new CeldaSemanaDto
                         {
                             NoSemana = s.NoSemana,
@@ -251,7 +251,7 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
             var ventanas = await ProcesoActualizacionService.VentanasAsync(_db, b.Mapeo.LegadoPorEquipoSap, b.Reglas, dia, referencia);
             var equipos = asignacion.Equipos.Where(b.Mapeo.CuentaParaDisponibilidad).ToList();
 
-            return CalculadoraDisponibilidad.FotosDelDia(equipos, asignacion.CantRequerida, horas, ventanas, dia)
+            return CalculadoraDisponibilidad.FotosDelDia(equipos, asignacion.CantRequerida, horas, ventanas, dia, b.Reglas.BaseEquipos)
                 .OrderByDescending(f => f.Hora)
                 .Select(f => new HoraDisponibilidadDto
                 {

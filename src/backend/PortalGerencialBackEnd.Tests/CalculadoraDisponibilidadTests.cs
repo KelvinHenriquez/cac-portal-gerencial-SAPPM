@@ -163,4 +163,24 @@ public class CalculadoraDisponibilidadTests
         Assert.Equal(Math.Round((100m + 75m + 100m) / 3, 2), semana.DispRealPct);
         Assert.Equal(24m, semana.HrsOtCorrectiva);
     }
+
+    [Fact]
+    public void Base_del_porcentaje_requeridos_o_equipos_como_Oracle()
+    {
+        // 3 equipos para 2 requeridos; a las 10:00 uno está en una orden.
+        var equipos = new[] { "F1", "F2", "F3" };
+        var ventanas = new[] { new VentanaFueraServicio("F1", "4000001", TiposOrden.Correctiva, new DateTime(2026, 9, 1, 8, 0, 0), new DateTime(2026, 9, 1, 12, 0, 0)) }
+            .ToLookup(v => v.CodigoLegado);
+
+        var requeridos = CalculadoraDisponibilidad.FotosDelDia(equipos, 2, new[] { 10 }, ventanas, new DateTime(2026, 9, 1)).Single();
+        var oracle = CalculadoraDisponibilidad.FotosDelDia(equipos, 2, new[] { 10 }, ventanas, new DateTime(2026, 9, 1), baseEquipos: true).Single();
+
+        Assert.Equal(100m, requeridos.DispPct);   // 2 de 2 requeridos
+        Assert.Equal(66.67m, oracle.DispPct);     // 2 de 3 equipos (PORCIENTO_HORA de Oracle)
+        Assert.Equal(100m, oracle.PotencialPct);  // el potencial siempre es sobre requeridos
+
+        // "Todas" como Oracle: total disponible / total de equipos.
+        Assert.Equal(75m, CalculadoraDisponibilidad.PorcentajeTotal(new[] { (2m, 2, 3), (4m, 5, 5) }, baseEquipos: true));
+        Assert.Equal(85.71m, CalculadoraDisponibilidad.PorcentajeTotal(new[] { (2m, 2, 3), (4m, 5, 5) }, baseEquipos: false));
+    }
 }

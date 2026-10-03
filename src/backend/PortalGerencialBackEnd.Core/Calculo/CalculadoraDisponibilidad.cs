@@ -11,7 +11,8 @@ namespace PortalGerencialBackEnd.Core.Calculo
         bool CorrectivasSegunAviso,
         ISet<string> EstadosCerrados,
         ISet<string> EstadosExcluidos,
-        IReadOnlyDictionary<string, string> TipoPorClase)
+        IReadOnlyDictionary<string, string> TipoPorClase,
+        bool BaseEquipos = false)
     {
         public string Tipo(string claseOrden) =>
             TipoPorClase.TryGetValue(claseOrden, out var t) ? t : TiposOrden.Planificada;
@@ -80,24 +81,26 @@ namespace PortalGerencialBackEnd.Core.Calculo
         /// <summary>Fotos de las horas activas de un día para una asignación.</summary>
         public static List<DisponibilidadHora> FotosDelDia(
             IReadOnlyCollection<string> equipos, int requeridos, IEnumerable<int> horasActivas,
-            ILookup<string, VentanaFueraServicio> ventanas, DateTime dia)
+            ILookup<string, VentanaFueraServicio> ventanas, DateTime dia, bool baseEquipos = false)
         {
+            // Base del %: requeridos (decisión del 30/09/2026) o equipos de la asignación (como Oracle:
+            // PORCIENTO_HORA = disponibles / equipos). El potencial siempre es sobre requeridos.
             return horasActivas.Select(h =>
             {
                 var instante = dia.Date.AddHours(h);
                 var fuera = equipos.Count(e => ventanas[e].Any(v => v.Desde <= instante && instante < v.Hasta));
                 var disponibles = equipos.Count - fuera;
                 return new DisponibilidadHora(h, equipos.Count, requeridos, disponibles,
-                    Porcentaje(disponibles, requeridos), PorcentajeSinTope(disponibles, requeridos));
+                    Porcentaje(disponibles, baseEquipos ? equipos.Count : requeridos), PorcentajeSinTope(disponibles, requeridos));
             }).ToList();
         }
 
         /// <summary>Un día de una asignación: promedio de las fotos horarias + horas por tipo de orden.</summary>
         public static CalcDisponibilidadDiaria CalcularDia(
             int reporteId, AsignacionDto asignacion, IReadOnlyCollection<string> equipos, IReadOnlyCollection<int> horasActivas,
-            ILookup<string, VentanaFueraServicio> ventanas, DateTime dia)
+            ILookup<string, VentanaFueraServicio> ventanas, DateTime dia, bool baseEquipos = false)
         {
-            var fotos = FotosDelDia(equipos, asignacion.CantRequerida, horasActivas, ventanas, dia);
+            var fotos = FotosDelDia(equipos, asignacion.CantRequerida, horasActivas, ventanas, dia, baseEquipos);
             var (planificada, preventivo, correctiva) = HorasPorTipo(equipos, ventanas, dia);
             var hrsDia = equipos.Count * 24m;
 
@@ -109,7 +112,7 @@ namespace PortalGerencialBackEnd.Core.Calculo
                 CantEquipo = equipos.Count,
                 EqRequerido = asignacion.CantRequerida,
                 EqDisponibleProm = fotos.Count == 0 ? equipos.Count : Math.Round((decimal)fotos.Average(f => f.EqDisponible), 2),
-                DispRealPct = fotos.Count == 0 ? Porcentaje(equipos.Count, asignacion.CantRequerida) : Math.Round(fotos.Average(f => f.DispPct), 2),
+                DispRealPct = fotos.Count == 0 ? Porcentaje(equipos.Count, baseEquipos ? equipos.Count : asignacion.CantRequerida) : Math.Round(fotos.Average(f => f.DispPct), 2),
                 PotencialPct = fotos.Count == 0 ? PorcentajeSinTope(equipos.Count, asignacion.CantRequerida) : Math.Round(fotos.Average(f => f.PotencialPct), 2),
                 DispCompPct = asignacion.DispCompPct,
                 HorasMedidas = fotos.Count,
@@ -203,6 +206,19 @@ namespace PortalGerencialBackEnd.Core.Calculo
                 return 100m;
             var cubiertos = lista.Sum(f => Math.Min(f.Disponibles, f.Requeridos));
             return Math.Min(100m, Math.Round(100m * cubiertos / requeridos, 2));
+        }
+
+        /// <summary>
+        /// Fila "Todas" con la base del porcentaje elegida: sobre requeridos (regla de arriba) o, como
+        /// Oracle, total disponible / total de equipos.
+        /// </summary>
+        public static decimal PorcentajeTotal(IEnumerable<(decimal Disponibles, int Requeridos, int Equipos)> filas, bool baseEquipos)
+        {
+            var lista = filas.ToList();
+            if (!baseEquipos)
+                return PorcentajeTotal(lista.Select(f => (f.Disponibles, f.Requeridos)));
+            var equipos = lista.Sum(f => f.Equipos);
+            return equipos <= 0 ? 100m : Math.Min(100m, Math.Round(100m * lista.Sum(f => f.Disponibles) / equipos, 2));
         }
 
         // ------------------------------------------------------------ intervalos

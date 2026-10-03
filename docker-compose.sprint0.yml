@@ -9,7 +9,7 @@
 services:
   oracle:
     environment:
-      SPRINT0_ID_EMPRESA: ${SPRINT0_ID_EMPRESA:-1}
+      SPRINT0_ID_EMPRESA: ${SPRINT0_ID_EMPRESA:-30}
     volumes:
       - oracle11_portalgerencial_sprint0_data:/u01/app/oracle/oradata
       - ./db/oracle/sprint0:/container-entrypoint-initdb.d:ro

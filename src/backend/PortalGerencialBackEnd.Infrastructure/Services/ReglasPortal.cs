@@ -72,7 +72,8 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
                 CorrectivasSegunAviso: string.Equals(p.Texto(ClavesParametro.CorrectivasSegunAviso, "S"), "S", StringComparison.OrdinalIgnoreCase),
                 EstadosCerrados: p.Lista(ClavesParametro.EstadosCerrados, "Cerrada"),
                 EstadosExcluidos: p.Lista(ClavesParametro.EstadosExcluidos, "Anulada"),
-                TipoPorClase: tipoPorClase);
+                TipoPorClase: tipoPorClase,
+                BaseEquipos: string.Equals(p.Texto(ClavesParametro.BasePorcentajeDisponibilidad, "REQUERIDOS"), "EQUIPOS", StringComparison.OrdinalIgnoreCase));
         }
 
         public static HashSet<string> ClasesAvance(ParametrosPortal p) => p.Lista(ClavesParametro.ClasesOrdenAvance, "ZC03");

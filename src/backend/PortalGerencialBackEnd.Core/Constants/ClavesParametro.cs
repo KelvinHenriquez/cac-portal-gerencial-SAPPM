@@ -37,6 +37,13 @@ namespace PortalGerencialBackEnd.Core.Constants
         /// </summary>
         public const string UsuariosHojaRuta = "SAP.USUARIOS_HOJA_RUTA";
 
+        /// <summary>
+        /// Base del % de disponibilidad: REQUERIDOS (disponibles / requeridos, topado en 100; decisión
+        /// del 30/09/2026) o EQUIPOS (disponibles / equipos de la asignación, como PR_DISPONIBILIDAD_EQUIPOS
+        /// de Oracle).
+        /// </summary>
+        public const string BasePorcentajeDisponibilidad = "DISPONIBILIDAD.BASE_PORCENTAJE";
+
         /// <summary>Clases de orden que cuentan para Avance de Reparación.</summary>
         public const string ClasesOrdenAvance = "AVANCE.CLASES_ORDEN";
 

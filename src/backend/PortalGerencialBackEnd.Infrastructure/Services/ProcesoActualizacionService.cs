@@ -437,7 +437,7 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
                         var dias = new List<CalcDisponibilidadDiaria>();
                         for (var dia = semana.FechaInicio; dia <= semana.FechaFin && dia <= hoy; dia = dia.AddDays(1))
                         {
-                            var d = CalculadoraDisponibilidad.CalcularDia(config.ReporteId, asignacion, equipos, config.HorasActivas, ventanas, dia);
+                            var d = CalculadoraDisponibilidad.CalcularDia(config.ReporteId, asignacion, equipos, config.HorasActivas, ventanas, dia, c.Reglas.BaseEquipos);
                             d.CorridaId = corridaId;
                             d.GeneradoEn = ahora;
                             dias.Add(d);

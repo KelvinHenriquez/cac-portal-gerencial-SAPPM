@@ -278,6 +278,16 @@ en producción hasta que se decida (sin destinatarios no envía nada, solo regis
   usuario) y columna `USUARIO_CREACION` en `STG_SAP_OPERACION_PGPM`.
 - El ABAP entregó equipos y avisos (`Z_PM_MF_WS_*`); revisión en el Anexo A v2.
 
+## PL/SQL de Oracle y ajustes del 03/10/2026
+
+- Empresa de CAC = **30**. Hora configurada como texto `' 00:00'` (24 h). 22 reportes de
+  disponibilidad, 7 activos (51 a 57); 7 programas de reparación del período 30 (correlativos 27 a 33).
+- Fórmulas reales de Oracle y diferencias con el portal: [oracle/ANALISIS_PLSQL_ORACLE.md](oracle/ANALISIS_PLSQL_ORACLE.md).
+- Vistas de producción ajustadas a lo que hace Oracle: fichas repetidas (se queda la activa),
+  fichas "000" fuera, asignaciones sin requeridos fuera, hora en 24 h, familia desde MA_MST_FAMILIA,
+  actividades SELECCIONADO = 'S'. Probadas otra vez contra la réplica (11 vistas válidas).
+- Nuevo parámetro `DISPONIBILIDAD.BASE_PORCENTAJE` (REQUERIDOS por defecto; EQUIPOS = como Oracle).
+
 ## Qué sigue
 
 1. **8a — Vistas reales:** escritas y probadas en local. Falta correr

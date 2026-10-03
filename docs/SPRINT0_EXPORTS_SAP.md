@@ -39,11 +39,11 @@ Herramientas → Exportar base de datos: **sin DDL**, datos en formato **INSERT*
 | MA_CONFIG_DISPONIBILIDAD, MA_CONFIG_SEMANA_DISP, MA_CONFIG_HORA_DISP | — |
 | MA_EQUIPOS_REQ_X_FAMILIA, MA_DEQUIPOS_REQ_X_FAMILIA | — (≈20.000 filas) |
 | MA_ENC_CONFIG_AVANCE, MA_DET_CONFIG_AVANCE, MA_SUBDET_CONFIG_AVANCE | — |
-| MA_ENC_SEMANA_OT, MA_DET_SEMANA_OT, MA_TIPO_ORDEN_TRABAJO | — |
+| MA_ENC_SEMANA_OT, MA_DET_SEMANA_OT, MA_TIPO_ORDEN_TRABAJO, MA_MST_FAMILIA | — |
 | MA_OT_CONFIG_AVANCE | `ID_PERIODO = 30` (solo el período actual; la tabla tiene 760.000 filas) |
 | PG_PERIODO | — (si el export trae columnas distintas a ID_EMPRESA, ID_PERIODO, DESCRIPCION, avisar) |
 
-La empresa de CAC se fija con `SPRINT0_ID_EMPRESA` (por defecto 1) al levantar el entorno.
+La empresa de CAC es la 30 (`SPRINT0_ID_EMPRESA`, ya es el valor por defecto).
 
 ## B. SAP
 
