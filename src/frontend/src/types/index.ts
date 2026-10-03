@@ -109,6 +109,7 @@ export interface FilaDisponibilidadDto {
   negrita: boolean;
   grupo: boolean;
   esMiembro: boolean;
+  enGrupo: string | null;
   cantEquipo: number;
   eqRequerido: number;
   eqDisponible: number;

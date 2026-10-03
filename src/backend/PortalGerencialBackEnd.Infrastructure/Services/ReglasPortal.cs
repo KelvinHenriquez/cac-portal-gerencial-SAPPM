@@ -77,6 +77,46 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
 
         public static HashSet<string> ClasesAvance(ParametrosPortal p) => p.Lista(ClavesParametro.ClasesOrdenAvance, "ZC03");
 
+        /// <summary>
+        /// Filas que no son grupo y cuyos equipos están todos dentro de una fila de grupo del mismo
+        /// reporte → nombre de ese grupo (el primero, por orden).
+        /// </summary>
+        public static Dictionary<int, string> MiembrosDeGrupos(IReadOnlyCollection<AsignacionDto> asignaciones)
+        {
+            var grupos = asignaciones.Where(a => a.Grupo)
+                .Select(g => (g.Nombre, Equipos: g.Equipos.ToHashSet(StringComparer.OrdinalIgnoreCase)))
+                .ToList();
+            var resultado = new Dictionary<int, string>();
+            foreach (var a in asignaciones.Where(a => !a.Grupo && a.Equipos.Count > 0))
+            {
+                var grupo = grupos.FirstOrDefault(g => a.Equipos.All(g.Equipos.Contains));
+                if (grupo.Nombre != null)
+                    resultado[a.AsignacionId] = grupo.Nombre;
+            }
+            return resultado;
+        }
+
+        public static HashSet<string> UsuariosHojaRuta(ParametrosPortal p)
+        {
+            var usuarios = p.Lista(ClavesParametro.UsuariosHojaRuta, "-");
+            usuarios.Remove("-");
+            return usuarios;
+        }
+
+        /// <summary>
+        /// Marca cada operación como del plan original o agregada según quién la creó: las de la
+        /// hoja de ruta las crea el usuario de planificación. Sin usuarios configurados, o si SAP no
+        /// trajo el creador, queda la marca que vino de SAP. Se aplica al leer (entidades sin
+        /// seguimiento), así que cambiar el parámetro vale también para lo ya extraído.
+        /// </summary>
+        public static void AplicarHojaRuta(IEnumerable<StgSapOrden> ordenes, ISet<string> usuariosHojaRuta)
+        {
+            if (usuariosHojaRuta.Count == 0) return;
+            foreach (var op in ordenes.SelectMany(o => o.Operaciones))
+                if (!string.IsNullOrWhiteSpace(op.UsuarioCreacion))
+                    op.Programada = usuariosHojaRuta.Contains(op.UsuarioCreacion.Trim());
+        }
+
         public static BasePlan BasePlan(ParametrosPortal p) =>
             string.Equals(p.Texto(ClavesParametro.BasePlanAvance, "ACTIVIDADES"), "DIAS", StringComparison.OrdinalIgnoreCase)
                 ? Core.Calculo.BasePlan.Dias

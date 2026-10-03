@@ -71,6 +71,7 @@ namespace PortalGerencialBackEnd.Infrastructure.Persistence.Configurations
             b.Property(x => x.Sistema).HasMaxLength(100);
             b.Property(x => x.Subsistema).HasMaxLength(100);
             b.Property(x => x.Componente).HasMaxLength(100);
+            b.Property(x => x.UsuarioCreacion).HasMaxLength(12);
             b.Property(x => x.TrabajoPlanHh).HasPrecision(12, 2);
             b.Property(x => x.TrabajoRealHh).HasPrecision(12, 2);
             b.Property(x => x.FechaInicioPlan).HasColumnType("DATE");

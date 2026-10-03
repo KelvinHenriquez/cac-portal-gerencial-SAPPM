@@ -48,6 +48,9 @@ namespace PortalGerencialBackEnd.Core.Dtos.Disponibilidad
         /// </summary>
         public bool EsMiembro { get; set; }
 
+        /// <summary>Grupo que ya cuenta los equipos de esta fila (si EsMiembro).</summary>
+        public string? EnGrupo { get; set; }
+
         public int CantEquipo { get; set; }
         public int EqRequerido { get; set; }
         public int EqDisponible { get; set; }

@@ -949,6 +949,13 @@ namespace PortalGerencialBackEnd.Infrastructure.Persistence.Migrations
                         },
                         new
                         {
+                            Clave = "SAP.USUARIOS_HOJA_RUTA",
+                            ActualizadoEn = new DateTime(2026, 10, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Descripcion = "Usuarios SAP (separados por coma) que crean las operaciones de la hoja de ruta (Real Programado); las creadas por otros usuarios son agregadas (Real No Programado). \"-\" = sin definir: se usa la marca que traiga SAP (respuesta del 02/10/2026).",
+                            Valor = "-"
+                        },
+                        new
+                        {
                             Clave = "AVANCE.BASE_PLAN",
                             ActualizadoEn = new DateTime(2026, 10, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             Descripcion = "Con qué se arma el % programado de cada semana: DIAS (respuesta del 02/10/2026: por actividades puede engañar si hay muchas actividades chicas) o ACTIVIDADES.",
@@ -1222,6 +1229,12 @@ namespace PortalGerencialBackEnd.Infrastructure.Persistence.Migrations
                         .HasPrecision(12, 2)
                         .HasColumnType("DECIMAL(12,2)")
                         .HasColumnName("TRABAJO_REAL_HH");
+
+                    b.Property<string>("UsuarioCreacion")
+                        .HasMaxLength(12)
+                        .IsUnicode(false)
+                        .HasColumnType("VARCHAR2(12)")
+                        .HasColumnName("USUARIO_CREACION");
 
                     b.HasKey("OrdenSapId", "Operacion")
                         .HasName("PK_STG_OPERACION_PGPM");

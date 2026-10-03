@@ -148,7 +148,7 @@ export default function DisponibilidadPage() {
         ...(esTodas ? { "& td": { fontWeight: 700, bgcolor: "#FFF9DB", borderBottom: 2, borderColor: "divider" } } : {}),
       }}
     >
-      <TableCell sx={{ ...celdaFija, ...(esTodas ? { bgcolor: "#FFF9DB" } : {}), ...(f.esMiembro ? { pl: 4 } : {}) }}>
+      <TableCell sx={{ ...celdaFija, ...(esTodas ? { bgcolor: "#FFF9DB" } : {}) }}>
         {esTodas ? (
           f.asignacion
         ) : (
@@ -156,10 +156,15 @@ export default function DisponibilidadPage() {
             variant="text"
             size="small"
             onClick={() => setAsignacionAbierta(f.asignacionId)}
-            sx={{ p: 0, minWidth: 0, textAlign: "left", fontWeight: f.negrita || f.grupo ? 700 : f.esMiembro ? 500 : 600, justifyContent: "flex-start" }}
+            sx={{ p: 0, minWidth: 0, textAlign: "left", fontWeight: f.negrita || f.grupo ? 700 : 600, justifyContent: "flex-start" }}
           >
             {f.asignacion}
           </Button>
+        )}
+        {f.enGrupo && (
+          <Typography variant="caption" color="text.secondary" display="block" sx={{ fontWeight: 400 }}>
+            Incluido en {f.enGrupo}
+          </Typography>
         )}
       </TableCell>
       <TableCell align="right">{f.cantEquipo}</TableCell>
@@ -261,8 +266,8 @@ export default function DisponibilidadPage() {
               Se mide cada hora configurada en el reporte: un equipo está fuera de servicio desde que se crea su orden hasta su
               cierre técnico (las correctivas, según el aviso de parada). Disponibilidad % = disponibles / requeridos, máximo
               100. Potencial % = disponibles / requeridos, sin tope. Cada semana es el promedio de sus días. &quot;Todas&quot;
-              = total disponible / total requerido, sin que lo que sobra en una asignación compense lo que falta en otra; de
-              un grupo se cuenta el grupo, no cada uno de sus equipos.
+              = total disponible / total requerido, sin que lo que sobra en una asignación compense lo que falta en otra. Una
+              fila cuyos equipos ya están todos en un grupo se muestra, pero en &quot;Todas&quot; solo cuenta el grupo.
             </Typography>
           </Box>
         </Paper>

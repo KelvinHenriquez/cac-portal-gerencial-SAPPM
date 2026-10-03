@@ -251,11 +251,37 @@ en producción hasta que se decida (sin destinatarios no envía nada, solo regis
   Todas 21/21/21; Centro de Servicios Todas 219/191/211; Tractores 40 equipos en el Programa de
   Reparación y 4 en Nivelación.
 
+## Lo que salió de la exploración de MAQUINARIAN y las respuestas de la noche del 02/10/2026
+
+- **Tablas reales** (diccionario exportado en `oracle/1.xlsx` a `5.xlsx`): disponibilidad en
+  `MA_CONFIG_DISPONIBILIDAD` → `MA_CONFIG_SEMANA_DISP`, `MA_CONFIG_HORA_DISP`,
+  `MA_EQUIPOS_REQ_X_FAMILIA` (asignaciones) → `MA_DEQUIPOS_REQ_X_FAMILIA` (equipos); avance en
+  `MA_ENC_CONFIG_AVANCE` → `MA_DET_CONFIG_AVANCE` (familias) → `MA_SUBDET_CONFIG_AVANCE` (plan por
+  semana) y `MA_OT_CONFIG_AVANCE` (OT asignadas, una fila por actividad); calendario en
+  `MA_ENC_SEMANA_OT` / `MA_DET_SEMANA_OT`; equipos en `MA_MAESTRO_EQUIPOS` (FICHA, EQUIPO).
+- [oracle/vistas_produccion.sql](oracle/vistas_produccion.sql) ya está escrito sobre esas tablas
+  (sin huecos `<...>`), compilado y probado en el Oracle local contra una réplica vacía con las
+  columnas exactas (`db/oracle/pruebas/`). Quedan 6 puntos "VERIFICAR" que se cierran con
+  [oracle/explorar_maquinarian_2.sql](oracle/explorar_maquinarian_2.sql) (también solo SELECT).
+- En Oracle los reportes de disponibilidad se identifican por área de servicio + tipo de reporte:
+  el portal usa `REPORTE_ID = ID_AREA_SERVICIO * 1000 + ID_TIPO_REPORTE`.
+- **Oracle ya guarda sus resultados** (`MA_DISPONIBILIDAD_EQUIPOS` por hora, `MA_TEMP_DISPONIBILIDAD`,
+  `MA_RES_CONFIG_AVANCE`, columnas `REAL_*` de `MA_SUBDET_CONFIG_AVANCE`): sirven para comparar el
+  portal contra Oracle número por número en el Sprint 0, y el PL/SQL que los llena trae las fórmulas.
+- **Código legado = FLEET_NUM** (la Ficha). Los equipos que no usan combustible quedaron sin código
+  legado en SAP: no se pueden cruzar (observación 2 del [Anexo A v2](ANEXO_A_V2_ABAP.md)).
+- **Grupos:** debajo de un grupo no van necesariamente sus equipos. El portal ya no usa la posición:
+  una fila cuenta como incluida en un grupo solo si todos sus equipos están en ese grupo; se
+  muestra con la nota "Incluido en …" y no entra en "Todas".
+- **Actividad programada vs. agregada:** la decide el usuario que creó la operación en SAP (el de
+  planificación = hoja de ruta). Nuevo parámetro `SAP.USUARIOS_HOJA_RUTA` (falta el nombre del
+  usuario) y columna `USUARIO_CREACION` en `STG_SAP_OPERACION_PGPM`.
+- El ABAP entregó equipos y avisos (`Z_PM_MF_WS_*`); revisión en el Anexo A v2.
+
 ## Qué sigue
 
-1. **8a — Vistas reales (depende de Kelvin):** correr `explorar_maquinarian.sql`, guardar la salida
-   en `docs/oracle/exploracion_maquinarian.txt`. Con eso se escribe `vistas_produccion.sql` sin
-   huecos y se prueba contra una copia de esas tablas en el Oracle local.
+1. **8a — Vistas reales:** escritas y probadas en local. Falta correr
+   `explorar_maquinarian_2.sql` (Kelvin) para cerrar los puntos "VERIFICAR".
 2. **Sprint 0 (depende de Kelvin):** exports de SAP de julio a septiembre
    ([lista](SPRINT0_EXPORTS_SAP.md)). Se construye un importador de Excel como tercera fuente de
    SAP (además del simulador y el RFC) y se compara contra los reportes de Oracle.
@@ -277,10 +303,12 @@ entran en dos momentos:
 ## Pendientes
 
 Responsable: **Kelvin (DBA)**
-- [ ] Correr `oracle/explorar_maquinarian.sql` (solo diccionario de datos) y guardar la salida.
-- [ ] ¿Qué código tiene SAP como legado: la Ficha (`F01168`) o el Equipo (`A29017-002`)?
-- [ ] Confirmar que en un reporte con grupos, las filas que siguen al grupo son sus equipos y
-      "Todas" debe contar solo el grupo.
+- [x] Correr `oracle/explorar_maquinarian.sql` (02/10/2026).
+- [ ] Correr `oracle/explorar_maquinarian_2.sql` y exportar cada resultado (6.xlsx en adelante).
+- [x] Código legado: la Ficha, en FLEET_NUM.
+- [ ] Equipos sin combustible sin código legado en SAP: ¿se corrigen en SAP o se busca otro cruce?
+- [ ] Usuario(s) SAP de planificación que crean la hoja de ruta (para `SAP.USUARIOS_HOJA_RUTA`).
+- [ ] Confirmar la regla de grupos de arriba para "Todas".
 - [ ] Esquema/tablespace real para los objetos `_pgpm` y usuario técnico del portal con CREATE TABLE,
       CREATE VIEW, CREATE SEQUENCE (o correr el script de migraciones una vez y dejarle solo DML).
 - [ ] Nombres reales de las tablas del Sistema de Órdenes de Trabajo: familias, curva por semana,

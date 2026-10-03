@@ -93,15 +93,12 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
             var semanales = (await _db.CalcDisponibilidadSemanal.AsNoTracking().Where(s => s.ReporteId == reporteId).ToListAsync())
                 .ToDictionary(s => (s.AsignacionId, s.NoSemana));
 
-            // Una fila de grupo va seguida de sus miembros (cada equipo como fila propia) hasta el
-            // próximo grupo: los miembros se muestran, pero "Todas" cuenta solo el grupo.
-            var miembros = new HashSet<int>();
-            var dentroDeGrupo = false;
-            foreach (var a in b.Config.Asignaciones)
-            {
-                if (a.Grupo) dentroDeGrupo = true;
-                else if (dentroDeGrupo) miembros.Add(a.AsignacionId);
-            }
+            // Un grupo junta equipos de distinta naturaleza que juntos generan su disponibilidad. Una
+            // fila que no es grupo y cuyos equipos están todos dentro de un grupo del mismo reporte se
+            // muestra, pero "Todas" no la cuenta: ya la cuenta el grupo. La posición no importa
+            // (respuesta del 02/10/2026: debajo de un grupo puede haber otros equipos).
+            var grupoDe = ReglasPortal.MiembrosDeGrupos(b.Config.Asignaciones);
+            var miembros = grupoDe.Keys.ToHashSet();
 
             var actuales = new List<(AsignacionDto Asig, int Equipos, int Disponibles)>();
             foreach (var a in b.Config.Asignaciones)
@@ -117,6 +114,7 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
                     Negrita = a.Negrita,
                     Grupo = a.Grupo,
                     EsMiembro = miembros.Contains(a.AsignacionId),
+                    EnGrupo = grupoDe.GetValueOrDefault(a.AsignacionId),
                     CantEquipo = equipos.Count,
                     EqRequerido = a.CantRequerida,
                     EqDisponible = foto.EqDisponible,

@@ -30,6 +30,13 @@ namespace PortalGerencialBackEnd.Core.Constants
         /// </summary>
         public const string CorrectivasSegunAviso = "DISPONIBILIDAD.CORRECTIVAS_SEGUN_AVISO";
 
+        /// <summary>
+        /// Usuarios SAP (separados por coma) que crean las operaciones de la hoja de ruta: una
+        /// operación creada por uno de ellos es del plan original (Real Programado); por otro usuario,
+        /// agregada en la reparación (Real No Programado). "-" = sin definir: se usa la marca que traiga SAP.
+        /// </summary>
+        public const string UsuariosHojaRuta = "SAP.USUARIOS_HOJA_RUTA";
+
         /// <summary>Clases de orden que cuentan para Avance de Reparación.</summary>
         public const string ClasesOrdenAvance = "AVANCE.CLASES_ORDEN";
 

@@ -1,102 +1,184 @@
 -- =====================================================================================
 -- PRODUCCIÓN — Vistas de estructura del Portal Gerencial SAP PM (Oracle 11g).
--- Lo corre el DBA en el esquema del portal, una vez y cada vez que cambie una tabla de
--- origen. Es idempotente (CREATE OR REPLACE).
+-- Lo corre el DBA en el esquema del portal (F5 en SQL Developer), una vez y cada vez que cambie
+-- una tabla de origen. Es idempotente (CREATE OR REPLACE).
 --
--- Reemplazar cada <...> por la tabla/columna real del "Sistema de Órdenes de Trabajo" de
--- Oracle Forms: pantallas MA_CONFIGURACION_DISP (disponibilidad) y MA_CONFIG_AVANCE (avance).
--- NO cambiar los nombres de vista ni los alias de columna: son el contrato con el portal (la
--- versión local, sobre el esquema simulado SISTEMA_OT, está en db/oracle/init/03_vistas_pgpm.sql).
--- Banderas como 'S'/'N'. El dueño de las vistas necesita GRANT SELECT directo (no por rol).
+-- Escritas sobre las tablas reales del esquema MAQUINARIAN (diccionario exportado el 02/10/2026:
+-- docs/oracle/1.xlsx a 5.xlsx). NO cambiar los nombres de vista ni los alias de columna: son el
+-- contrato con el portal (la versión local, sobre el esquema simulado SISTEMA_OT, está en
+-- db/oracle/init/03_vistas_pgpm.sql).
 --
--- Las tablas de origen están en el esquema MAQUINARIAN. Los nombres entre <...> marcados como
--- "candidata" salen de los bloques de las pantallas (F5, 02/10/2026) y hay que confirmarlos con
--- la salida de explorar_maquinarian.sql: un bloque de Forms no siempre es una tabla.
+-- Antes de correrlo:
+--   1. Confirmar la empresa de CAC (sección 6 de explorar_maquinarian_2.sql) y ajustar el DEFINE.
+--   2. Revisar los puntos marcados "VERIFICAR" con la salida de explorar_maquinarian_2.sql.
+--   3. El dueño de las vistas necesita GRANT SELECT directo (no por rol); como MAQUINARIAN o DBA:
+--        GRANT SELECT ON MAQUINARIAN.MA_MAESTRO_EQUIPOS        TO <esquema_portal>;
+--        GRANT SELECT ON MAQUINARIAN.MA_CONFIG_DISPONIBILIDAD  TO <esquema_portal>;
+--        GRANT SELECT ON MAQUINARIAN.MA_CONFIG_SEMANA_DISP     TO <esquema_portal>;
+--        GRANT SELECT ON MAQUINARIAN.MA_CONFIG_HORA_DISP       TO <esquema_portal>;
+--        GRANT SELECT ON MAQUINARIAN.MA_EQUIPOS_REQ_X_FAMILIA  TO <esquema_portal>;
+--        GRANT SELECT ON MAQUINARIAN.MA_DEQUIPOS_REQ_X_FAMILIA TO <esquema_portal>;
+--        GRANT SELECT ON MAQUINARIAN.MA_ENC_CONFIG_AVANCE      TO <esquema_portal>;
+--        GRANT SELECT ON MAQUINARIAN.MA_DET_CONFIG_AVANCE      TO <esquema_portal>;
+--        GRANT SELECT ON MAQUINARIAN.MA_SUBDET_CONFIG_AVANCE   TO <esquema_portal>;
+--        GRANT SELECT ON MAQUINARIAN.MA_OT_CONFIG_AVANCE       TO <esquema_portal>;
+--        GRANT SELECT ON MAQUINARIAN.MA_ENC_SEMANA_OT          TO <esquema_portal>;
+--        GRANT SELECT ON MAQUINARIAN.MA_DET_SEMANA_OT          TO <esquema_portal>;
+--        GRANT SELECT ON MAQUINARIAN.MA_TIPO_ORDEN_TRABAJO     TO <esquema_portal>;
+--        GRANT SELECT ON <dueño>.PG_PERIODO                    TO <esquema_portal>;
+--
+-- Llaves: en Oracle Forms los reportes de disponibilidad se identifican por
+-- (empresa, área de servicio, tipo de reporte); el portal usa un solo número:
+-- REPORTE_ID = ID_AREA_SERVICIO * 1000 + ID_TIPO_REPORTE.
 -- =====================================================================================
+DEFINE ID_EMPRESA = 1   -- VERIFICAR: empresa de CAC
 
--- Equipos (Objeto Técnico / Ficha) con su familia: cruce SAP <-> Oracle por código legado.
+-- Equipos (Ficha) con su familia: cruce SAP <-> Oracle por la Ficha, que SAP guarda como código
+-- legado en FLEET_NUM (KEY_NUM en Z_PM_MF_WS_MAESTRO_EQUIPO).
 CREATE OR REPLACE VIEW VW_EQUIPOS_FAMILIA_PGPM AS
-SELECT <ficha>           AS CODIGO_LEGADO,   -- "F01168": mismo código que SAP trae como legado
-       <equipo>          AS EQUIPO_CODIGO,   -- "A29017-002": código de equipo que muestra Oracle
-       <descripcion>     AS DESCRIPCION,
-       <familia>         AS FAMILIA_CODIGO,
-       <activo 'S'/'N'>  AS ACTIVO
-FROM   <tabla_equipos>;
+SELECT e.FICHA                     AS CODIGO_LEGADO,   -- "F01168"
+       e.EQUIPO                    AS EQUIPO_CODIGO,   -- "A29017-002"
+       e.DESCRIPCION               AS DESCRIPCION,
+       TO_CHAR(e.ID_FAMILIA)       AS FAMILIA_CODIGO,
+       CASE WHEN UPPER(e.ESTADO) = 'ACTIVO' THEN 'S' ELSE 'N' END AS ACTIVO   -- VERIFICAR valores (sección 10)
+FROM   MAQUINARIAN.MA_MAESTRO_EQUIPOS e
+WHERE  e.ID_EMPRESA = &ID_EMPRESA
+AND    e.FICHA IS NOT NULL;
 
 -- =============================================================== disponibilidad
 
--- Paso 1: tipo de reporte. Rojo si < UMBRAL_ROJO (Comp. 1); naranja si < UMBRAL_NARANJA (Comp. 2).
+-- Paso 1: tipo de reporte. Rojo si < Comp. 1; naranja si < Comp. 2.
 CREATE OR REPLACE VIEW VW_DISP_REPORTE_PGPM AS
-SELECT <id>          AS REPORTE_ID,
-       <orden>       AS ORDEN,
-       <descripcion> AS DESCRIPCION,     -- "Equipos De Riegos - Gerencial"...
-       <comp1>       AS UMBRAL_ROJO,
-       <comp2>       AS UMBRAL_NARANJA,
-       CASE WHEN UPPER(<estado>) = 'ACTIVO' THEN 'S' ELSE 'N' END AS ACTIVO
-FROM   <tabla_tipo_reporte>;            -- candidata: MAQUINARIAN.MA_CONFIG_DISPONIBILIDAD
+SELECT c.ID_AREA_SERVICIO * 1000 + c.ID_TIPO_REPORTE AS REPORTE_ID,
+       NVL(c.ORDEN, c.ID_TIPO_REPORTE)                AS ORDEN,
+       c.DESCRIPCION                                  AS DESCRIPCION,
+       NVL(c.VALOR_COMP, 0)                           AS UMBRAL_ROJO,
+       NVL(c.VALOR_COMP2, 0)                          AS UMBRAL_NARANJA,
+       CASE WHEN UPPER(c.ESTADO) = 'ACTIVO' THEN 'S' ELSE 'N' END AS ACTIVO
+FROM   MAQUINARIAN.MA_CONFIG_DISPONIBILIDAD c
+WHERE  c.ID_EMPRESA = &ID_EMPRESA;
 
--- Paso 2: semanas del reporte (generadas del rango de fechas).
+-- Paso 2: semanas del reporte. VERIFICAR (sección 8) que NO_SEMANA no se repite dentro de un reporte.
 CREATE OR REPLACE VIEW VW_DISP_SEMANA_PGPM AS
-SELECT <id_reporte> AS REPORTE_ID, <no_semana> AS NO_SEMANA, <mes> AS MES,
-       <fecha_inicio> AS FECHA_INICIO, <fecha_fin> AS FECHA_FIN
-FROM   <tabla_semana_reporte>;          -- candidata: MAQUINARIAN.MA_CONFIG_SEMANA_DISP
+SELECT s.ID_AREA_SERVICIO * 1000 + s.ID_TIPO_REPORTE AS REPORTE_ID,
+       s.NO_SEMANA, s.ID_MES AS MES, s.FECHA_INICIO, s.FECHA_FIN
+FROM   MAQUINARIAN.MA_CONFIG_SEMANA_DISP s
+WHERE  s.ID_EMPRESA = &ID_EMPRESA;
 
--- Paso 3: horas del día en que corre el proceso (0 a 23).
+-- Paso 3: horas del día en que se mide (0 a 23). HORA es texto: VERIFICAR el formato (sección 8);
+-- aquí se asume '12:00 AM' / '01:00 PM'.
 CREATE OR REPLACE VIEW VW_DISP_HORA_PGPM AS
-SELECT <id_reporte> AS REPORTE_ID,
-       <hora 0-23>  AS HORA,             -- convertir si se guarda como '12:00 AM'
-       CASE WHEN UPPER(<estado>) = 'ACTIVO' THEN 'S' ELSE 'N' END AS ACTIVO
-FROM   <tabla_hora_reporte>;            -- candidata: MAQUINARIAN.MA_CONFIG_HORA_DISP
+SELECT h.ID_AREA_SERVICIO * 1000 + h.ID_TIPO_REPORTE AS REPORTE_ID,
+       TO_NUMBER(TO_CHAR(TO_DATE(TRIM(h.HORA), 'HH:MI AM', 'NLS_DATE_LANGUAGE=AMERICAN'), 'HH24')) AS HORA,
+       CASE WHEN UPPER(NVL(h.ESTADO, 'ACTIVO')) = 'ACTIVO' THEN 'S' ELSE 'N' END AS ACTIVO
+FROM   MAQUINARIAN.MA_CONFIG_HORA_DISP h
+WHERE  h.ID_EMPRESA = &ID_EMPRESA;
 
--- Paso 4: asignaciones (filas del reporte). Un "Grupo" junta equipos de distinta naturaleza
--- que entre todos resuelven una operación (p. ej. "Aguacatico Goteo"). ORDEN debe dejar cada
--- fila de grupo seguida de las filas de sus equipos, como en la pantalla: el portal toma como
--- miembros del grupo las filas que siguen hasta el próximo grupo, y en "Todas" cuenta solo el grupo.
+-- Paso 4: asignaciones (filas del reporte). Un grupo junta equipos de distinta naturaleza que
+-- juntos generan su disponibilidad. El portal toma como "incluida en el grupo" a la fila que no es
+-- grupo y cuyos equipos están todos en un grupo del mismo reporte (no importa la posición): se
+-- muestra, pero en "Todas" solo cuenta el grupo.
 CREATE OR REPLACE VIEW VW_DISP_ASIGNACION_PGPM AS
-SELECT <id_reporte> AS REPORTE_ID, <id_asignacion> AS ASIGNACION_ID, <orden> AS ORDEN,
-       <asignacion> AS ASIGNACION, <cant_asig> AS CANT_ASIGNADA, <cant_req> AS CANT_REQUERIDA,
-       <disp_comp>  AS DISP_COMP_PCT,
-       CASE WHEN UPPER(<negrita>) IN ('SI', 'S') THEN 'S' ELSE 'N' END AS NEGRITA,
-       CASE WHEN UPPER(<grupo>)   IN ('SI', 'S') THEN 'S' ELSE 'N' END AS GRUPO
-FROM   <tabla_asignacion>;              -- candidata: MAQUINARIAN.MA_EQUIPOS_REQ_X_FAMILIA
+SELECT a.ID_AREA_SERVICIO * 1000 + a.ID_TIPO_REPORTE AS REPORTE_ID,
+       a.CORRELATIVO                                  AS ASIGNACION_ID,
+       NVL(a.ORDEN, a.CORRELATIVO)                    AS ORDEN,
+       a.DESCRIPCION                                  AS ASIGNACION,
+       NVL(a.CANT, 0)                                 AS CANT_ASIGNADA,
+       NVL(a.CANT_REQ, 0)                             AS CANT_REQUERIDA,
+       NVL(a.DISP_COMP, 0)                            AS DISP_COMP_PCT,
+       CASE WHEN UPPER(a.IND_NEGRITA) IN ('SI', 'S') THEN 'S' ELSE 'N' END AS NEGRITA,
+       CASE WHEN UPPER(a.IND_GRUPO)   IN ('SI', 'S') THEN 'S' ELSE 'N' END AS GRUPO
+FROM   MAQUINARIAN.MA_EQUIPOS_REQ_X_FAMILIA a
+WHERE  a.ID_EMPRESA = &ID_EMPRESA;
 
--- Equipos de cada asignación ("Detalle de Equipos Asignados"). La fila de grupo lleva todos
--- los equipos del grupo; cada fila miembro, el suyo.
+-- Equipos de cada asignación ("Detalle de Equipos Asignados"). La ficha se toma del maestro
+-- (por IDENTIFICADOR) por si cambió después de configurar el reporte.
 CREATE OR REPLACE VIEW VW_DISP_ASIG_EQUIPO_PGPM AS
-SELECT <id_reporte> AS REPORTE_ID, <id_asignacion> AS ASIGNACION_ID, <ficha> AS CODIGO_LEGADO
-FROM   <tabla_asignacion_equipo>;       -- candidata: MAQUINARIAN.MA_DEQUIPOS_REQ_X_FAMILIA
+SELECT d.ID_AREA_SERVICIO * 1000 + d.ID_TIPO_REPORTE AS REPORTE_ID,
+       d.CORRELATIVO                                  AS ASIGNACION_ID,
+       NVL(e.FICHA, d.FICHA)                          AS CODIGO_LEGADO
+FROM   MAQUINARIAN.MA_DEQUIPOS_REQ_X_FAMILIA d
+LEFT JOIN MAQUINARIAN.MA_MAESTRO_EQUIPOS e ON e.IDENTIFICADOR = d.IDENTIFICADOR
+WHERE  d.ID_EMPRESA = &ID_EMPRESA
+AND    NVL(e.FICHA, d.FICHA) IS NOT NULL;
 
 -- =============================================================== avance
 
+-- Período de reparación ("30: 2025-2026"). VERIFICAR dueño y columnas de PG_PERIODO (sección 13).
 CREATE OR REPLACE VIEW VW_AVANCE_PERIODO_PGPM AS
-SELECT <id_periodo> AS PERIODO_ID, <descripcion> AS DESCRIPCION   -- 30 / '2025 - 2026'
-FROM   <tabla_periodo>;
+SELECT p.ID_PERIODO AS PERIODO_ID, p.DESCRIPCION AS DESCRIPCION
+FROM   PG_PERIODO p
+WHERE  p.ID_EMPRESA = &ID_EMPRESA
+AND    p.ID_PERIODO IN (SELECT ID_PERIODO FROM MAQUINARIAN.MA_ENC_CONFIG_AVANCE WHERE ID_EMPRESA = &ID_EMPRESA);
 
--- Paso 1 de "Configuración Reporte Avance".
+-- Reporte de avance ("Programa de Reparación 2026", ...) con las fechas de su calendario.
 CREATE OR REPLACE VIEW VW_AVANCE_REPORTE_PGPM AS
-SELECT <id_reporte> AS REPORTE_ID, <id_periodo> AS PERIODO_ID, <nombre_reporte> AS NOMBRE,
-       <tipo_ot> AS TIPO_OT, <fecha_ref> AS FECHA_REF,
-       <fecha_inicio_calendario> AS FECHA_INICIO, <fecha_fin_calendario> AS FECHA_FIN
-FROM   <tabla_config_avance>;           -- candidata: MAQUINARIAN.MA_ENC_CONFIG_AVANCE
+SELECT e.CORRELATIVO               AS REPORTE_ID,
+       e.ID_PERIODO                AS PERIODO_ID,
+       e.CONCEPTO                  AS NOMBRE,
+       NVL(t.DESCRIPCION, TO_CHAR(e.ID_TIPO_OT)) AS TIPO_OT,
+       NVL(e.FECHA_TRABAJAR, ' ')  AS FECHA_REF,
+       s.FECHA_INICIO              AS FECHA_INICIO,
+       s.FECHA_FIN                 AS FECHA_FIN
+FROM   MAQUINARIAN.MA_ENC_CONFIG_AVANCE e
+JOIN   MAQUINARIAN.MA_ENC_SEMANA_OT s
+       ON s.ID_EMPRESA = e.ID_EMPRESA AND s.ID_PERIODO = e.ID_PERIODO
+      AND s.ID_AREA_SERVICIO = e.ID_AREA AND s.CORRELATIVO = e.ID_TIPO_SEMANA
+LEFT JOIN MAQUINARIAN.MA_TIPO_ORDEN_TRABAJO t
+       ON t.ID_EMPRESA = e.ID_EMPRESA AND t.ID_TIPO_OT = e.ID_TIPO_OT
+WHERE  e.ID_EMPRESA = &ID_EMPRESA;
 
--- Paso 3: familias del reporte.
+-- Familias del reporte. FAMILIA_CODIGO es el ID_FAMILIA (el mismo del maestro de equipos).
 CREATE OR REPLACE VIEW VW_AVANCE_FAMILIA_PGPM AS
-SELECT <id_reporte> AS REPORTE_ID, <orden> AS ORDEN, <familia> AS FAMILIA_CODIGO,
-       <familia_nombre> AS FAMILIA_NOMBRE, <fecha_est_inicio> AS FECHA_EST_INICIO,
-       <fecha_est_fin> AS FECHA_EST_FIN, <cant_equipo> AS CANT_EQUIPO
-FROM   <tabla_familia_definida>;        -- candidata: MAQUINARIAN.MA_DET_CONFIG_AVANCE
+SELECT d.CORRELATIVO                                  AS REPORTE_ID,
+       NVL(d.ORDEN, d.DCORRELATIVO)                   AS ORDEN,
+       TO_CHAR(d.ID_FAMILIA)                          AS FAMILIA_CODIGO,
+       d.DESCRIPCION                                  AS FAMILIA_NOMBRE,
+       NVL(d.FECHA_EST_INICIO, s.FECHA_INICIO)        AS FECHA_EST_INICIO,
+       NVL(d.FECHA_EST_FIN, s.FECHA_FIN)              AS FECHA_EST_FIN,
+       NVL(d.CANT_EQUIPO, 0)                          AS CANT_EQUIPO
+FROM   MAQUINARIAN.MA_DET_CONFIG_AVANCE d
+JOIN   MAQUINARIAN.MA_ENC_CONFIG_AVANCE e ON e.ID_EMPRESA = d.ID_EMPRESA AND e.CORRELATIVO = d.CORRELATIVO
+JOIN   MAQUINARIAN.MA_ENC_SEMANA_OT s
+       ON s.ID_EMPRESA = e.ID_EMPRESA AND s.ID_PERIODO = e.ID_PERIODO
+      AND s.ID_AREA_SERVICIO = e.ID_AREA AND s.CORRELATIVO = e.ID_TIPO_SEMANA
+WHERE  d.ID_EMPRESA = &ID_EMPRESA;
 
--- "Órdenes de Trabajo Asignada a Familia": qué equipos forman el programa de cada familia.
--- El portal cruza con SAP por CODIGO_LEGADO (el número de OT es el de Oracle, no el de SAP).
+-- "Órdenes de Trabajo Asignada a Familia": MA_OT_CONFIG_AVANCE tiene una fila por actividad de
+-- cada OT; aquí se resume a una fila por OT con su equipo, actividades y días. El portal cruza con
+-- SAP por la ficha del equipo (el número de OT es el de Oracle). VERIFICAR SELECCIONADO (sección 12).
 CREATE OR REPLACE VIEW VW_AVANCE_OT_PGPM AS
-SELECT <id_reporte> AS REPORTE_ID, <familia> AS FAMILIA_CODIGO, <no_ot> AS NO_OT,
-       <ficha> AS CODIGO_LEGADO, <cant_actividad> AS CANT_ACTIVIDAD, <cant_dias> AS CANT_DIAS
-FROM   <tabla_ot_asignada>;             -- candidata: MAQUINARIAN.MA_OT_CONFIG_AVANCE
+SELECT o.CORRELATIVO                    AS REPORTE_ID,
+       TO_CHAR(d.ID_FAMILIA)            AS FAMILIA_CODIGO,
+       TO_CHAR(o.NO_ORDEN_TRABAJO)      AS NO_OT,
+       MAX(e.FICHA)                     AS CODIGO_LEGADO,
+       COUNT(*)                         AS CANT_ACTIVIDAD,
+       NVL(SUM(o.DIAS_ESTIMADOS), 0)    AS CANT_DIAS
+FROM   MAQUINARIAN.MA_OT_CONFIG_AVANCE o
+JOIN   MAQUINARIAN.MA_DET_CONFIG_AVANCE d
+       ON d.ID_EMPRESA = o.ID_EMPRESA AND d.CORRELATIVO = o.CORRELATIVO AND d.DCORRELATIVO = o.DCORRELATIVO
+JOIN   MAQUINARIAN.MA_MAESTRO_EQUIPOS e ON e.IDENTIFICADOR = o.IDENTIFICADOR_EQUIPO
+WHERE  o.ID_EMPRESA = &ID_EMPRESA
+AND    e.FICHA IS NOT NULL
+GROUP BY o.CORRELATIVO, d.ID_FAMILIA, o.NO_ORDEN_TRABAJO;
 
--- "Semana Definida Por Familia": actividades y días planificados de cada semana (no
--- acumulados). FECHA_INICIO/FIN salen del calendario del reporte.
+-- "Semana Definida Por Familia": actividades y días planificados de cada semana (no acumulados),
+-- con las fechas del calendario del reporte.
 CREATE OR REPLACE VIEW VW_AVANCE_SEMANA_PGPM AS
-SELECT <id_reporte> AS REPORTE_ID, <familia> AS FAMILIA_CODIGO, <no_semana> AS NO_SEMANA,
-       <mes> AS MES, <fecha_inicio_semana> AS FECHA_INICIO, <fecha_fin_semana> AS FECHA_FIN,
-       <actividad> AS ACTIVIDAD, <dias> AS DIAS
-FROM   <tabla_semana_familia>;          -- candidata: MAQUINARIAN.MA_SUBDET_CONFIG_AVANCE
+SELECT sd.CORRELATIVO                  AS REPORTE_ID,
+       TO_CHAR(d.ID_FAMILIA)           AS FAMILIA_CODIGO,
+       sd.NO_SEMANA                    AS NO_SEMANA,
+       sd.ID_MES                       AS MES,
+       w.FECHA_INICIO                  AS FECHA_INICIO,
+       w.FECHA_FIN                     AS FECHA_FIN,
+       NVL(sd.CANT_ACTIVIDAD, 0)       AS ACTIVIDAD,
+       NVL(sd.CANT_DIA_ACT, 0)         AS DIAS
+FROM   MAQUINARIAN.MA_SUBDET_CONFIG_AVANCE sd
+JOIN   MAQUINARIAN.MA_DET_CONFIG_AVANCE d
+       ON d.ID_EMPRESA = sd.ID_EMPRESA AND d.CORRELATIVO = sd.CORRELATIVO AND d.DCORRELATIVO = sd.DCORRELATIVO
+JOIN   MAQUINARIAN.MA_ENC_CONFIG_AVANCE e ON e.ID_EMPRESA = d.ID_EMPRESA AND e.CORRELATIVO = d.CORRELATIVO
+JOIN   MAQUINARIAN.MA_DET_SEMANA_OT w
+       ON w.ID_EMPRESA = e.ID_EMPRESA AND w.ID_PERIODO = sd.ID_PERIODO
+      AND w.ID_AREA_SERVICIO = e.ID_AREA AND w.CORRELATIVO = e.ID_TIPO_SEMANA
+      AND w.ID_MES = sd.ID_MES AND w.NO_SEMANA = sd.NO_SEMANA
+WHERE  sd.ID_EMPRESA = &ID_EMPRESA;

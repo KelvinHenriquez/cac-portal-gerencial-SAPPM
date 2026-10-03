@@ -171,6 +171,7 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
                     .ToListAsync());
             }
 
+            ReglasPortal.AplicarHojaRuta(ordenes, ReglasPortal.UsuariosHojaRuta(parametros));
             return (ordenes.Where(o => ReglasPortal.EsDelPrograma(o, mapeo, config, equiposPrograma, reglas)).ToList(), mapeo, reglas, familia);
         }
 

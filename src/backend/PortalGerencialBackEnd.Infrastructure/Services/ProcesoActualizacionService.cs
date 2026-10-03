@@ -237,6 +237,7 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
                     o.FechaUltimaConf = dto.FechaUltimaConf;
                     o.ConfFinal = dto.ConfFinal;
                     o.Programada = dto.Programada;
+                    o.UsuarioCreacion = dto.UsuarioCreacion;
                     o.ActualizadoEn = ahora;
                     procesadas++;
                 }
@@ -318,6 +319,7 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
             public ReglasVentana Reglas { get; init; } = default!;
             public HashSet<string> ClasesAvance { get; init; } = default!;
             public BasePlan BasePlan { get; init; }
+            public HashSet<string> UsuariosHojaRuta { get; init; } = default!;
             public MapeoEquipos Equipos { get; init; } = default!;
         }
 
@@ -331,6 +333,7 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
                 Reglas = ReglasPortal.Ventana(p),
                 ClasesAvance = ReglasPortal.ClasesAvance(p),
                 BasePlan = ReglasPortal.BasePlan(p),
+                UsuariosHojaRuta = ReglasPortal.UsuariosHojaRuta(p),
                 Equipos = await MapeoEquipos.CargarAsync(_db, _estructura)
             };
         }
@@ -470,6 +473,7 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
                 .Where(o => o.EquipoSapId != null && clases.Contains(o.ClaseOrden))
                 .Include(o => o.Operaciones)
                 .ToListAsync();
+            ReglasPortal.AplicarHojaRuta(ordenes, c.UsuariosHojaRuta);
 
             var ahora = Ahora;
             var resultado = new List<CalcAvanceSemanal>();

@@ -52,6 +52,7 @@ namespace PortalGerencialBackEnd.Core.Dtos.Sap
         public DateTime? FechaUltimaConf { get; set; }
         public bool ConfFinal { get; set; }
         public bool Programada { get; set; } = true;
+        public string? UsuarioCreacion { get; set; }
         public DateTime FechaModificacion { get; set; }
     }
 

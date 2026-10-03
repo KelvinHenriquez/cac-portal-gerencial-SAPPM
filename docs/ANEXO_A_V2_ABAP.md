@@ -18,6 +18,29 @@ horas como `SY-UZEIT`. Excluir siempre confirmaciones anuladas (`STOKZ = 'X'` o 
 
 ---
 
+## Estado de la entrega del ABAP (02/10/2026)
+
+El ABAP usa otros nombres (`Z_PM_MF_WS_*`) y lee de tablas Z propias. Revisado contra este anexo:
+
+| Anexo | Módulo entregado | Revisión |
+|---|---|---|
+| A.1 Equipos | `Z_PM_MF_WS_MAESTRO_EQUIPO` (de `ZT_MAESTRO_EQUIPO`) | Cubre lo necesario: EQUNR, EQKTX, **KEY_NUM = ficha de Oracle**, ESTADO_EQUIPO, puesto de trabajo, centro. Ver observaciones 1 y 2. |
+| A.5 Avisos | `Z_PM_MF_WS_AVISO_MANTENIMIENTO` (de `ZT_AVISOS_MANTENIMIENTO`) | **Completo**: QMNUM, EQUNR, AUFNR, MSAUS (parada), AUSVN/AUZTV y AUSBS/AUZTB (avería), QMDAT/MZEIT, QMDAB, estados, AEDAT para el delta. Ver observación 3. |
+| A.2 Órdenes | pendiente | |
+| A.3 Historial de estados | pendiente | |
+| A.4 Operaciones | pendiente | **Agregar ERNAM (usuario que creó la operación)**: las del usuario de planificación son de la hoja de ruta (Real Programado); las de otros usuarios, agregadas en la reparación (Real No Programado). |
+
+Observaciones para el ABAP:
+1. El código legado de Oracle está en **FLEET_NUM** (dato de flota). Confirmar que KEY_NUM sale de ahí.
+2. **Los equipos que no usan combustible no tienen código legado** (en la migración solo se llenó en
+   los de flota). Sin código legado, el portal no los puede cruzar con Oracle: aparecen en "Equipos
+   sin clasificar" y, del lado de Oracle, cuentan como disponibles porque no se les ven órdenes.
+   Ver si la ficha quedó en otro campo para esos equipos (EQUI-INVNR, EQUI-TIDNR, EQUZ, una
+   característica) o si datos maestros puede llenarla.
+3. ¿Qué parámetros de entrada tienen los módulos (fecha desde para el delta)? ¿Cada cuánto se
+   llenan las tablas `ZT_*` de las que leen? La frescura del portal depende de eso.
+4. ESTADO_EQUIPO: ¿qué valores trae (p. ej. INAC, PTBO)? Con eso se marca el equipo como inactivo.
+
 ## A.1 `Z_PM_TALLERES_EQUIPOS` — maestro de equipos (sin cambios de fondo)
 
 Sin parámetros de entrada (trae todos los equipos de los centros de mantenimiento del área).
@@ -112,7 +135,8 @@ Entrada: `IV_FECHA_DESDE`. Avisos (QMEL/QMIH) creados o modificados desde esa fe
 
 ## Preguntas para el ABAP
 
-1. ¿Campo del código legado del equipo (A.1)?
+1. ~~¿Campo del código legado del equipo (A.1)?~~ FLEET_NUM (respuesta del 02/10/2026); falta
+   resolver los equipos sin combustible (observación 2).
 2. ¿Dónde viven Sistema / Sub-sistema / Componente de las actividades (A.4)?
 3. ¿Qué clases de orden (AUART) y clases de actividad PM (ILART) se usan para planificada,
    preventiva y correctiva?

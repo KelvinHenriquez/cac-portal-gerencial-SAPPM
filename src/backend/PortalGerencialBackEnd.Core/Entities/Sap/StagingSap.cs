@@ -93,6 +93,9 @@ namespace PortalGerencialBackEnd.Core.Entities.Sap
         /// <summary>True = del plan original de la orden; false = agregada en la reparación (Real No Programado).</summary>
         public bool Programada { get; set; } = true;
 
+        /// <summary>Usuario SAP que creó la operación (ERNAM): distingue hoja de ruta de agregadas.</summary>
+        public string? UsuarioCreacion { get; set; }
+
         public DateTime ActualizadoEn { get; set; }
 
         public StgSapOrden? Orden { get; set; }

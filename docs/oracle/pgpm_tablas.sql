@@ -580,3 +580,47 @@ END;
 
 /
 
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "EF_MIGRACIONES_PGPM" WHERE "MigrationId" = N'20261003002823_UsuarioCreacionYHojaRuta';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'ALTER TABLE "STG_SAP_OPERACION_PGPM" ADD "USUARIO_CREACION" VARCHAR2(12)'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "EF_MIGRACIONES_PGPM" WHERE "MigrationId" = N'20261003002823_UsuarioCreacionYHojaRuta';
+IF v_Count = 0 THEN
+
+    BEGIN
+    INSERT INTO "PARAMETRO_PGPM" ("CLAVE", "ACTUALIZADO_EN", "DESCRIPCION", "VALOR")
+    VALUES ('SAP.USUARIOS_HOJA_RUTA', TO_DATE('2026-10-01 00:00:00', 'YYYY-MM-DD HH24:MI:SS'), 'Usuarios SAP (separados por coma) que crean las operaciones de la hoja de ruta (Real Programado); las creadas por otros usuarios son agregadas (Real No Programado). "-" = sin definir: se usa la marca que traiga SAP (respuesta del 02/10/2026).', '-');
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "EF_MIGRACIONES_PGPM" WHERE "MigrationId" = N'20261003002823_UsuarioCreacionYHojaRuta';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "EF_MIGRACIONES_PGPM" ("MigrationId", "ProductVersion")
+    VALUES (N''20261003002823_UsuarioCreacionYHojaRuta'', N''8.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+
