@@ -1,5 +1,5 @@
 import axiosInstance from "@/services/axios";
-import { AlertaDto, CorridaDto, EquipoSinClasificarDto, EstadoActualizacionDto } from "@/types";
+import { AlertaDto, CorridaDto, EquipoSinClasificarDto, EstadoActualizacionDto, ParametroDto, ParametrosDto } from "@/types";
 
 /** Evento de ventana que avisa que hubo una corrida nueva (el encabezado se refresca al oírlo). */
 export const EVENTO_DATOS_ACTUALIZADOS = "portalgerencial:datos-actualizados";
@@ -29,6 +29,16 @@ export const sistemaService = {
 
   getAlertas: async (cantidad = 10): Promise<AlertaDto[]> => {
     const { data } = await axiosInstance.get<AlertaDto[]>("/sistema/alertas", { params: { cantidad } });
+    return data;
+  },
+
+  getParametros: async (): Promise<ParametrosDto> => {
+    const { data } = await axiosInstance.get<ParametrosDto>("/sistema/parametros");
+    return data;
+  },
+
+  actualizarParametro: async (clave: string, valor: string): Promise<ParametroDto> => {
+    const { data } = await axiosInstance.put<ParametroDto>(`/sistema/parametros/${encodeURIComponent(clave)}`, { valor });
     return data;
   },
 };

@@ -53,6 +53,7 @@ namespace PortalGerencialBackEnd.Infrastructure.Persistence.Configurations
             b.HasKey(x => x.Clave).HasName("PK_PARAMETRO_PGPM");
             b.Property(x => x.Clave).HasMaxLength(60);
             b.Property(x => x.Valor).HasMaxLength(500);
+            b.Property(x => x.ActualizadoPor).HasMaxLength(60);
             b.Property(x => x.Descripcion).HasMaxLength(500);
             b.Property(x => x.ActualizadoEn).HasColumnType("DATE");
 

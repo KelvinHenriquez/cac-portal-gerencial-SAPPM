@@ -20,6 +20,7 @@ services:
       Oracle__VersionSql: ${ORACLE_VERSION_SQL:-19}
       Database__AplicarMigracionesAlArrancar: ${APLICAR_MIGRACIONES:-true}
       Job__Habilitado: ${JOB_HABILITADO:-true}
+      Admin__Usuarios: ${ADMIN_USUARIOS:-}
       Alertas__Destinatarios: ${ALERTA_DESTINATARIOS:-}
       Alertas__UrlPortal: ${PUBLIC_URL}
       Alertas__Smtp__Host: ${SMTP_HOST:-}
@@ -54,11 +55,15 @@ services:
   nginx:
     image: nginx:1.27-alpine
     restart: unless-stopped
+    # En el servidor de CAC el 443 ya lo usa Pago en Efectivo: el portal sale por PUERTO_HTTPS
+    # (8443 por defecto). La plantilla recibe el puerto para que la redirección http→https lo conserve.
+    environment:
+      PUERTO_HTTPS: ${PUERTO_HTTPS:-8443}
     ports:
-      - "80:80"
-      - "443:443"
+      - "${PUERTO_HTTP:-8081}:80"
+      - "${PUERTO_HTTPS:-8443}:443"
     volumes:
-      - ./deploy/nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./deploy/nginx/nginx.conf.template:/etc/nginx/templates/default.conf.template:ro
       - ./deploy/certs:/etc/nginx/certs:ro
     depends_on:
       api:

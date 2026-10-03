@@ -872,6 +872,12 @@ namespace PortalGerencialBackEnd.Infrastructure.Persistence.Migrations
                         .HasColumnType("DATE")
                         .HasColumnName("ACTUALIZADO_EN");
 
+                    b.Property<string>("ActualizadoPor")
+                        .HasMaxLength(60)
+                        .IsUnicode(false)
+                        .HasColumnType("VARCHAR2(60)")
+                        .HasColumnName("ACTUALIZADO_POR");
+
                     b.Property<string>("Descripcion")
                         .HasMaxLength(500)
                         .IsUnicode(false)

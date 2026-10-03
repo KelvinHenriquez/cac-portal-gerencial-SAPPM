@@ -288,6 +288,20 @@ en producción hasta que se decida (sin destinatarios no envía nada, solo regis
   actividades SELECCIONADO = 'S'. Probadas otra vez contra la réplica (11 vistas válidas).
 - Nuevo parámetro `DISPONIBILIDAD.BASE_PORCENTAJE` (REQUERIDOS por defecto; EQUIPOS = como Oracle).
 
+## Respuestas del 03/10/2026
+
+- Base del % de disponibilidad y clases de orden que cuentan: **configurables**. Nueva pantalla
+  **Sistema → Parámetros**: todos ven las reglas; solo los usuarios de `Admin:Usuarios` las
+  cambian, con validación y registro de quién y cuándo.
+- Actividad **no programada = agregada por otro usuario**; una actividad **no trabajada no cuenta
+  como hecha** (el portal exige horas reales). Se mantiene lo construido.
+- Oracle se sigue alimentando hasta que el portal lo reemplace: la comparación del Sprint 0 vale
+  para ambos reportes.
+- Servidor: el mismo de Pago en Efectivo (Docker Desktop 4.93, contenedores Linux). El portal sale
+  por **8443** porque el 443 es de Pago en Efectivo. Ver [DESPLIEGUE.md](DESPLIEGUE.md).
+- `PG_PERIODO` es de **PARGER**: las vistas leen `PARGER.PG_PERIODO`.
+- Para el ABAP: [ANEXO_A_V3_ABAP.md](ANEXO_A_V3_ABAP.md), especificación narrativa por módulo.
+
 ## Qué sigue
 
 1. **8a — Vistas reales:** escritas y probadas en local. Falta correr

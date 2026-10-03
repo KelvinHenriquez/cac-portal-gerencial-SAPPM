@@ -54,6 +54,18 @@ namespace PortalGerencialBackEnd.API.Controllers
         public async Task<ActionResult<List<AlertaDto>>> GetAlertas([FromQuery] int cantidad = 10) =>
             Ok(await _sistema.GetAlertasAsync(cantidad));
 
+        /// <summary>Parámetros de cálculo (PARAMETRO_PGPM). Todos los ven; solo Admin:Usuarios los cambia.</summary>
+        [HttpGet("parametros")]
+        public async Task<ActionResult<ParametrosDto>> GetParametros() =>
+            Ok(await _sistema.GetParametrosAsync(UsuarioActual));
+
+        [HttpPut("parametros/{clave}")]
+        public async Task<ActionResult<ParametroDto>> ActualizarParametro(string clave, [FromBody] ActualizarParametroRequest request) =>
+            Ok(await _sistema.ActualizarParametroAsync(clave, request.Valor, UsuarioActual));
+
+        private string UsuarioActual =>
+            User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? User.Identity?.Name ?? "";
+
         [HttpGet("equipos-sin-clasificar")]
         public async Task<ActionResult<List<EquipoSinClasificarDto>>> GetEquiposSinClasificar() =>
             Ok(await _sistema.GetEquiposSinClasificarAsync());

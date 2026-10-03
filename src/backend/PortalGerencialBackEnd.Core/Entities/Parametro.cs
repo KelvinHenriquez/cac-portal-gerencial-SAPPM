@@ -11,5 +11,8 @@ namespace PortalGerencialBackEnd.Core.Entities
         public string Valor { get; set; } = default!;
         public string? Descripcion { get; set; }
         public DateTime ActualizadoEn { get; set; }
+
+        /// <summary>Usuario de Oracle que hizo el último cambio desde el portal (null = valor sembrado).</summary>
+        public string? ActualizadoPor { get; set; }
     }
 }

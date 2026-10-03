@@ -307,6 +307,22 @@ export interface AnalisisAvanceDto {
   sistemas: AnalisisFilaDto[];
 }
 
+export interface ParametroDto {
+  clave: string;
+  seccion: string;
+  nombre: string;
+  descripcion: string | null;
+  valor: string;
+  opciones: string[] | null;
+  actualizadoEn: string;
+  actualizadoPor: string | null;
+}
+
+export interface ParametrosDto {
+  puedeEditar: boolean;
+  parametros: ParametroDto[];
+}
+
 export interface ApiError {
   statusCode: number;
   errorMessage: string;

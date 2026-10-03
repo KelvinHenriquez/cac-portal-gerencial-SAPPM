@@ -41,7 +41,7 @@ Herramientas → Exportar base de datos: **sin DDL**, datos en formato **INSERT*
 | MA_ENC_CONFIG_AVANCE, MA_DET_CONFIG_AVANCE, MA_SUBDET_CONFIG_AVANCE | — |
 | MA_ENC_SEMANA_OT, MA_DET_SEMANA_OT, MA_TIPO_ORDEN_TRABAJO, MA_MST_FAMILIA | — |
 | MA_OT_CONFIG_AVANCE | `ID_PERIODO = 30` (solo el período actual; la tabla tiene 760.000 filas) |
-| PG_PERIODO | — (si el export trae columnas distintas a ID_EMPRESA, ID_PERIODO, DESCRIPCION, avisar) |
+| PARGER.PG_PERIODO | `ID_EMPRESA = 30` (es del esquema PARGER) |
 
 La empresa de CAC es la 30 (`SPRINT0_ID_EMPRESA`, ya es el valor por defecto).
 
@@ -68,13 +68,18 @@ Lo que pasa si falta algo (el importador lo avisa y sigue):
 - Sin **avisos**: las correctivas cuentan desde la creación de la orden, sin mirar la parada.
 - Equipos **sin Ficha** en SAP: quedan en "Equipos sin clasificar" y no cruzan con Oracle.
 
-## C. Comparación contra Oracle
+## C. Resultados de Oracle para comparar
 
-Pendiente de la salida de `docs/oracle/explorar_maquinarian_2.sql` (secciones 16-17: el PL/SQL que
-llena `MA_DISPONIBILIDAD_EQUIPOS` y `MA_RES_CONFIG_AVANCE`). Con eso se define qué exportar de los
-resultados de Oracle para julio-septiembre y se arma la comparación día por día. Criterio de
-aceptación todavía por definir (propuesta: diferencia de 5 puntos o menos en al menos el 80 % de
-los días por asignación).
+[oracle/exportar_sprint0_oracle.sql](oracle/exportar_sprint0_oracle.sql) (solo SELECT): la
+disponibilidad que calculó Oracle por asignación y día de julio a septiembre (≈ 15.000 filas), las
+OT de Oracle que dejaron equipos fuera, y los tipos y estados de OT. Cada resultado a Excel en
+`sprint0\oracle_resultados\`. El avance de Oracle ya viene en el export de configuración (columnas
+`REAL_*` de `MA_SUBDET_CONFIG_AVANCE`).
+
+Para comparar con las mismas reglas que Oracle, el portal se corre con
+`DISPONIBILIDAD.BASE_PORCENTAJE=EQUIPOS` y solo la clase SAP equivalente a la OT tipo 1 (Sistema →
+Parámetros). Criterio de aceptación por definir (propuesta: diferencia de 5 puntos o menos en al
+menos el 80 % de los días por asignación).
 
 ---
 

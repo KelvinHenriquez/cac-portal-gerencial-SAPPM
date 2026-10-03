@@ -3,6 +3,7 @@ import {
   IconTractor,
   IconProgressCheck,
   IconRefresh,
+  IconAdjustments,
 } from "@tabler/icons-react";
 
 export interface MenuItem {
@@ -39,5 +40,11 @@ export const MENU_ITEMS: MenuItem[] = [
     icon: IconRefresh,
     href: "/dashboard/sistema/actualizacion",
     subheader: "Sistema",
+  },
+  {
+    id: "parametros",
+    title: "Parámetros",
+    icon: IconAdjustments,
+    href: "/dashboard/sistema/parametros",
   },
 ];

@@ -29,7 +29,7 @@
 --        GRANT SELECT ON MAQUINARIAN.MA_DET_SEMANA_OT          TO <esquema_portal>;
 --        GRANT SELECT ON MAQUINARIAN.MA_TIPO_ORDEN_TRABAJO     TO <esquema_portal>;
 --        GRANT SELECT ON MAQUINARIAN.MA_MST_FAMILIA            TO <esquema_portal>;
---        GRANT SELECT ON <dueño>.PG_PERIODO                    TO <esquema_portal>;
+--        GRANT SELECT ON PARGER.PG_PERIODO                     TO <esquema_portal>;
 --
 -- Llaves: en Oracle Forms los reportes de disponibilidad se identifican por
 -- (empresa, área de servicio, tipo de reporte); el portal usa un solo número:
@@ -119,11 +119,11 @@ AND    SUBSTR(NVL(d.FICHA, '00000'), 4, 3) <> '000';
 
 -- =============================================================== avance
 
--- Período de reparación ("30: 2025-2026"). PG_PERIODO no está en MAQUINARIAN: el DBA crea un
--- sinónimo PG_PERIODO en el esquema del portal apuntando a la tabla real (VERIFICAR columnas).
+-- Período de reparación ("30: 2025-2026"). La tabla es de PARGER (respuesta del 03/10/2026).
+-- VERIFICAR que tenga ID_EMPRESA, ID_PERIODO y DESCRIPCION (exportar_sprint0_oracle.sql, consulta 1).
 CREATE OR REPLACE VIEW VW_AVANCE_PERIODO_PGPM AS
 SELECT p.ID_PERIODO AS PERIODO_ID, p.DESCRIPCION AS DESCRIPCION
-FROM   PG_PERIODO p
+FROM   PARGER.PG_PERIODO p
 WHERE  p.ID_EMPRESA = &&ID_EMPRESA
 AND    p.ID_PERIODO IN (SELECT ID_PERIODO FROM MAQUINARIAN.MA_ENC_CONFIG_AVANCE WHERE ID_EMPRESA = &&ID_EMPRESA);
 

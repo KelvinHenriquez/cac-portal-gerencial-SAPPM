@@ -41,6 +41,8 @@ services:
       - ASPNETCORE_HTTPS_PORT=
       - DOTNET_RUNNING_IN_CONTAINER=true
       - DataSourceMode=Local
+      # Usuarios de Oracle que pueden cambiar parámetros en Sistema → Parámetros.
+      - Admin__Usuarios=GERENTE1
       # Alerta de datos desactualizados (sección 11): en local va a Mailpit, que no envía nada
       # afuera; los correos se ven en http://localhost:8025.
       - Alertas__Destinatarios=gerencia.taller@cac.local

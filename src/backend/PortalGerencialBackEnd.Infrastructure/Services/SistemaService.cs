@@ -4,6 +4,7 @@ using PortalGerencialBackEnd.Core.Constants;
 using PortalGerencialBackEnd.Core.Enums;
 using PortalGerencialBackEnd.Core.Dtos.Sistema;
 using PortalGerencialBackEnd.Core.Entities;
+using PortalGerencialBackEnd.Core.Exceptions;
 using PortalGerencialBackEnd.Core.Interfaces.Services;
 using PortalGerencialBackEnd.Infrastructure.Jobs;
 using PortalGerencialBackEnd.Infrastructure.Persistence.Context;
@@ -18,6 +19,7 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
         private readonly TimeProvider _time;
         private readonly string _modo;
         private readonly bool _jobHabilitado;
+        private readonly HashSet<string> _administradores;
 
         public SistemaService(PortalGerencialDbContext db, CoordinadorCorridas coordinador, TimeProvider time, IConfiguration configuration)
         {
@@ -26,6 +28,10 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
             _time = time;
             _modo = (configuration.GetValue<DataSourceMode?>("DataSourceMode") ?? DataSourceMode.Local).ToString().ToUpperInvariant();
             _jobHabilitado = configuration.GetValue("Job:Habilitado", true);
+            // Usuarios de Oracle que pueden cambiar parámetros (el resto solo los ve).
+            _administradores = (configuration["Admin:Usuarios"] ?? "")
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
         }
 
         public async Task<EstadoActualizacionDto> GetEstadoActualizacionAsync()
@@ -153,6 +159,56 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
                     FechaCorteDesde = p.FechaCorteDesde,
                     ErrorMensaje = p.ErrorMensaje
                 }).ToList()
+            };
+        }
+    
+        // ------------------------------------------------------------ parámetros
+
+        public async Task<ParametrosDto> GetParametrosAsync(string usuario)
+        {
+            var orden = CatalogoParametros.Definiciones.Keys.Select((k, i) => (k, i)).ToDictionary(x => x.k, x => x.i);
+            var parametros = await _db.Parametros.AsNoTracking().ToListAsync();
+            return new ParametrosDto
+            {
+                PuedeEditar = _administradores.Contains(usuario),
+                Parametros = parametros
+                    .OrderBy(p => orden.GetValueOrDefault(p.Clave, int.MaxValue)).ThenBy(p => p.Clave)
+                    .Select(ADto)
+                    .ToList()
+            };
+        }
+
+        public async Task<ParametroDto> ActualizarParametroAsync(string clave, string valor, string usuario)
+        {
+            if (!_administradores.Contains(usuario))
+                throw new ForbiddenException("Solo los administradores del portal pueden cambiar parámetros.");
+            // Sin SingleOrDefault en la base: en Oracle 11g EF lo traduce a FETCH FIRST, que no existe.
+            var parametro = (await _db.Parametros.Where(p => p.Clave == clave).ToListAsync()).SingleOrDefault()
+                            ?? throw new NotFoundException($"No existe el parámetro '{clave}'.");
+            var (normalizado, error) = CatalogoParametros.Validar(clave, valor);
+            if (error != null)
+                throw new BadRequestException(error);
+
+            parametro.Valor = normalizado!;
+            parametro.ActualizadoEn = _time.GetLocalNow().DateTime;
+            parametro.ActualizadoPor = usuario.ToUpperInvariant();
+            await _db.SaveChangesAsync();
+            return ADto(parametro);
+        }
+
+        private static ParametroDto ADto(Parametro p)
+        {
+            var d = CatalogoParametros.Definiciones.GetValueOrDefault(p.Clave);
+            return new ParametroDto
+            {
+                Clave = p.Clave,
+                Seccion = d?.Seccion ?? "Otros",
+                Nombre = d?.Nombre ?? p.Clave,
+                Descripcion = p.Descripcion,
+                Valor = p.Valor,
+                Opciones = d?.Opciones,
+                ActualizadoEn = p.ActualizadoEn,
+                ActualizadoPor = p.ActualizadoPor
             };
         }
     }

@@ -15,7 +15,32 @@ usuarios (navegador) ──443──> nginx ──> web  (Next.js)
   corrida). Se apaga con `JOB_HABILITADO=false`.
 - Probado en la laptop con las mismas imágenes (ver "Prueba local" abajo).
 
-## 1. Decisión pendiente: qué Docker corre en el servidor Windows
+## 1. El servidor: el mismo de Pago en Efectivo (03/10/2026)
+
+Docker Desktop 4.93 (Engine 29.8.1, Compose 5.5.1) sobre WSL2, con **contenedores Linux**: es la
+opción A de abajo y corre las mismas imágenes que se probaron. Ya tiene montado `pagoscac-prod`
+(postgres, nginx en **443**, api, web). El portal convive así:
+
+- **Proyecto aparte** (`portalgerencial-prod`): su propia red y sus contenedores; no toca nada de
+  Pago en Efectivo.
+- **Puertos:** el 80/443 son de Pago en Efectivo. El portal publica **8443** (HTTPS) y **8081**
+  (redirige a 8443): `https://<servidor>:8443`. Se cambian con `PUERTO_HTTPS` / `PUERTO_HTTP`. Abrir
+  el 8443 en el firewall de Windows.
+- **Más adelante** (opcional), cuando haya nombres DNS para los dos sistemas, un solo nginx en el
+  443 puede atender a ambos por nombre (`pagos...` y `portal-gerencial...`) y el portal deja de
+  necesitar el puerto en la URL.
+- **Recursos:** la VM de Docker tiene 4 CPU y 3,7 GB; Pago en Efectivo usa ~350 MB y el portal
+  necesita ~500 MB más. Alcanza.
+- **Dos cuidados con Docker Desktop en un servidor:**
+  1. **Licencia:** la captura muestra el plan **Personal**. Docker Desktop exige suscripción paga
+     (Pro/Team/Business) en empresas de más de 250 empleados o más de USD 10 millones de ingresos.
+     Conviene confirmarlo con TI. Ya aplica hoy por Pago en Efectivo, no es nuevo por el portal.
+  2. **Arranque:** Docker Desktop arranca cuando alguien inicia sesión en Windows. Si el servidor se
+     reinicia y nadie entra, los contenedores no suben. Se resuelve con "Start Docker Desktop when you
+     sign in" más inicio de sesión automático del usuario de servicio, o pasando a Docker Engine
+     dentro de WSL2 como servicio.
+
+## 1b. Opciones de Docker en Windows (referencia)
 
 Las imágenes del portal son **Linux** (como en la laptop). En un servidor Windows hay dos caminos:
 
@@ -40,8 +65,8 @@ reescribir nada). Se define al empezar la Etapa 8b, con NCo en la mano.
 2. Tablas del portal: correr [oracle/pgpm_tablas.sql](oracle/pgpm_tablas.sql) como `<PORTAL>`
    (idempotente). Alternativa: dejar `APLICAR_MIGRACIONES=true` y que la API las cree al arrancar.
    Si el DBA prefiere que el usuario técnico no tenga DDL, usar el script y `APLICAR_MIGRACIONES=false`.
-3. Permisos de lectura sobre MAQUINARIAN (directos, no por rol) y sinónimo de períodos: la lista
-   está al inicio de [oracle/vistas_produccion.sql](oracle/vistas_produccion.sql).
+3. Permisos de lectura sobre MAQUINARIAN y sobre `PARGER.PG_PERIODO` (directos, no por rol): la
+   lista está al inicio de [oracle/vistas_produccion.sql](oracle/vistas_produccion.sql).
 4. Vistas: correr `vistas_produccion.sql` como `<PORTAL>` (pide `ID_EMPRESA`: **30**).
 5. Usuarios nombrados (los gerentes): no necesitan nada nuevo; entran al portal con su usuario y
    clave de Oracle. Solo hace falta `CREATE SESSION`, que ya tienen.
@@ -61,7 +86,7 @@ En el servidor (dentro de Ubuntu/WSL2 si es la opción A):
 
 ```bash
 git clone <repositorio> /opt/portal-gerencial && cd /opt/portal-gerencial
-cp .env.prod.example .env.prod      # completar TODOS los valores; chmod 600 .env.prod
+cp .env.prod.example .env.prod      # completar TODOS los valores (ADMIN_USUARIOS, puertos...); chmod 600 .env.prod
 # copiar el certificado a deploy/certs/
 docker compose --env-file .env.prod -f docker-compose.prod.yml up -d --build
 ```
@@ -72,7 +97,7 @@ pantallas sin datos de SAP, o esperar a la Etapa 8b.
 ## 5. Verificar
 
 1. `docker compose -f docker-compose.prod.yml ps`: los tres en `running`, la api `healthy`.
-2. `https://<servidor>/api/salud` → `Healthy` (la API llega a Oracle con el usuario técnico).
+2. `https://<servidor>:8443/api/salud` → `Healthy` (la API llega a Oracle con el usuario técnico).
 3. Entrar con un usuario nombrado de Oracle.
 4. Sistema → Estado de actualización: última corrida OK y próxima a las 05:00.
 
@@ -84,6 +109,7 @@ pantallas sin datos de SAP, o esperar a la Etapa 8b.
 | Actualizar versión | `git pull` y el mismo `up -d --build`; las migraciones nuevas se aplican solas (o el DBA corre el `pgpm_tablas.sql` nuevo) |
 | Volver a la versión anterior | `git checkout <commit anterior>` y `up -d --build`. Las migraciones solo agregan; no hace falta tocar Oracle |
 | Correr la actualización a mano | botón "Actualizar ahora" en Sistema → Estado de actualización |
+| Cambiar una regla de cálculo | Sistema → Parámetros (solo los usuarios de `ADMIN_USUARIOS`; queda quién y cuándo) |
 | Respaldo | nada en el servidor: el respaldo es el de Oracle |
 | Reinicio del servidor | los contenedores tienen `restart: unless-stopped`: suben solos con Docker |
 
@@ -95,6 +121,6 @@ desarrollo y SAP simulado:
 ```bash
 bash scripts/certificado_local.sh
 docker compose --env-file deploy/prod-local.env -f docker-compose.prod.yml -f docker-compose.prod-local.yml up -d --build
-# https://localhost:8443
+# https://localhost:8443  (8081 redirige a 8443, como en el servidor)
 docker compose --env-file deploy/prod-local.env -f docker-compose.prod.yml -f docker-compose.prod-local.yml down
 ```

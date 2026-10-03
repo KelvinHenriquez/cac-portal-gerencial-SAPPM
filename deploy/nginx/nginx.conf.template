@@ -1,9 +1,11 @@
-# Reverse proxy: HTTPS en :443, /api -> API (.NET), todo lo demás -> frontend (Next.js).
+# Reverse proxy: HTTPS, /api -> API (.NET), todo lo demás -> frontend (Next.js).
 # Certificado y llave se montan en /etc/nginx/certs (fullchain.pem y privkey.pem).
+# Plantilla de la imagen oficial de nginx: ${PUERTO_HTTPS} se reemplaza al arrancar (solo las
+# variables definidas en el contenedor; $host y demás quedan como variables de nginx).
 server {
     listen 80;
     server_name _;
-    return 301 https://$host$request_uri;
+    return 301 https://$host:${PUERTO_HTTPS}$request_uri;
 }
 
 server {

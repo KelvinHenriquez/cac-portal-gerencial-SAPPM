@@ -70,4 +70,34 @@ namespace PortalGerencialBackEnd.Core.Dtos.Sistema
         public int CantOrdenes { get; set; }
         public DateTime DetectadoEn { get; set; }
     }
+
+    // ------------------------------------------------------------ parámetros
+
+    public class ParametroDto
+    {
+        public string Clave { get; set; } = default!;
+        public string Seccion { get; set; } = default!;
+        public string Nombre { get; set; } = default!;
+        public string? Descripcion { get; set; }
+        public string Valor { get; set; } = default!;
+
+        /// <summary>Valores permitidos si es una lista cerrada; null = texto.</summary>
+        public string[]? Opciones { get; set; }
+
+        public DateTime ActualizadoEn { get; set; }
+        public string? ActualizadoPor { get; set; }
+    }
+
+    public class ParametrosDto
+    {
+        /// <summary>El usuario está en Admin:Usuarios y puede cambiar valores.</summary>
+        public bool PuedeEditar { get; set; }
+
+        public List<ParametroDto> Parametros { get; set; } = new();
+    }
+
+    public class ActualizarParametroRequest
+    {
+        public string Valor { get; set; } = default!;
+    }
 }
