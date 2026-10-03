@@ -18,7 +18,7 @@ montando todos los reportes y tableros gerenciales, incluida el área industrial
 | 7b | Ajustes por las respuestas del 02/10/2026: grupos de equipos, OT asignadas a familia, plan por días, disponibilidad solo con correctivas y preventivas | **Hecha** |
 | 8 | Integración real: DDL en Oracle de CAC, vistas reales, cliente RFC con NCo ([Anexo A v2](ANEXO_A_V2_ABAP.md)) | 8a (vistas reales) espera la salida de `explorar_maquinarian.sql`; 8b (RFC) espera al ABAP y a Basis |
 | 0 | Sprint 0: validar el cálculo con exports reales de SAP ([cómo](SPRINT0_EXPORTS_SAP.md)) | Importador y entorno listos (03/10/2026); esperando los exports de SAP y de MAQUINARIAN |
-| 9 | Despliegue en el servidor Docker | Después de la 8 |
+| 9 | Despliegue en el servidor Docker ([guía](DESPLIEGUE.md)) | Preparado y probado en local (03/10/2026); falta decidir el Docker del servidor, certificado, DNS y el esquema en Oracle de producción |
 
 ## Decisiones tomadas (30/09/2026)
 
@@ -299,7 +299,8 @@ en producción hasta que se decida (sin destinatarios no envía nada, solo regis
 3. **8b — RFC real (depende del ABAP y de Basis):** cliente NCo contra los 5 módulos del Anexo A v2
    (confirmado RFC, no servicio web, el 03/10/2026). La conversión de estados y números de SAP ya
    está compartida con el importador (`EstadosSap`).
-4. **9 — Despliegue** en el servidor Windows con Docker.
+4. **9 — Despliegue:** imágenes de producción, HTTPS, healthcheck `/api/salud` y guía en
+   [DESPLIEGUE.md](DESPLIEGUE.md), probados en la laptop. Falta el servidor.
 
 ## Datos reales de SAP
 

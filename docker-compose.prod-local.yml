@@ -1,0 +1,12 @@
+# SOLO PARA PROBAR EN LA LAPTOP el despliegue de producción (mismas imágenes y nginx con HTTPS),
+# contra el Oracle de desarrollo y con SAP simulado. Uso:
+#   docker compose --env-file deploy/prod-local.env -f docker-compose.prod.yml -f docker-compose.prod-local.yml up -d --build
+#   https://localhost:8443   (certificado autofirmado: deploy/certs generados con scripts/certificado_local.sh)
+services:
+  api:
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+  nginx:
+    ports: !override
+      - "8080:80"
+      - "8443:443"

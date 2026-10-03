@@ -11,6 +11,8 @@ COPY PortalGerencialBackEnd.API PortalGerencialBackEnd.API
 RUN dotnet publish PortalGerencialBackEnd.API/PortalGerencialBackEnd.API.csproj -c Release -o /app/publish --no-restore
 
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
+# curl solo para el healthcheck de Docker (/api/salud).
+RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY --from=build /app/publish .
 ENV ASPNETCORE_ENVIRONMENT=Production

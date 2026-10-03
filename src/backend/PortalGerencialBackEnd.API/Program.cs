@@ -1,11 +1,13 @@
 using Microsoft.EntityFrameworkCore;
 using PortalGerencialBackEnd.API.Extensions;
 using PortalGerencialBackEnd.API.Middlewares;
+using PortalGerencialBackEnd.API.Salud;
 using PortalGerencialBackEnd.Infrastructure.Persistence.Context;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddApplicationServices(builder.Configuration);
+builder.Services.AddHealthChecks().AddCheck<OracleHealthCheck>("oracle");
 
 var app = builder.Build();
 
@@ -37,5 +39,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHealthChecks("/api/salud");
 
 app.Run();
