@@ -302,6 +302,24 @@ en producción hasta que se decida (sin destinatarios no envía nada, solo regis
 - `PG_PERIODO` es de **PARGER**: las vistas leen `PARGER.PG_PERIODO`.
 - Para el ABAP: [ANEXO_A_V3_ABAP.md](ANEXO_A_V3_ABAP.md), especificación narrativa por módulo.
 
+## Sprint 0, parte Oracle (06/10/2026)
+
+Cargada la configuración real (export de MAQUINARIAN y PARGER, 140.000 filas) y los resultados de
+Oracle de julio a septiembre. Con las vistas de producción:
+
+- **Disponibilidad:** 256 de 256 asignaciones activas iguales a Oracle en equipos y requeridos
+  (reportes 51 a 57). Las 6 que Oracle midió y el portal no son de equipos desactivados el 25/09
+  (plantas eléctricas J08022 y J08026, góndola C13002); Oracle también dejó de medirlas ese día.
+- Ajustes para lograrlo: el estado activo se mira en el registro exacto del equipo (no en la
+  ficha, que puede estar repetida) y las asignaciones sin equipos activos no se muestran, como hace
+  Oracle.
+- **Avance:** 7 programas de 2026 con sus familias y OT asignadas; el plan semanal coincide con las
+  actividades de las OT.
+- Hallazgos en Oracle: fuera de servicio solo con correctiva (tipo 1) en estado Creada, En Proceso
+  o Terminada; **"En Espera" cuenta como disponible**. Midió 88 de 92 días (4 sin proceso) y
+  algunos días más de 24 veces.
+- Falta la parte SAP para comparar los porcentajes día por día.
+
 ## Qué sigue
 
 1. **8a — Vistas reales:** escritas y probadas en local. Falta correr

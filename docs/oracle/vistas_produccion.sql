@@ -102,17 +102,29 @@ SELECT a.ID_AREA_SERVICIO * 1000 + a.ID_TIPO_REPORTE AS REPORTE_ID,
 FROM   MAQUINARIAN.MA_EQUIPOS_REQ_X_FAMILIA a
 WHERE  a.ID_EMPRESA = &&ID_EMPRESA
 -- Oracle no mide las filas sin requeridos
-AND    NVL(a.CANT_REQ, 0) <> 0;
+AND    NVL(a.CANT_REQ, 0) <> 0
+-- ni las que no tienen ningún equipo activo (PR_DISPONIBILIDAD_EQUIPOS: CANT_EQ = 0 no se inserta)
+AND    EXISTS (SELECT 1
+               FROM   MAQUINARIAN.MA_DEQUIPOS_REQ_X_FAMILIA d
+               JOIN   MAQUINARIAN.MA_MAESTRO_EQUIPOS e
+                      ON e.ID_EMPRESA = d.ID_EMPRESA AND e.CODIGO_EQUIPO = d.CODIGO_EQUIPO AND e.IDENTIFICADOR = d.IDENTIFICADOR
+               WHERE  d.ID_EMPRESA = a.ID_EMPRESA AND d.ID_AREA_SERVICIO = a.ID_AREA_SERVICIO
+               AND    d.ID_TIPO_REPORTE = a.ID_TIPO_REPORTE AND d.CORRELATIVO = a.CORRELATIVO
+               AND    SUBSTR(NVL(d.FICHA, '00000'), 4, 3) <> '000'
+               AND    UPPER(e.ESTADO) = 'ACTIVO');
 
--- Equipos de cada asignación ("Detalle de Equipos Asignados"). La ficha se toma del maestro
--- (por IDENTIFICADOR) por si cambió después de configurar el reporte.
+-- Equipos de cada asignación ("Detalle de Equipos Asignados"). Como Oracle: solo los equipos
+-- ACTIVOS, mirando el registro exacto del maestro (CODIGO_EQUIPO + IDENTIFICADOR), no la ficha:
+-- con fichas repetidas, una puede estar activa y la otra no. La ficha se toma del maestro.
 CREATE OR REPLACE VIEW VW_DISP_ASIG_EQUIPO_PGPM AS
 SELECT d.ID_AREA_SERVICIO * 1000 + d.ID_TIPO_REPORTE AS REPORTE_ID,
        d.CORRELATIVO                                  AS ASIGNACION_ID,
        NVL(e.FICHA, d.FICHA)                          AS CODIGO_LEGADO
 FROM   MAQUINARIAN.MA_DEQUIPOS_REQ_X_FAMILIA d
-LEFT JOIN MAQUINARIAN.MA_MAESTRO_EQUIPOS e ON e.IDENTIFICADOR = d.IDENTIFICADOR
+JOIN   MAQUINARIAN.MA_MAESTRO_EQUIPOS e
+       ON e.ID_EMPRESA = d.ID_EMPRESA AND e.CODIGO_EQUIPO = d.CODIGO_EQUIPO AND e.IDENTIFICADOR = d.IDENTIFICADOR
 WHERE  d.ID_EMPRESA = &&ID_EMPRESA
+AND    UPPER(e.ESTADO) = 'ACTIVO'
 AND    NVL(e.FICHA, d.FICHA) IS NOT NULL
 -- misma exclusión que PR_DISPONIBILIDAD_EQUIPOS
 AND    SUBSTR(NVL(d.FICHA, '00000'), 4, 3) <> '000';
@@ -120,7 +132,7 @@ AND    SUBSTR(NVL(d.FICHA, '00000'), 4, 3) <> '000';
 -- =============================================================== avance
 
 -- Período de reparación ("30: 2025-2026"). La tabla es de PARGER (respuesta del 03/10/2026).
--- VERIFICAR que tenga ID_EMPRESA, ID_PERIODO y DESCRIPCION (exportar_sprint0_oracle.sql, consulta 1).
+-- Columnas confirmadas el 06/10/2026 (ID_EMPRESA, ID_PERIODO, DESCRIPCION, fechas).
 CREATE OR REPLACE VIEW VW_AVANCE_PERIODO_PGPM AS
 SELECT p.ID_PERIODO AS PERIODO_ID, p.DESCRIPCION AS DESCRIPCION
 FROM   PARGER.PG_PERIODO p
