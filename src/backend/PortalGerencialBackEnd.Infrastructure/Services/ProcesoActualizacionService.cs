@@ -320,6 +320,7 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
             public HashSet<string> ClasesAvance { get; init; } = default!;
             public BasePlan BasePlan { get; init; }
             public HashSet<string> UsuariosHojaRuta { get; init; } = default!;
+            public DateTime CargaInicial { get; init; }
             public MapeoEquipos Equipos { get; init; } = default!;
         }
 
@@ -334,6 +335,7 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
                 ClasesAvance = ReglasPortal.ClasesAvance(p),
                 BasePlan = ReglasPortal.BasePlan(p),
                 UsuariosHojaRuta = ReglasPortal.UsuariosHojaRuta(p),
+                CargaInicial = p.Fecha(ClavesParametro.FechaCargaInicial, new DateTime(ahora.Year, 1, 1)),
                 Equipos = await MapeoEquipos.CargarAsync(_db, _estructura)
             };
         }
@@ -477,7 +479,8 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
 
             var ahora = Ahora;
             var resultado = new List<CalcAvanceSemanal>();
-            foreach (var reporte in await _estructura.GetConfigsAvanceAsync())
+            // Los programas que terminaron antes de que SAP saliera en vivo no tienen órdenes en SAP.
+            foreach (var reporte in (await _estructura.GetConfigsAvanceAsync()).Where(r => r.FechaFin >= c.CargaInicial))
             {
                 foreach (var familia in reporte.Familias)
                 {

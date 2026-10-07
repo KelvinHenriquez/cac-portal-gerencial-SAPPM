@@ -15,6 +15,9 @@ namespace PortalGerencialBackEnd.Infrastructure.Integraciones
         /// <summary>Estado de sistema de "cierre técnico" (TECO): fin de la indisponibilidad.</summary>
         public const string CodigoCierreTecnico = "I0045";
 
+        /// <summary>Estado de sistema "cerrada" (CLSD / CERR): algunas órdenes se cierran sin pasar por CTEC.</summary>
+        public const string CodigoCerrada = "I0046";
+
         /// <summary>Estado de sistema "creada" (CRTD): su alta en JCDS trae la hora de creación.</summary>
         public const string CodigoCreada = "I0001";
 
@@ -36,6 +39,18 @@ namespace PortalGerencialBackEnd.Infrastructure.Integraciones
         /// <summary>Equipo inactivo en SAP: status INAC o petición/marca de borrado.</summary>
         public static bool EquipoInactivo(string? status) =>
             Tokens(status).Overlaps(new[] { "INAC", "INACTIVO", "PTBO", "BORR", "DLFL", "INACT" });
+
+        private static readonly System.Text.RegularExpressions.Regex Ficha = new(@"\b([A-Z]\d{5})\b");
+
+        /// <summary>
+        /// Ficha de Oracle escrita en la descripción del equipo ("Motobomba John Deere F01198"), para
+        /// los equipos que no tienen FLEET_NUM (los que no usan combustible). Se toma la última.
+        /// </summary>
+        public static string? FichaEnDescripcion(string? descripcion)
+        {
+            var coincidencias = Ficha.Matches((descripcion ?? "").ToUpperInvariant());
+            return coincidencias.Count > 0 ? coincidencias[^1].Groups[1].Value : null;
+        }
 
         /// <summary>Número SAP sin ceros a la izquierda (AUFNR, EQUNR, QMNUM): igual en Excel y RFC.</summary>
         public static string? Id(string? valor)

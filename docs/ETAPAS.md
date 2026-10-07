@@ -320,6 +320,24 @@ Oracle de julio a septiembre. Con las vistas de producción:
   algunos días más de 24 veces.
 - Falta la parte SAP para comparar los porcentajes día por día.
 
+## Sprint 0, parte SAP (06/10/2026)
+
+Exports de SAP de julio a septiembre: maestro y avisos (módulos del ABAP), IW39, IW47 y JCDS (falta
+IW37N). Corrida completa OK con datos reales. Resultado en `sprint0/Comparacion_Sprint0_Disponibilidad.xlsx`
+(fuera de git: datos reales).
+
+- **Cruce SAP ↔ Oracle:** 88 a 100 % de los equipos de cada reporte encontrados en SAP. Solo 652
+  de 2.615 equipos traen KEY_NUM; para 582 más la Ficha se tomó de la descripción ("Motobomba John
+  Deere F01198"). Las 1.391 correctivas y preventivas tienen equipo con Ficha.
+- **Por reporte** el portal queda cerca de Oracle (con las reglas de Oracle, 4 de 7 a 1,5 puntos o
+  menos). **Por asignación y día** solo el 64 % de los días queda a 5 puntos o menos: las órdenes
+  de los dos sistemas no coinciden. 67 asignaciones tienen correctivas abiertas en SAP que Oracle no
+  tiene; 41, OT abiertas en Oracle que SAP no tiene; 67, órdenes en los dos con fechas distintas.
+- **Datos a corregir:** 64 correctivas SAP abiertas 30 días o más (13 sin cierre técnico al 06/10,
+  algunas desde julio) y 250 OT de Oracle abiertas 30 días o más en el trimestre.
+- Ajustes al importador: etiquetas reales de IW39/IW47/JCDS, Ficha desde la descripción, petición
+  de borrado = anulada, cierre = primera activación de CTEC (o CERR).
+
 ## Qué sigue
 
 1. **8a — Vistas reales:** escritas y probadas en local. Falta correr

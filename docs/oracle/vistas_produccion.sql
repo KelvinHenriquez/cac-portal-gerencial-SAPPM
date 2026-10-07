@@ -156,13 +156,14 @@ LEFT JOIN MAQUINARIAN.MA_TIPO_ORDEN_TRABAJO t
        ON t.ID_EMPRESA = e.ID_EMPRESA AND t.ID_TIPO_OT = e.ID_TIPO_OT
 WHERE  e.ID_EMPRESA = &&ID_EMPRESA;
 
--- Familias del reporte. Ojo: aquí ID_FAMILIA es del maestro MA_MST_FAMILIA (como en
+-- Familias del reporte. FAMILIA_CODIGO = familia-correlativo: una familia puede repetirse en un
+-- programa (Molinos dos veces en el Programa de Reparación 2021). Ojo: aquí ID_FAMILIA es del maestro MA_MST_FAMILIA (como en
 -- PR_RES_CONFIG_SEMANA), no del MA_FAMILIA por área que usa el maestro de equipos: los equipos
 -- de cada familia salen de las OT asignadas (VW_AVANCE_OT_PGPM), no del código de familia.
 CREATE OR REPLACE VIEW VW_AVANCE_FAMILIA_PGPM AS
 SELECT d.CORRELATIVO                                  AS REPORTE_ID,
        NVL(d.ORDEN, d.DCORRELATIVO)                   AS ORDEN,
-       TO_CHAR(d.ID_FAMILIA)                          AS FAMILIA_CODIGO,
+       TO_CHAR(d.ID_FAMILIA) || '-' || TO_CHAR(d.DCORRELATIVO)                          AS FAMILIA_CODIGO,
        NVL(INITCAP(f.DESCRIPCION), d.DESCRIPCION)     AS FAMILIA_NOMBRE,
        NVL(d.FECHA_EST_INICIO, s.FECHA_INICIO)        AS FECHA_EST_INICIO,
        NVL(d.FECHA_EST_FIN, s.FECHA_FIN)              AS FECHA_EST_FIN,
@@ -181,7 +182,7 @@ WHERE  d.ID_EMPRESA = &&ID_EMPRESA;
 -- marcadas SELECCIONADO = 'S', como cuenta Oracle el real programado.
 CREATE OR REPLACE VIEW VW_AVANCE_OT_PGPM AS
 SELECT o.CORRELATIVO                    AS REPORTE_ID,
-       TO_CHAR(d.ID_FAMILIA)            AS FAMILIA_CODIGO,
+       TO_CHAR(d.ID_FAMILIA) || '-' || TO_CHAR(d.DCORRELATIVO)            AS FAMILIA_CODIGO,
        TO_CHAR(o.NO_ORDEN_TRABAJO)      AS NO_OT,
        MAX(e.FICHA)                     AS CODIGO_LEGADO,
        COUNT(CASE WHEN o.SELECCIONADO = 'S' THEN 1 END)                     AS CANT_ACTIVIDAD,
@@ -192,13 +193,13 @@ JOIN   MAQUINARIAN.MA_DET_CONFIG_AVANCE d
 JOIN   MAQUINARIAN.MA_MAESTRO_EQUIPOS e ON e.IDENTIFICADOR = o.IDENTIFICADOR_EQUIPO
 WHERE  o.ID_EMPRESA = &&ID_EMPRESA
 AND    e.FICHA IS NOT NULL
-GROUP BY o.CORRELATIVO, d.ID_FAMILIA, o.NO_ORDEN_TRABAJO;
+GROUP BY o.CORRELATIVO, d.ID_FAMILIA, d.DCORRELATIVO, o.NO_ORDEN_TRABAJO;
 
 -- "Semana Definida Por Familia": actividades y días planificados de cada semana (no acumulados),
 -- con las fechas del calendario del reporte.
 CREATE OR REPLACE VIEW VW_AVANCE_SEMANA_PGPM AS
 SELECT sd.CORRELATIVO                  AS REPORTE_ID,
-       TO_CHAR(d.ID_FAMILIA)           AS FAMILIA_CODIGO,
+       TO_CHAR(d.ID_FAMILIA) || '-' || TO_CHAR(d.DCORRELATIVO)           AS FAMILIA_CODIGO,
        sd.NO_SEMANA                    AS NO_SEMANA,
        sd.ID_MES                       AS MES,
        w.FECHA_INICIO                  AS FECHA_INICIO,

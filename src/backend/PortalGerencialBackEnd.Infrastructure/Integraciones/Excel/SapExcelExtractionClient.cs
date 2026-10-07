@@ -25,23 +25,23 @@ namespace PortalGerencialBackEnd.Infrastructure.Integraciones.Excel
         private static readonly string[] ClaseActividad = { "ILART", "Clase de actividad PM", "Cl.actividad PM", "Clase actividad PM", "Cl. actividad PM" };
         private static readonly string[] Equipo = { "EQUNR", "Equipo", "Número de equipo", "Nº equipo" };
         private static readonly string[] TextoOrden = { "KTEXT", "Texto breve", "Descripción", "Texto breve de orden" };
-        private static readonly string[] PuestoResponsable = { "VAPLZ", "Puesto de trabajo responsable", "Pto.tbjo.responsable", "Pto.trab.resp.", "Puesto trabajo responsable" };
+        private static readonly string[] PuestoResponsable = { "VAPLZ", "Puesto de trabajo responsable", "Pto.tbjo.responsable", "Pto.trab.resp.", "Puesto trabajo responsable", "Pto.tbjo.resp." };
         private static readonly string[] Aviso = { "QMNUM", "Aviso", "Número de aviso", "Nº aviso" };
-        private static readonly string[] StatusSistema = { "STTXT", "STATUS_SISTEMA", "Status del sistema", "Status sistema", "Estado de sistema", "Status de sistema" };
+        private static readonly string[] StatusSistema = { "STTXT", "STATUS_SISTEMA", "Status del sistema", "Status sistema", "Estado de sistema", "Status de sistema", "Estado sistema" };
         private static readonly string[] StatusUsuario = { "USTXT", "STATUS_USUARIO", "Status de usuario", "Status usuario", "Estado de usuario" };
         private static readonly string[] FechaCreacion = { "ERDAT", "Fecha de creación", "Creado el", "Fecha creación" };
         private static readonly string[] HoraCreacion = { "ERFZEIT", "Hora de creación", "Hora creación", "Creado a las" };
-        private static readonly string[] InicioPlan = { "GSTRP", "Fecha de inicio extrema", "Inicio extremo", "Fecha inicio extrema", "Fecha de inicio básica", "Inicio básico", "Fecha inicio básica" };
-        private static readonly string[] HoraInicioPlan = { "GSUZP", "Hora de inicio básica", "Hora inicio básica" };
-        private static readonly string[] FinPlan = { "GLTRP", "Fecha de fin extrema", "Fin extremo", "Fecha fin extrema", "Fecha de fin básica", "Fin básico", "Fecha fin básica" };
-        private static readonly string[] HoraFinPlan = { "GLUZP", "Hora de fin básica", "Hora fin básica" };
+        private static readonly string[] InicioPlan = { "GSTRP", "Fecha de inicio extrema", "Inicio extremo", "Fecha inicio extrema", "Fecha de inicio básica", "Inicio básico", "Fecha inicio básica", "Fe.inic.extrema" };
+        private static readonly string[] HoraInicioPlan = { "GSUZP", "Hora de inicio básica", "Hora inicio básica", "Hora inicio" };
+        private static readonly string[] FinPlan = { "GLTRP", "Fecha de fin extrema", "Fin extremo", "Fecha fin extrema", "Fecha de fin básica", "Fin básico", "Fecha fin básica", "Fe.fin extrema" };
+        private static readonly string[] HoraFinPlan = { "GLUZP", "Hora de fin básica", "Hora fin básica", "Hora fin extr." };
         private static readonly string[] InicioReal = { "GSTRI", "Fecha de inicio real", "Inicio real", "Fe.inicio real", "Fecha inicio real" };
-        private static readonly string[] HoraInicioReal = { "GSUZI", "Hora de inicio real", "Hora inicio real" };
+        private static readonly string[] HoraInicioReal = { "GSUZI", "Hora de inicio real", "Hora inicio real", "Hora in.real" };
         private static readonly string[] FinReal = { "GLTRI", "Fecha de fin real", "Fin real", "Fe.fin real", "Fecha fin real" };
-        private static readonly string[] HoraFinReal = { "GEUZI", "Hora de fin real", "Hora fin real" };
-        private static readonly string[] CierreTecnico = { "FECHA_TECO", "IDAT2", "Fecha de cierre técnico", "Fe.cierre técnico", "Cierre técnico", "Fecha cierre técnico" };
+        private static readonly string[] HoraFinReal = { "GEUZI", "Hora de fin real", "Hora fin real", "Fin real (hora)" };
+        private static readonly string[] CierreTecnico = { "FECHA_TECO", "IDAT2", "Fecha de cierre técnico", "Fe.cierre técnico", "Cierre técnico", "Fecha cierre técnico", "FechaTerminac." };
         private static readonly string[] HoraCierreTecnico = { "HORA_TECO", "Hora de cierre técnico", "Hora cierre técnico" };
-        private static readonly string[] Modificacion = { "AEDAT", "Fecha de modificación", "Modificado el", "Fecha modificación", "Fecha de última modificación" };
+        private static readonly string[] Modificacion = { "AEDAT", "Fecha de modificación", "Modificado el", "Fecha modificación", "Fecha de última modificación", "Fecha modific." };
 
         private static readonly string[] DescripcionEquipo = { "EQKTX", "Denominación", "Denominación de objeto técnico", "Descripción del equipo", "Descripción" };
         private static readonly string[] CodigoLegado = { "KEY_NUM", "FLEET_NUM", "Código legado", "Número de flota", "Nº de flota", "Ficha", "Ficha del equipo Oracle" };
@@ -54,7 +54,7 @@ namespace PortalGerencialBackEnd.Infrastructure.Integraciones.Excel
         private static readonly string[] Trabajo = { "ARBEI", "Trabajo", "Trabajo planificado" };
         private static readonly string[] UnidadTrabajo = { "ARBEH", "Unidad de trabajo", "Unidad trabajo", "Un.trabajo" };
         private static readonly string[] TrabajoReal = { "ISMNW", "ISMNW_TOTAL", "Trabajo real" };
-        private static readonly string[] UnidadTrabajoReal = { "ISMNE", "Unidad trabajo real", "Unidad de trabajo real" };
+        private static readonly string[] UnidadTrabajoReal = { "ISMNE", "Unidad trabajo real", "Unidad de trabajo real", "Un.trab.(real)" };
         private static readonly string[] InicioOperacion = { "FSAVD", "Fecha de inicio más temprana", "Inicio más temprano", "Fecha inicio más temprana", "Inicio programado" };
         private static readonly string[] HoraInicioOperacion = { "FSAVZ", "Hora de inicio más temprana", "Hora inicio más temprana" };
         private static readonly string[] FinOperacion = { "FSEDD", "Fecha de fin más temprana", "Fin más temprano", "Fecha fin más temprana", "Fin programado" };
@@ -68,12 +68,12 @@ namespace PortalGerencialBackEnd.Infrastructure.Integraciones.Excel
         private static readonly string[] Subsistema = { "SUBSISTEMA" };
         private static readonly string[] Componente = { "COMPONENTE" };
 
-        private static readonly string[] Notificacion = { "RUECK", "Notificación", "Número de notificación", "Nº notificación" };
+        private static readonly string[] Notificacion = { "RUECK", "Notificación", "Número de notificación", "Nº notificación", "Respuesta" };
         private static readonly string[] FechaContabilizacion = { "BUDAT", "Fecha de contabilización", "Fecha contab.", "Fe.contabilización", "Fecha contabilización" };
-        private static readonly string[] FechaCaptura = { "ERSDA", "Fecha de entrada", "Fecha de captura", "Fecha entrada", "Registrado el" };
-        private static readonly string[] NotificacionFinal = { "AUERU", "Notificación final", "Notif.final", "Confirmación final", "Notif. final" };
+        private static readonly string[] FechaCaptura = { "ERSDA", "Fecha de entrada", "Fecha de captura", "Fecha entrada", "Registrado el", "Creado el" };
+        private static readonly string[] NotificacionFinal = { "AUERU", "Notificación final", "Notif.final", "Confirmación final", "Notif. final", "Confirm.final" };
         private static readonly string[] Anulada = { "STOKZ", "Anulado", "Indicador de anulación", "Anulación", "Anulada" };
-        private static readonly string[] ContadorAnulacion = { "STZHL", "Contador de anulación", "Contador anulación" };
+        private static readonly string[] ContadorAnulacion = { "STZHL", "Contador de anulación", "Contador anulación", "Confirm.canc." };
 
         private static readonly string[] ClaseAviso = { "QMART", "Clase de aviso", "Cl.aviso", "Clase aviso" };
         private static readonly string[] TextoAviso = { "QMTXT", "Texto breve", "Descripción", "Texto breve del aviso" };
@@ -86,12 +86,14 @@ namespace PortalGerencialBackEnd.Infrastructure.Integraciones.Excel
         private static readonly string[] HoraFinAveria = { "AUZTB", "Hora de fin de avería", "Hora fin avería", "Hora de fin de la avería" };
         private static readonly string[] CierreAviso = { "QMDAB", "Fecha de cierre", "Fecha cierre" };
 
-        private static readonly string[] Objeto = { "OBJNR", "Número de objeto" };
+        private static readonly string[] Objeto = { "OBJNR", "Número de objeto", "Nº objeto" };
         private static readonly string[] Estado = { "STAT", "Status", "Estado" };
-        private static readonly string[] NumeroCambio = { "CHGNR", "Número de modificación" };
+        private static readonly string[] NumeroCambio = { "CHGNR", "Número de modificación", "Número modificación" };
         private static readonly string[] FechaCambio = { "UDATE", "Fecha de modificación", "Fecha" };
         private static readonly string[] HoraCambio = { "UTIME", "Hora de modificación", "Hora" };
-        private static readonly string[] IndicadorCambio = { "CHIND", "Indicador de modificación" };
+        private static readonly string[] IndicadorCambio = { "CHIND", "Indicador de modificación", "Ind.modificación" };
+        private static readonly string[] EstadoInactivo = { "INACT", "Status inactivo" };
+        private static readonly string[] PeticionBorrado = { "Pet.borrado", "Petición de borrado" };
 
         private static readonly HashSet<string> Conocidos = typeof(SapExcelExtractionClient)
             .GetFields(System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)
@@ -196,8 +198,14 @@ namespace PortalGerencialBackEnd.Infrastructure.Integraciones.Excel
             return datos;
         }
 
-        private static Dictionary<string, List<HistorialEstadoDto>> LeerHistorial(List<TablaExcel>? tablas, Datos datos)
+        /// <summary>
+        /// Historial de estados de las órdenes y, por (orden, estado), el primer momento en que el
+        /// estado quedó ACTIVO. JCDS registra también altas como inactivas (columna INACT): el cierre
+        /// técnico vale cuando I0045 queda activo, no cuando aparece por primera vez.
+        /// </summary>
+        private static Dictionary<(string Orden, string Estado), DateTime> LeerHistorial(List<TablaExcel>? tablas, Datos datos)
         {
+            var activaciones = new Dictionary<(string, string), DateTime>();
             foreach (var f in (tablas ?? new()).SelectMany(t => t.Filas))
             {
                 var objeto = f.Texto(Objeto);
@@ -206,9 +214,13 @@ namespace PortalGerencialBackEnd.Infrastructure.Integraciones.Excel
                 var fecha = f.FechaHora(FechaCambio, HoraCambio, TimeSpan.Zero);
                 var estado = f.Texto(Estado);
                 if (fecha == null || estado == null) continue;
+                var orden = EstadosSap.Id(objeto[2..])!;
+                if (!f.Marca(EstadoInactivo)
+                    && (!activaciones.TryGetValue((orden, estado), out var antes) || fecha.Value < antes))
+                    activaciones[(orden, estado)] = fecha.Value;
                 datos.Historial.Add(new HistorialEstadoDto
                 {
-                    OrdenSapId = EstadosSap.Id(objeto[2..])!,
+                    OrdenSapId = orden,
                     EstadoCodigo = estado,
                     NumeroCambio = f.Texto(NumeroCambio) ?? "001",
                     FechaHoraCambio = fecha.Value,
@@ -219,7 +231,7 @@ namespace PortalGerencialBackEnd.Infrastructure.Integraciones.Excel
             var unicos = datos.Historial.GroupBy(h => (h.OrdenSapId, h.EstadoCodigo, h.NumeroCambio)).Select(g => g.First()).ToList();
             datos.Historial.Clear();
             datos.Historial.AddRange(unicos);
-            return datos.Historial.GroupBy(h => h.OrdenSapId).ToDictionary(g => g.Key, g => g.ToList());
+            return activaciones;
         }
 
         private static void LeerEquipos(List<TablaExcel>? tablas, Datos datos)
@@ -230,11 +242,17 @@ namespace PortalGerencialBackEnd.Infrastructure.Integraciones.Excel
                 return;
             }
             var sinLegado = 0;
+            var desdeDescripcion = 0;
             foreach (var f in tablas.SelectMany(t => t.Filas))
             {
                 var id = EstadosSap.Id(f.Texto(Equipo));
                 if (id == null) continue;
                 var legado = f.Texto(CodigoLegado);
+                if (legado == null && EstadosSap.FichaEnDescripcion(f.Texto(DescripcionEquipo)) is { } ficha)
+                {
+                    legado = ficha;
+                    desdeDescripcion++;
+                }
                 if (legado == null) sinLegado++;
                 datos.Equipos.Add(new EquipoSapDto
                 {
@@ -248,18 +266,20 @@ namespace PortalGerencialBackEnd.Infrastructure.Integraciones.Excel
             var unicos = datos.Equipos.GroupBy(e => e.EquipoSapId).Select(g => g.First()).ToList();
             datos.Equipos.Clear();
             datos.Equipos.AddRange(unicos);
+            if (desdeDescripcion > 0)
+                datos.Mensajes.Add($"{desdeDescripcion} equipo(s) sin FLEET_NUM: la Ficha se tomó de la descripción (p. ej. \"Motobomba John Deere F01198\").");
             if (sinLegado > 0)
                 datos.Mensajes.Add($"{sinLegado} equipo(s) sin código legado (FLEET_NUM): quedan en \"equipos sin clasificar\".");
         }
 
-        private static void LeerOrdenes(List<TablaExcel>? tablas, Dictionary<string, List<HistorialEstadoDto>> historial, Datos datos, DateTime ahora)
+        private static void LeerOrdenes(List<TablaExcel>? tablas, Dictionary<(string Orden, string Estado), DateTime> activaciones, Datos datos, DateTime ahora)
         {
             if (tablas == null)
             {
                 datos.Mensajes.Add("No vino el export de órdenes (IW39).");
                 return;
             }
-            if (!tablas.Any(t => t.Tiene(HoraCreacion)) && historial.Count == 0)
+            if (!tablas.Any(t => t.Tiene(HoraCreacion)) && activaciones.Count == 0)
                 datos.Mensajes.Add("Las órdenes no traen hora de creación ni historial de estados (JCDS): se asume las 12:00.");
 
             var sinFecha = 0;
@@ -267,10 +287,9 @@ namespace PortalGerencialBackEnd.Infrastructure.Integraciones.Excel
             {
                 var id = EstadosSap.Id(f.Texto(Orden));
                 if (id == null) continue;
-                var cambios = historial.GetValueOrDefault(id) ?? new();
 
                 // La hora exacta sale del historial (alta del estado CREA / CTEC); si no, del export.
-                var creacion = PrimerAlta(cambios, EstadosSap.CodigoCreada)
+                var creacion = Activacion(activaciones, id, EstadosSap.CodigoCreada)
                                ?? f.FechaHora(FechaCreacion, HoraCreacion, HoraSupuesta)
                                ?? f.FechaHora(InicioPlan, HoraInicioPlan, HoraSupuesta)
                                ?? f.FechaHora(InicioReal, HoraInicioReal, HoraSupuesta);
@@ -281,17 +300,20 @@ namespace PortalGerencialBackEnd.Infrastructure.Integraciones.Excel
                 }
 
                 var statusSistema = f.Texto(StatusSistema);
-                var estado = EstadosSap.Derivar(statusSistema, f.Texto(StatusUsuario));
+                // Con petición de borrado la orden no cuenta, aunque el status no diga PTBO.
+                var estado = f.Marca(PeticionBorrado) ? EstadosSap.Anulada : EstadosSap.Derivar(statusSistema, f.Texto(StatusUsuario));
                 var finReal = f.FechaHora(FinReal, HoraFinReal, HoraSupuesta);
                 DateTime? cierre = null;
                 if (estado == EstadosSap.Cerrada)
                 {
-                    cierre = PrimerAlta(cambios, EstadosSap.CodigoCierreTecnico);
+                    // Cierre técnico (CTEC); si la orden se cerró sin pasar por CTEC, el cierre (CERR).
+                    cierre = Activacion(activaciones, id, EstadosSap.CodigoCierreTecnico)
+                             ?? Activacion(activaciones, id, EstadosSap.CodigoCerrada);
                     if (cierre == null && f.Fecha(CierreTecnico) is { } diaCierre)
                         cierre = f.Hora(HoraCierreTecnico) is { } h ? diaCierre.Date + h
                             : finReal?.Date == diaCierre.Date ? finReal
                             : diaCierre.Date + HoraSupuesta;
-                    cierre ??= finReal;
+                    cierre ??= finReal ?? f.FechaHora(Modificacion, Array.Empty<string>(), HoraSupuesta);
                 }
 
                 datos.Ordenes.Add(new OrdenSapDto
@@ -428,10 +450,8 @@ namespace PortalGerencialBackEnd.Infrastructure.Integraciones.Excel
 
         // ------------------------------------------------------------ utilidades
 
-        private static DateTime? PrimerAlta(List<HistorialEstadoDto> cambios, string estado) =>
-            cambios.Where(c => c.EstadoCodigo.Equals(estado, StringComparison.OrdinalIgnoreCase) && c.Indicador.Equals("I", StringComparison.OrdinalIgnoreCase))
-                .Select(c => (DateTime?)c.FechaHoraCambio)
-                .Min();
+        private static DateTime? Activacion(Dictionary<(string Orden, string Estado), DateTime> activaciones, string orden, string estado) =>
+            activaciones.TryGetValue((orden, estado), out var f) ? f : null;
 
         /// <summary>Trabajo en horas: SAP puede traerlo en minutos o días.</summary>
         internal static decimal Horas(decimal valor, string? unidad) => (unidad ?? "H").Trim().ToUpperInvariant() switch
