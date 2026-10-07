@@ -74,7 +74,12 @@ namespace PortalGerencialBackEnd.Infrastructure.Integraciones.Local
                 indice++;
                 var equipoSapId = (10000000 + indice).ToString();
                 var puesto = "TALLER-" + e.FamiliaCodigo[..Math.Min(8, e.FamiliaCodigo.Length)];
-                datos.Equipos.Add(new EquipoSapDto { EquipoSapId = equipoSapId, CodigoLegado = e.CodigoLegado, Descripcion = e.Descripcion, PuestoTrabajo = puesto });
+                datos.Equipos.Add(new EquipoSapDto
+                {
+                    EquipoSapId = equipoSapId, CodigoLegado = e.CodigoLegado, Descripcion = e.Descripcion, PuestoTrabajo = puesto,
+                    TipoEquipo = $"PM_{e.FamiliaCodigo}", TipoEquipoDesc = Titulo(e.FamiliaCodigo),
+                    GrupoPlanificacion = "CDS", GrupoPlanificacionDesc = "Centro de Servicio"
+                });
 
                 if (!e.Activo)
                     continue;
@@ -373,8 +378,23 @@ namespace PortalGerencialBackEnd.Infrastructure.Integraciones.Local
                         ConfFinal = cerrada,
                         FechaModificacion = cerrada ? cierre : creacion
                     });
-                    var eventos = new List<(string, string, DateTime, string)> { ("I0001", "CREA", creacion, "I"), ("I0002", "LIB.", creacion, "I") };
-                    if (cerrada) eventos.Add(("I0045", "CTEC", cierre, "I"));
+                    // Sin usar el generador aleatorio: los demás datos del simulador no cambian.
+                    var liberada = creacion.AddMinutes(15 + 45 * (secuencia % 3));
+                    var enProceso = creacion.AddMinutes(30);
+                    if (enProceso < liberada) enProceso = liberada;
+                    var finalizada = cierre.AddHours(-Math.Min(horasReparacion / 4, 6 * (secuencia % 3)));
+                    var eventos = new List<(string, string, DateTime, string)>
+                    {
+                        ("I0001", "CREA", creacion, "I"), ("E0001", "PEND", creacion, "I"),
+                        ("I0002", "LIB.", liberada, "I")
+                    };
+                    if (enProceso <= ahora) { eventos.Add(("E0001", "PEND", enProceso, "D")); eventos.Add(("E0002", "ENPR", enProceso, "I")); }
+                    if (cerrada)
+                    {
+                        eventos.Add(("E0002", "ENPR", finalizada, "D"));
+                        eventos.Add(("E0003", "FINL", finalizada, "I"));
+                        eventos.Add(("I0045", "CTEC", cierre, "I"));
+                    }
                     AgregarHistorial(datos, ordenId, eventos);
                 }
 
@@ -383,6 +403,10 @@ namespace PortalGerencialBackEnd.Infrastructure.Integraciones.Local
         }
 
         // ------------------------------------------------------------ apoyo
+
+        /// <summary>"TRACTORES" -> "Tractores" (descripción del tipo de equipo simulado).</summary>
+        private static string Titulo(string texto) =>
+            System.Globalization.CultureInfo.GetCultureInfo("es-DO").TextInfo.ToTitleCase(texto.Replace('_', ' ').ToLowerInvariant());
 
         private static string EstadoATexto(string estado) => estado switch
         {
@@ -408,7 +432,8 @@ namespace PortalGerencialBackEnd.Infrastructure.Integraciones.Local
                         EstadoTexto = e.Texto,
                         NumeroCambio = numero.ToString("D3"),
                         FechaHoraCambio = e.Fecha,
-                        Indicador = e.Ind
+                        Indicador = e.Ind,
+                        Inactivo = e.Ind == "D"
                     });
                 }
             }

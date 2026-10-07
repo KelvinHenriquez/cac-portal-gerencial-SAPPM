@@ -51,6 +51,18 @@ namespace PortalGerencialBackEnd.Core.Constants
         /// </summary>
         public const string FechaOrdenTerminadaAvance = "AVANCE.FECHA_ORDEN_TERMINADA";
 
+        /// <summary>Clases de orden correctivas del reporte de permanencia (Centro de Servicios e Industrial).</summary>
+        public const string ClasesOrdenPermanencia = "PERMANENCIA.CLASES_ORDEN";
+
+        /// <summary>Áreas del reporte de permanencia por grupo de planificación del equipo: "CDS=Centro de Servicios,IND=Industrial".</summary>
+        public const string AreasPermanencia = "PERMANENCIA.AREAS";
+
+        /// <summary>Estados de usuario de la orden: "ENPR=E0002,FINL=E0003" (En proceso, Finalizada).</summary>
+        public const string EstadosUsuarioPermanencia = "PERMANENCIA.ESTADOS_USUARIO";
+
+        /// <summary>Estado de usuario "en espera de repuestos" (p. ej. E0004); "-" = todavía no existe en SAP.</summary>
+        public const string EstadoEsperaRepuestos = "PERMANENCIA.ESTADO_ESPERA";
+
         /// <summary>Clases de orden que cuentan para Avance de Reparación.</summary>
         public const string ClasesOrdenAvance = "AVANCE.CLASES_ORDEN";
 
@@ -77,6 +89,7 @@ namespace PortalGerencialBackEnd.Core.Constants
         public const string SapHistorial = "SAP_HISTORIAL";
         public const string CalcSinClasificar = "CALC_SIN_CLASIFICAR";
         public const string CalcDisponibilidad = "CALC_DISPONIBILIDAD";
+        public const string CalcPermanencia = "CALC_PERMANENCIA";
         public const string CalcAvance = "CALC_AVANCE";
     }
 

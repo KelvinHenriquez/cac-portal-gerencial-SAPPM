@@ -4,6 +4,7 @@ import {
   IconProgressCheck,
   IconRefresh,
   IconAdjustments,
+  IconClockHour4,
 } from "@tabler/icons-react";
 
 export interface MenuItem {
@@ -33,6 +34,12 @@ export const MENU_ITEMS: MenuItem[] = [
     title: "Avance de Órdenes de Trabajo",
     icon: IconProgressCheck,
     href: "/dashboard/taller/avance",
+  },
+  {
+    id: "permanencia",
+    title: "Tiempo de Permanencia",
+    icon: IconClockHour4,
+    href: "/dashboard/taller/permanencia",
   },
   {
     id: "actualizacion",

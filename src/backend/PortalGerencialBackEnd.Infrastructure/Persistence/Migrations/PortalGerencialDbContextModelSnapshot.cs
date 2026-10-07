@@ -421,6 +421,163 @@ namespace PortalGerencialBackEnd.Infrastructure.Persistence.Migrations
                     b.ToTable("CALC_EQUIPO_SIN_CLASIF_PGPM", (string)null);
                 });
 
+            modelBuilder.Entity("PortalGerencialBackEnd.Core.Entities.Calculo.CalcPermanencia", b =>
+                {
+                    b.Property<string>("OrdenSapId")
+                        .HasMaxLength(20)
+                        .IsUnicode(false)
+                        .HasColumnType("VARCHAR2(20)")
+                        .HasColumnName("ORDEN_SAP_ID");
+
+                    b.Property<string>("Area")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .IsUnicode(false)
+                        .HasColumnType("VARCHAR2(10)")
+                        .HasColumnName("AREA");
+
+                    b.Property<string>("AvisoSapId")
+                        .HasMaxLength(20)
+                        .IsUnicode(false)
+                        .HasColumnType("VARCHAR2(20)")
+                        .HasColumnName("AVISO_SAP_ID");
+
+                    b.Property<string>("ClaseOrden")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .IsUnicode(false)
+                        .HasColumnType("VARCHAR2(10)")
+                        .HasColumnName("CLASE_ORDEN");
+
+                    b.Property<string>("ClaveEquipo")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .IsUnicode(false)
+                        .HasColumnType("VARCHAR2(30)")
+                        .HasColumnName("CLAVE_EQUIPO");
+
+                    b.Property<string>("CorridaId")
+                        .IsRequired()
+                        .HasMaxLength(36)
+                        .IsUnicode(false)
+                        .HasColumnType("VARCHAR2(36)")
+                        .HasColumnName("CORRIDA_ID");
+
+                    b.Property<string>("Descripcion")
+                        .HasMaxLength(200)
+                        .IsUnicode(false)
+                        .HasColumnType("VARCHAR2(200)")
+                        .HasColumnName("DESCRIPCION");
+
+                    b.Property<string>("EquipoDescripcion")
+                        .HasMaxLength(200)
+                        .IsUnicode(false)
+                        .HasColumnType("VARCHAR2(200)")
+                        .HasColumnName("EQUIPO_DESCRIPCION");
+
+                    b.Property<string>("EquipoSapId")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .IsUnicode(false)
+                        .HasColumnType("VARCHAR2(30)")
+                        .HasColumnName("EQUIPO_SAP_ID");
+
+                    b.Property<DateTime?>("FechaAviso")
+                        .HasColumnType("DATE")
+                        .HasColumnName("FECHA_AVISO");
+
+                    b.Property<DateTime?>("FechaCierreTecnico")
+                        .HasColumnType("DATE")
+                        .HasColumnName("FECHA_CIERRE_TECNICO");
+
+                    b.Property<DateTime>("FechaCreada")
+                        .HasColumnType("DATE")
+                        .HasColumnName("FECHA_CREADA");
+
+                    b.Property<DateTime?>("FechaEnProceso")
+                        .HasColumnType("DATE")
+                        .HasColumnName("FECHA_EN_PROCESO");
+
+                    b.Property<DateTime?>("FechaFinalizada")
+                        .HasColumnType("DATE")
+                        .HasColumnName("FECHA_FINALIZADA");
+
+                    b.Property<DateTime?>("FechaLiberada")
+                        .HasColumnType("DATE")
+                        .HasColumnName("FECHA_LIBERADA");
+
+                    b.Property<DateTime>("GeneradoEn")
+                        .HasColumnType("DATE")
+                        .HasColumnName("GENERADO_EN");
+
+                    b.Property<decimal?>("HorasCierreAdm")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("DECIMAL(12,2)")
+                        .HasColumnName("HORAS_CIERRE_ADM");
+
+                    b.Property<decimal?>("HorasEjecucion")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("DECIMAL(12,2)")
+                        .HasColumnName("HORAS_EJECUCION");
+
+                    b.Property<decimal?>("HorasEsperaInicio")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("DECIMAL(12,2)")
+                        .HasColumnName("HORAS_ESPERA_INICIO");
+
+                    b.Property<decimal>("HorasEsperaRepuestos")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("DECIMAL(12,2)")
+                        .HasColumnName("HORAS_ESPERA_REPUESTOS");
+
+                    b.Property<decimal?>("HorasLiberacion")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("DECIMAL(12,2)")
+                        .HasColumnName("HORAS_LIBERACION");
+
+                    b.Property<decimal>("HorasPermanencia")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("DECIMAL(12,2)")
+                        .HasColumnName("HORAS_PERMANENCIA");
+
+                    b.Property<decimal?>("HorasRespuesta")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("DECIMAL(12,2)")
+                        .HasColumnName("HORAS_RESPUESTA");
+
+                    b.Property<DateTime>("Inicio")
+                        .HasColumnType("DATE")
+                        .HasColumnName("INICIO");
+
+                    b.Property<bool>("Terminada")
+                        .HasColumnType("NUMBER(1)")
+                        .HasColumnName("TERMINADA");
+
+                    b.Property<string>("TipoEquipo")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .IsUnicode(false)
+                        .HasColumnType("VARCHAR2(20)")
+                        .HasColumnName("TIPO_EQUIPO");
+
+                    b.Property<string>("TipoEquipoDesc")
+                        .HasMaxLength(60)
+                        .IsUnicode(false)
+                        .HasColumnType("VARCHAR2(60)")
+                        .HasColumnName("TIPO_EQUIPO_DESC");
+
+                    b.HasKey("OrdenSapId")
+                        .HasName("PK_CALC_PERMANENCIA_PGPM");
+
+                    b.HasIndex("EquipoSapId")
+                        .HasDatabaseName("IX_CALC_PERM_EQUIPO_PGPM");
+
+                    b.HasIndex("Area", "TipoEquipo")
+                        .HasDatabaseName("IX_CALC_PERM_AREA_TIPO_PGPM");
+
+                    b.ToTable("CALC_PERMANENCIA_PGPM", (string)null);
+                });
+
             modelBuilder.Entity("PortalGerencialBackEnd.Core.Entities.Estructura.VwAvanceFamilia", b =>
                 {
                     b.Property<int>("CantEquipo")
@@ -969,6 +1126,34 @@ namespace PortalGerencialBackEnd.Infrastructure.Persistence.Migrations
                         },
                         new
                         {
+                            Clave = "PERMANENCIA.CLASES_ORDEN",
+                            ActualizadoEn = new DateTime(2026, 10, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Descripcion = "Clases de orden correctivas del reporte Tiempo de Permanencia: ZC01 (Centro de Servicios) y ZI01 (Industrial) (06/10/2026).",
+                            Valor = "ZC01,ZI01"
+                        },
+                        new
+                        {
+                            Clave = "PERMANENCIA.AREAS",
+                            ActualizadoEn = new DateTime(2026, 10, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Descripcion = "Áreas del reporte de permanencia por grupo de planificación (INGRP) del equipo en SAP: CODIGO=Nombre, separadas por coma.",
+                            Valor = "CDS=Centro de Servicios,IND=Industrial"
+                        },
+                        new
+                        {
+                            Clave = "PERMANENCIA.ESTADOS_USUARIO",
+                            ActualizadoEn = new DateTime(2026, 10, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Descripcion = "Estados de usuario de las órdenes PM: ENPR = en proceso, FINL = finalizada (código del perfil de estados en JCDS).",
+                            Valor = "ENPR=E0002,FINL=E0003"
+                        },
+                        new
+                        {
+                            Clave = "PERMANENCIA.ESTADO_ESPERA",
+                            ActualizadoEn = new DateTime(2026, 10, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Descripcion = "Código del estado de usuario 'en espera de repuestos' (p. ej. E0004). \"-\" = todavía no existe en SAP: el tiempo de espera queda dentro de la ejecución.",
+                            Valor = "-"
+                        },
+                        new
+                        {
                             Clave = "AVANCE.FECHA_ORDEN_TERMINADA",
                             ActualizadoEn = new DateTime(2026, 10, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             Descripcion = "Avance por órdenes: una orden cerrada cuenta en la semana de su FIN_REAL (cuando terminó el trabajo) o de su CIERRE_TECNICO en SAP (decisión del 06/10/2026: fin real).",
@@ -1099,6 +1284,18 @@ namespace PortalGerencialBackEnd.Infrastructure.Persistence.Migrations
                         .HasColumnType("VARCHAR2(200)")
                         .HasColumnName("DESCRIPCION");
 
+                    b.Property<string>("GrupoPlanificacion")
+                        .HasMaxLength(10)
+                        .IsUnicode(false)
+                        .HasColumnType("VARCHAR2(10)")
+                        .HasColumnName("GRUPO_PLANIFICACION");
+
+                    b.Property<string>("GrupoPlanificacionDesc")
+                        .HasMaxLength(60)
+                        .IsUnicode(false)
+                        .HasColumnType("VARCHAR2(60)")
+                        .HasColumnName("GRUPO_PLANIFICACION_DESC");
+
                     b.Property<bool>("Inactivo")
                         .HasColumnType("NUMBER(1)")
                         .HasColumnName("INACTIVO");
@@ -1108,6 +1305,30 @@ namespace PortalGerencialBackEnd.Infrastructure.Persistence.Migrations
                         .IsUnicode(false)
                         .HasColumnType("VARCHAR2(60)")
                         .HasColumnName("PUESTO_TRABAJO");
+
+                    b.Property<string>("TipoEquipo")
+                        .HasMaxLength(20)
+                        .IsUnicode(false)
+                        .HasColumnType("VARCHAR2(20)")
+                        .HasColumnName("TIPO_EQUIPO");
+
+                    b.Property<string>("TipoEquipoDesc")
+                        .HasMaxLength(60)
+                        .IsUnicode(false)
+                        .HasColumnType("VARCHAR2(60)")
+                        .HasColumnName("TIPO_EQUIPO_DESC");
+
+                    b.Property<string>("UbicacionTecnica")
+                        .HasMaxLength(40)
+                        .IsUnicode(false)
+                        .HasColumnType("VARCHAR2(40)")
+                        .HasColumnName("UBICACION_TECNICA");
+
+                    b.Property<string>("UbicacionTecnicaDesc")
+                        .HasMaxLength(100)
+                        .IsUnicode(false)
+                        .HasColumnType("VARCHAR2(100)")
+                        .HasColumnName("UBICACION_TECNICA_DESC");
 
                     b.HasKey("EquipoSapId")
                         .HasName("PK_STG_EQUIPO_PGPM");
@@ -1151,6 +1372,10 @@ namespace PortalGerencialBackEnd.Infrastructure.Persistence.Migrations
                     b.Property<DateTime>("FechaHoraCambio")
                         .HasColumnType("DATE")
                         .HasColumnName("FECHA_HORA_CAMBIO");
+
+                    b.Property<bool>("Inactivo")
+                        .HasColumnType("NUMBER(1)")
+                        .HasColumnName("INACTIVO");
 
                     b.Property<string>("Indicador")
                         .IsRequired()

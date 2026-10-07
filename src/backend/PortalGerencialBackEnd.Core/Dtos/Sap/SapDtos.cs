@@ -10,6 +10,12 @@ namespace PortalGerencialBackEnd.Core.Dtos.Sap
         public string? Descripcion { get; set; }
         public string? PuestoTrabajo { get; set; }
         public bool Inactivo { get; set; }
+        public string? TipoEquipo { get; set; }
+        public string? TipoEquipoDesc { get; set; }
+        public string? GrupoPlanificacion { get; set; }
+        public string? GrupoPlanificacionDesc { get; set; }
+        public string? UbicacionTecnica { get; set; }
+        public string? UbicacionTecnicaDesc { get; set; }
     }
 
     public class OrdenSapDto
@@ -80,5 +86,6 @@ namespace PortalGerencialBackEnd.Core.Dtos.Sap
         public string NumeroCambio { get; set; } = default!;
         public DateTime FechaHoraCambio { get; set; }
         public string Indicador { get; set; } = default!;
+        public bool Inactivo { get; set; }
     }
 }

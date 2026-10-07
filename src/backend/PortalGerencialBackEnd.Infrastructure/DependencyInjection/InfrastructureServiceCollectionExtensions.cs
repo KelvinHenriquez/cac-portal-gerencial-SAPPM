@@ -81,6 +81,7 @@ namespace PortalGerencialBackEnd.Infrastructure.DependencyInjection
             // Reportes (solo leen resultados calculados y staging).
             services.AddScoped<IReporteDisponibilidadService, ReporteDisponibilidadService>();
             services.AddScoped<IReporteAvanceService, ReporteAvanceService>();
+            services.AddScoped<IReportePermanenciaService, ReportePermanenciaService>();
             services.AddSingleton<LoginAttemptLimiter>();
 
             services.Configure<JwtSettings>(configuration.GetSection("Jwt"));

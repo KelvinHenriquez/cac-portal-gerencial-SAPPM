@@ -352,6 +352,28 @@ IW37N). Corrida completa OK con datos reales. Resultado en `sprint0/Comparacion_
   del cierre técnico: el taller cerró técnicamente 32 órdenes en lote el 25/08 aunque el trabajo
   terminó en julio y agosto. Con fin real, Vagones reparte su avance en las semanas 1 a 5 y 10.
 
+## Reporte 3: Tiempo de Permanencia (06/10/2026)
+
+Pedido: cuánto tarda un equipo (o en promedio su familia) desde que se abre el aviso hasta que se
+cierra la orden, con el detalle de cada paso; por área (Centro de Servicios / Industrial) →
+familia → equipo → órdenes. Solo correctivas.
+
+- **Reglas acordadas:** fin = orden **finalizada** (estado de usuario FINL; si no, fin real); el
+  cierre técnico se muestra aparte (cierre administrativo). Correctivas ZC01 (Centro de Servicios) y
+  **ZI01** (Industrial). Área por **grupo de planificación** del equipo (CDS / IND). Familia =
+  **tipo de equipo de SAP** (EQART). Promedios solo con órdenes finalizadas en el período (por
+  defecto, los últimos 3 meses); las abiertas se muestran "en curso" con su antigüedad. Promedio y
+  mediana. Días de calendario.
+- **Pasos:** respuesta (aviso → orden), liberación (→ LIB), espera de inicio (→ ENPR), ejecución
+  (→ FINL). **Espera de repuestos:** parámetro `PERMANENCIA.ESTADO_ESPERA` para cuando exista un
+  estado de usuario en SAP; mide el tiempo en ese estado aunque entre y salga varias veces.
+- Staging: el equipo guarda tipo de equipo, grupo de planificación y **ubicación técnica** (para el
+  futuro reporte por ubicación del área industrial); el historial de estados guarda si el cambio dejó
+  el estado inactivo. Resultado en `CALC_PERMANENCIA_PGPM` (una fila por orden, se recalcula entera).
+- Con los datos reales (julio a septiembre): Centro de Servicios, 1.161 correctivas finalizadas en
+  447 equipos, **6,5 días promedio y 2,0 de mediana**; el mayor peso está en la ejecución (4,2 d) y
+  la liberación (2,1 d). Industrial: solo 3 ZI01 finalizadas y 28 en curso.
+
 ## Qué sigue
 
 1. **8a — Vistas reales:** escritas y probadas en local. Falta correr

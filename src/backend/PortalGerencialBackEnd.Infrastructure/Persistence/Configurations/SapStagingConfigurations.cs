@@ -17,6 +17,12 @@ namespace PortalGerencialBackEnd.Infrastructure.Persistence.Configurations
             b.Property(x => x.CodigoLegado).HasMaxLength(30);
             b.Property(x => x.Descripcion).HasMaxLength(200);
             b.Property(x => x.PuestoTrabajo).HasMaxLength(60);
+            b.Property(x => x.TipoEquipo).HasMaxLength(20);
+            b.Property(x => x.TipoEquipoDesc).HasMaxLength(60);
+            b.Property(x => x.GrupoPlanificacion).HasMaxLength(10);
+            b.Property(x => x.GrupoPlanificacionDesc).HasMaxLength(60);
+            b.Property(x => x.UbicacionTecnica).HasMaxLength(40);
+            b.Property(x => x.UbicacionTecnicaDesc).HasMaxLength(100);
             b.Property(x => x.ActualizadoEn).HasColumnType("DATE");
             b.HasIndex(x => x.CodigoLegado).HasDatabaseName("IX_STG_EQUIPO_LEGADO_PGPM");
         }

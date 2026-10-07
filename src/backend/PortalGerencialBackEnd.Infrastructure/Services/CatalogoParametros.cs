@@ -30,6 +30,12 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
                 ? null
                 : "Pares CLASE=TIPO separados por coma; TIPO es CORRECTIVA, PREVENTIVO o PLANIFICADA.";
 
+        private static string? CodigoIgualNombre(string v) =>
+            v.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .All(par => par.Split('=') is [var a, var b] && a.Trim().Length > 0 && b.Trim().Length > 0)
+                ? null
+                : "Pares CODIGO=VALOR separados por coma.";
+
         public static readonly IReadOnlyDictionary<string, Definicion> Definiciones = new Dictionary<string, Definicion>
         {
             [ClavesParametro.BasePorcentajeDisponibilidad] = new("Disponibilidad", "Base del % de disponibilidad", new[] { "REQUERIDOS", "EQUIPOS" }),
@@ -40,6 +46,10 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
             [ClavesParametro.BasePlanAvance] = new("Avance", "Base del % programado", new[] { "DIAS", "ACTIVIDADES" }),
             [ClavesParametro.FechaOrdenTerminadaAvance] = new("Avance", "Fecha en que una orden cuenta como terminada", new[] { "FIN_REAL", "CIERRE_TECNICO" }),
             [ClavesParametro.UsuariosHojaRuta] = new("Avance", "Usuarios SAP que crean la hoja de ruta", Validar: Lista),
+            [ClavesParametro.ClasesOrdenPermanencia] = new("Permanencia", "Clases de orden correctivas", Validar: Lista),
+            [ClavesParametro.AreasPermanencia] = new("Permanencia", "Áreas por grupo de planificación", Validar: CodigoIgualNombre),
+            [ClavesParametro.EstadosUsuarioPermanencia] = new("Permanencia", "Estados de usuario (en proceso, finalizada)", Validar: CodigoIgualNombre),
+            [ClavesParametro.EstadoEsperaRepuestos] = new("Permanencia", "Estado de usuario 'en espera de repuestos'", Validar: Lista),
             [ClavesParametro.TipoPorClaseOrden] = new("SAP", "Tipo de horas por clase de orden", Validar: ClaseIgualTipo),
             [ClavesParametro.EstadosCerrados] = new("SAP", "Estados que cierran la orden", Validar: Lista),
             [ClavesParametro.EstadosExcluidos] = new("SAP", "Estados que no cuentan", Validar: Lista),

@@ -17,6 +17,18 @@ namespace PortalGerencialBackEnd.Core.Entities.Sap
         /// <summary>Status INAC o marca de borrado en SAP: no cuenta en la disponibilidad.</summary>
         public bool Inactivo { get; set; }
 
+        /// <summary>Tipo de equipo (EQART, p. ej. PM_TRACT "Tractores"): la "familia" del reporte de permanencia.</summary>
+        public string? TipoEquipo { get; set; }
+        public string? TipoEquipoDesc { get; set; }
+
+        /// <summary>Grupo de planificación (INGRP): CDS = Centro de Servicio, IND = Industrial.</summary>
+        public string? GrupoPlanificacion { get; set; }
+        public string? GrupoPlanificacionDesc { get; set; }
+
+        /// <summary>Ubicación técnica (TPLNR): para el futuro reporte por ubicación del área industrial.</summary>
+        public string? UbicacionTecnica { get; set; }
+        public string? UbicacionTecnicaDesc { get; set; }
+
         public DateTime ActualizadoEn { get; set; }
 
         public ICollection<StgSapOrden> Ordenes { get; set; } = new List<StgSapOrden>();
@@ -132,6 +144,9 @@ namespace PortalGerencialBackEnd.Core.Entities.Sap
 
         /// <summary>'I' = el estado se activó; 'D' = se desactivó.</summary>
         public string Indicador { get; set; } = default!;
+
+        /// <summary>El cambio dejó el estado INACTIVO (JCDS-INACT): sirve para medir cuánto estuvo en él.</summary>
+        public bool Inactivo { get; set; }
 
         public DateTime ActualizadoEn { get; set; }
     }

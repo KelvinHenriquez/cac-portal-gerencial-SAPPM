@@ -326,6 +326,76 @@ export interface ParametrosDto {
   parametros: ParametroDto[];
 }
 
+// ---- Tiempo de Permanencia (horas de calendario; la pantalla muestra días)
+
+export interface AreaPermanenciaDto {
+  codigo: string;
+  nombre: string;
+}
+
+export interface PasosPermanenciaDto {
+  respuesta: number | null;
+  liberacion: number | null;
+  esperaInicio: number | null;
+  ejecucion: number | null;
+  cierreAdministrativo: number | null;
+  esperaRepuestos: number | null;
+}
+
+export interface IndicadorPermanenciaDto {
+  codigo: string;
+  nombre: string;
+  clave: string | null;
+  ordenes: number;
+  equipos: number;
+  promedioHoras: number;
+  medianaHoras: number;
+  maximoHoras: number;
+  pasos: PasosPermanenciaDto;
+  ordenesEnCurso: number;
+  antiguedadEnCursoHoras: number | null;
+}
+
+export interface ResumenPermanenciaDto {
+  area: string;
+  areaNombre: string;
+  desde: string;
+  hasta: string;
+  fechaCalculo: string | null;
+  esperaRepuestosConfigurada: boolean;
+  total: IndicadorPermanenciaDto;
+  familias: IndicadorPermanenciaDto[];
+}
+
+export interface FamiliaPermanenciaDto {
+  familia: IndicadorPermanenciaDto;
+  equipos: IndicadorPermanenciaDto[];
+}
+
+export interface OrdenPermanenciaDto {
+  ordenSapId: string;
+  claseOrden: string;
+  descripcion: string | null;
+  avisoSapId: string | null;
+  terminada: boolean;
+  inicio: string;
+  fechaAviso: string | null;
+  fechaCreada: string;
+  fechaLiberada: string | null;
+  fechaEnProceso: string | null;
+  fechaFinalizada: string | null;
+  fechaCierreTecnico: string | null;
+  horasPermanencia: number;
+  pasos: PasosPermanenciaDto;
+}
+
+export interface EquipoPermanenciaDto {
+  equipo: IndicadorPermanenciaDto;
+  tipoEquipo: string;
+  tipoEquipoDesc: string | null;
+  ordenes: OrdenPermanenciaDto[];
+}
+
 export interface ApiError {
   statusCode: number;
   errorMessage: string;

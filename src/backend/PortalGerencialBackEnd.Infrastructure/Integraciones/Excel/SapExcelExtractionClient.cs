@@ -46,6 +46,12 @@ namespace PortalGerencialBackEnd.Infrastructure.Integraciones.Excel
         private static readonly string[] DescripcionEquipo = { "EQKTX", "Denominación", "Denominación de objeto técnico", "Descripción del equipo", "Descripción" };
         private static readonly string[] CodigoLegado = { "KEY_NUM", "FLEET_NUM", "Código legado", "Número de flota", "Nº de flota", "Ficha", "Ficha del equipo Oracle" };
         private static readonly string[] PuestoEquipo = { "WORKCENTER", "ARBPL", "GEWRK", "Puesto de trabajo responsable", "Pto.tbjo.responsable", "Puesto de trabajo" };
+        private static readonly string[] TipoEquipo = { "EQART", "Tipo de equipo", "Clase de objeto técnico", "Cl.objeto técnico" };
+        private static readonly string[] TipoEquipoDesc = { "EQART_DESC", "Denominación tipo de equipo" };
+        private static readonly string[] GrupoPlanificacion = { "INGRP", "Grupo planificador", "Grupo de planificación" };
+        private static readonly string[] GrupoPlanificacionDesc = { "INGRP_DESC" };
+        private static readonly string[] UbicacionTecnica = { "TPLNR", "Ubicación técnica", "Ubicac.técnica" };
+        private static readonly string[] UbicacionTecnicaDesc = { "TPLNR_DESC", "PLTXT", "Denominación ubicación técnica" };
         private static readonly string[] EstadoEquipo = { "ESTADO_EQUIPO", "STTXT", "Status del sistema", "Estado de equipo", "Status sistema" };
 
         private static readonly string[] Operacion = { "VORNR", "Operación", "Op.", "Número de operación", "Nº operación" };
@@ -224,7 +230,8 @@ namespace PortalGerencialBackEnd.Infrastructure.Integraciones.Excel
                     EstadoCodigo = estado,
                     NumeroCambio = f.Texto(NumeroCambio) ?? "001",
                     FechaHoraCambio = fecha.Value,
-                    Indicador = f.Texto(IndicadorCambio) ?? "I"
+                    Indicador = f.Texto(IndicadorCambio) ?? "I",
+                    Inactivo = f.Marca(EstadoInactivo)
                 });
             }
             // Clave única del staging: (orden, estado, número de cambio).
@@ -260,7 +267,13 @@ namespace PortalGerencialBackEnd.Infrastructure.Integraciones.Excel
                     CodigoLegado = legado,
                     Descripcion = f.Texto(DescripcionEquipo),
                     PuestoTrabajo = f.Texto(PuestoEquipo),
-                    Inactivo = EstadosSap.EquipoInactivo(f.Texto(EstadoEquipo))
+                    Inactivo = EstadosSap.EquipoInactivo(f.Texto(EstadoEquipo)),
+                    TipoEquipo = f.Texto(TipoEquipo),
+                    TipoEquipoDesc = f.Texto(TipoEquipoDesc),
+                    GrupoPlanificacion = f.Texto(GrupoPlanificacion),
+                    GrupoPlanificacionDesc = f.Texto(GrupoPlanificacionDesc),
+                    UbicacionTecnica = f.Texto(UbicacionTecnica),
+                    UbicacionTecnicaDesc = f.Texto(UbicacionTecnicaDesc)
                 });
             }
             var unicos = datos.Equipos.GroupBy(e => e.EquipoSapId).Select(g => g.First()).ToList();

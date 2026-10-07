@@ -89,4 +89,34 @@ namespace PortalGerencialBackEnd.Infrastructure.Persistence.Configurations
             b.Property(x => x.DetectadoEn).HasColumnType("DATE");
         }
     }
+
+    public class CalcPermanenciaConfiguration : IEntityTypeConfiguration<CalcPermanencia>
+    {
+        public void Configure(EntityTypeBuilder<CalcPermanencia> b)
+        {
+            b.ToTable("CALC_PERMANENCIA_PGPM");
+            b.HasKey(x => x.OrdenSapId).HasName("PK_CALC_PERMANENCIA_PGPM");
+            b.Property(x => x.OrdenSapId).HasMaxLength(20);
+            b.Property(x => x.ClaseOrden).HasMaxLength(10);
+            b.Property(x => x.Descripcion).HasMaxLength(200);
+            b.Property(x => x.AvisoSapId).HasMaxLength(20);
+            b.Property(x => x.EquipoSapId).HasMaxLength(30);
+            b.Property(x => x.ClaveEquipo).HasMaxLength(30);
+            b.Property(x => x.EquipoDescripcion).HasMaxLength(200);
+            b.Property(x => x.Area).HasMaxLength(10);
+            b.Property(x => x.TipoEquipo).HasMaxLength(20);
+            b.Property(x => x.TipoEquipoDesc).HasMaxLength(60);
+            foreach (var fecha in new[] { nameof(CalcPermanencia.Inicio), nameof(CalcPermanencia.FechaAviso), nameof(CalcPermanencia.FechaCreada),
+                         nameof(CalcPermanencia.FechaLiberada), nameof(CalcPermanencia.FechaEnProceso), nameof(CalcPermanencia.FechaFinalizada),
+                         nameof(CalcPermanencia.FechaCierreTecnico), nameof(CalcPermanencia.GeneradoEn) })
+                b.Property(fecha).HasColumnType("DATE");
+            foreach (var horas in new[] { nameof(CalcPermanencia.HorasRespuesta), nameof(CalcPermanencia.HorasLiberacion),
+                         nameof(CalcPermanencia.HorasEsperaInicio), nameof(CalcPermanencia.HorasEjecucion), nameof(CalcPermanencia.HorasCierreAdm),
+                         nameof(CalcPermanencia.HorasPermanencia), nameof(CalcPermanencia.HorasEsperaRepuestos) })
+                b.Property(horas).HasPrecision(12, 2);
+            b.Property(x => x.CorridaId).HasMaxLength(36);
+            b.HasIndex(x => new { x.Area, x.TipoEquipo }).HasDatabaseName("IX_CALC_PERM_AREA_TIPO_PGPM");
+            b.HasIndex(x => x.EquipoSapId).HasDatabaseName("IX_CALC_PERM_EQUIPO_PGPM");
+        }
+    }
 }

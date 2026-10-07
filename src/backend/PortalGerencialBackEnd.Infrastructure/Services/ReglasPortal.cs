@@ -108,6 +108,26 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
             return resultado;
         }
 
+        /// <summary>"CDS=Centro de Servicios,IND=Industrial" → diccionario código → nombre (orden de la lista).</summary>
+        public static List<(string Codigo, string Nombre)> Pares(ParametrosPortal p, string clave, string porDefecto) =>
+            p.Texto(clave, porDefecto)
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(par => par.Split('=', 2, StringSplitOptions.TrimEntries))
+                .Where(par => par.Length == 2)
+                .Select(par => (par[0], par[1]))
+                .ToList();
+
+        public static List<(string Codigo, string Nombre)> AreasPermanencia(ParametrosPortal p) =>
+            Pares(p, ClavesParametro.AreasPermanencia, "CDS=Centro de Servicios,IND=Industrial");
+
+        public static EstadosPermanencia EstadosPermanencia(ParametrosPortal p)
+        {
+            var estados = Pares(p, ClavesParametro.EstadosUsuarioPermanencia, "ENPR=E0002,FINL=E0003")
+                .ToDictionary(x => x.Codigo, x => x.Nombre, StringComparer.OrdinalIgnoreCase);
+            var espera = p.Texto(ClavesParametro.EstadoEsperaRepuestos, "-");
+            return new EstadosPermanencia(estados.GetValueOrDefault("ENPR"), estados.GetValueOrDefault("FINL"), espera == "-" ? null : espera);
+        }
+
         public static HashSet<string> UsuariosHojaRuta(ParametrosPortal p)
         {
             var usuarios = p.Lista(ClavesParametro.UsuariosHojaRuta, "-");

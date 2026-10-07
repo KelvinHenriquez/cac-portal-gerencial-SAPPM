@@ -73,6 +73,7 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
                 var contexto = await CargarContextoAsync(parametros);
                 ok = await PasoAsync(corridaId, origenLog, FuentesLog.CalcSinClasificar, null, _ => CalcularSinClasificarAsync(contexto, corridaId))
                      && await PasoAsync(corridaId, origenLog, FuentesLog.CalcDisponibilidad, contexto.DesdeDisponibilidad, _ => CalcularDisponibilidadAsync(contexto, corridaId))
+                     && await PasoAsync(corridaId, origenLog, FuentesLog.CalcPermanencia, null, _ => CalcularPermanenciaAsync(parametros, contexto, corridaId))
                      && await PasoAsync(corridaId, origenLog, FuentesLog.CalcAvance, null, _ => CalcularAvanceAsync(contexto, corridaId));
             }
 
@@ -149,6 +150,12 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
                 e.Descripcion = dto.Descripcion;
                 e.PuestoTrabajo = dto.PuestoTrabajo;
                 e.Inactivo = dto.Inactivo;
+                e.TipoEquipo = dto.TipoEquipo;
+                e.TipoEquipoDesc = dto.TipoEquipoDesc;
+                e.GrupoPlanificacion = dto.GrupoPlanificacion;
+                e.GrupoPlanificacionDesc = dto.GrupoPlanificacionDesc;
+                e.UbicacionTecnica = dto.UbicacionTecnica;
+                e.UbicacionTecnicaDesc = dto.UbicacionTecnicaDesc;
                 e.ActualizadoEn = ahora;
             }
 
@@ -302,6 +309,7 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
                     h.EstadoTexto = dto.EstadoTexto;
                     h.FechaHoraCambio = dto.FechaHoraCambio;
                     h.Indicador = dto.Indicador;
+                    h.Inactivo = dto.Inactivo;
                     h.ActualizadoEn = ahora;
                 }
             }
@@ -468,6 +476,86 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
                 _db.CalcDisponibilidadSemanal.AddRange(semanalTotal);
             });
             return diariaTotal.Count;
+        }
+
+        /// <summary>
+        /// Tiempo de permanencia de cada orden correctiva (ZC01, ZI01) de equipos de las áreas
+        /// configuradas: del aviso a la orden finalizada, con cada paso. Se recalcula entero.
+        /// </summary>
+        private async Task<int> CalcularPermanenciaAsync(ParametrosPortal p, ContextoCalculo c, string corridaId)
+        {
+            var clases = p.Lista(ClavesParametro.ClasesOrdenPermanencia, "ZC01,ZI01").ToList();
+            var areas = ReglasPortal.AreasPermanencia(p).Select(a => a.Codigo).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            var estados = ReglasPortal.EstadosPermanencia(p);
+            var ahora = c.Ahora;
+
+            var equipos = (await _db.StgSapEquipos.AsNoTracking().Where(e => e.GrupoPlanificacion != null).ToListAsync())
+                .Where(e => areas.Contains(e.GrupoPlanificacion!))
+                .ToDictionary(e => e.EquipoSapId);
+            var ordenes = (await _db.StgSapOrdenes.AsNoTracking()
+                    .Where(o => o.EquipoSapId != null && clases.Contains(o.ClaseOrden))
+                    .ToListAsync())
+                .Where(o => equipos.ContainsKey(o.EquipoSapId!) && !c.Reglas.EstadosExcluidos.Contains(o.EstadoOrden))
+                .ToList();
+
+            var avisos = new Dictionary<string, DateTime>();
+            foreach (var lote in ordenes.Where(o => o.AvisoSapId != null).Select(o => o.AvisoSapId!).Distinct().Chunk(900))
+                foreach (var a in await _db.StgSapAvisos.AsNoTracking().Where(a => lote.Contains(a.AvisoSapId)).Select(a => new { a.AvisoSapId, a.FechaAviso }).ToListAsync())
+                    avisos[a.AvisoSapId] = a.FechaAviso;
+
+            var historial = new Dictionary<string, List<CambioEstado>>();
+            foreach (var lote in ordenes.Select(o => o.OrdenSapId).Chunk(900))
+                foreach (var h in await _db.StgSapHistorialEstados.AsNoTracking().Where(h => lote.Contains(h.OrdenSapId)).ToListAsync())
+                {
+                    if (!historial.TryGetValue(h.OrdenSapId, out var l)) historial[h.OrdenSapId] = l = new List<CambioEstado>();
+                    l.Add(new CambioEstado(h.EstadoCodigo, h.FechaHoraCambio, h.Inactivo || h.Indicador == "D"));
+                }
+
+            var filas = ordenes.Select(o =>
+            {
+                var e = equipos[o.EquipoSapId!];
+                var r = CalculadoraPermanencia.Calcular(
+                    o.AvisoSapId != null && avisos.TryGetValue(o.AvisoSapId, out var fa) ? fa : null,
+                    o.FechaCreacion, o.FechaFinReal, o.FechaCierre,
+                    historial.GetValueOrDefault(o.OrdenSapId) ?? new List<CambioEstado>(), estados, ahora);
+                return new CalcPermanencia
+                {
+                    OrdenSapId = o.OrdenSapId,
+                    ClaseOrden = o.ClaseOrden,
+                    Descripcion = o.Descripcion,
+                    AvisoSapId = o.AvisoSapId,
+                    EquipoSapId = e.EquipoSapId,
+                    ClaveEquipo = MapeoEquipos.Clave(e.CodigoLegado, e.EquipoSapId),
+                    EquipoDescripcion = e.Descripcion,
+                    Area = e.GrupoPlanificacion!.ToUpperInvariant(),
+                    TipoEquipo = e.TipoEquipo ?? "SIN_TIPO",
+                    TipoEquipoDesc = e.TipoEquipoDesc ?? "Sin tipo de equipo",
+                    Inicio = r.Inicio,
+                    FechaAviso = r.Aviso,
+                    FechaCreada = r.Creada,
+                    FechaLiberada = r.Liberada,
+                    FechaEnProceso = r.EnProceso,
+                    FechaFinalizada = r.Finalizada,
+                    FechaCierreTecnico = r.CierreTecnico,
+                    Terminada = r.Terminada,
+                    HorasRespuesta = r.HorasRespuesta,
+                    HorasLiberacion = r.HorasLiberacion,
+                    HorasEsperaInicio = r.HorasEsperaInicio,
+                    HorasEjecucion = r.HorasEjecucion,
+                    HorasCierreAdm = r.HorasCierreAdministrativo,
+                    HorasPermanencia = r.HorasPermanencia,
+                    HorasEsperaRepuestos = r.HorasEsperaRepuestos,
+                    CorridaId = corridaId,
+                    GeneradoEn = ahora
+                };
+            }).ToList();
+
+            await ReemplazarAsync(async () =>
+            {
+                await _db.CalcPermanencias.ExecuteDeleteAsync();
+                _db.CalcPermanencias.AddRange(filas);
+            });
+            return filas.Count;
         }
 
         private async Task<int> CalcularAvanceAsync(ContextoCalculo c, string corridaId)

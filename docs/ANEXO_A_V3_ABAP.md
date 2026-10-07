@@ -181,6 +181,18 @@ UDATE ≥ fecha de entrada. Estados de sistema y de usuario.
 
 ---
 
+## 5b. Agregado el 06/10/2026 — reporte Tiempo de Permanencia
+
+- **Maestro de equipos:** además de lo de la sección 1, el portal usa **EQART / EQART_DESC** (tipo
+  de equipo = familia del reporte), **INGRP / INGRP_DESC** (grupo de planificación: CDS = Centro de
+  Servicio, IND = Industrial) y **TPLNR / TPLNR_DESC** (ubicación técnica). Ya vienen en
+  `Z_PM_MF_WS_MAESTRO_EQUIPO`: no hace falta cambiarlo.
+- **Historial de estados (módulo 5):** pasa a ser necesario (ya no es respaldo). Debe traer también
+  los **estados de usuario** (E0001 PEND, E0002 ENPR, E0003 FINL) y la marca **INACT**: con ella se
+  mide cuánto estuvo la orden en cada estado. Si se crea un estado de usuario "en espera de
+  repuestos", se configura en el portal sin cambiar nada más.
+- **Avisos:** QMDAT + MZEIT son el inicio de la permanencia (ya vienen).
+
 ## 6. Preguntas para el ABAP
 
 1. ¿KEY_NUM sale de FLEET_NUM? ¿Los equipos sin flota tienen la Ficha en algún otro campo?
