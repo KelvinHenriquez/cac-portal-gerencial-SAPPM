@@ -179,8 +179,9 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
         {
             var config = await ConfigAsync(reporteId);
             var (ordenes, mapeo, reglas, familia) = await ProgramaAsync(config, familiaCodigo);
-            var plan = familia.Semanas.FirstOrDefault(s => s.NoSemana == noSemana)
-                       ?? throw new NotFoundException($"La semana {noSemana} no está en el plan de {familia.FamiliaNombre}.");
+            var calendario = ReglasPortal.PlanEnCalendario(config, familia);
+            var plan = calendario.FirstOrDefault(s => s.NoSemana == noSemana)
+                       ?? throw new NotFoundException($"La semana {noSemana} no está en el calendario de {config.Nombre}.");
             var calc = (await _db.CalcAvanceSemanal.AsNoTracking()
                     .Where(a => a.ReporteId == reporteId && a.FamiliaCodigo == familiaCodigo && a.NoSemana == noSemana)
                     .ToListAsync())
@@ -188,8 +189,8 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
 
             // Misma regla del cálculo: lo terminado antes del programa cuenta en la primera semana y
             // lo terminado después, en la última.
-            var primera = familia.Semanas.Min(s => s.NoSemana) == noSemana;
-            var ultima = familia.Semanas.Max(s => s.NoSemana) == noSemana;
+            var primera = calendario.Min(s => s.NoSemana) == noSemana;
+            var ultima = calendario.Max(s => s.NoSemana) == noSemana;
             bool EnSemana(DateTime? f) => f is { } d
                 && (d.Date >= plan.FechaInicio || primera)
                 && (d.Date <= plan.FechaFin || ultima);

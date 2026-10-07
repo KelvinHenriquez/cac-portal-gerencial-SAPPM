@@ -493,7 +493,7 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
                         .Select(op => new ActividadAvance(ReglasPortal.DiasActividad(op), ReglasPortal.Terminada(op), op.Programada))
                         .ToList();
 
-                    var filas = CalculadoraAvance.Calcular(reporte.ReporteId, familia.FamiliaCodigo, familia.Semanas, c.BasePlan, ordenesAvance, actividades);
+                    var filas = CalculadoraAvance.Calcular(reporte.ReporteId, familia.FamiliaCodigo, ReglasPortal.PlanEnCalendario(reporte, familia), c.BasePlan, ordenesAvance, actividades);
                     foreach (var f in filas)
                     {
                         f.CorridaId = corridaId;

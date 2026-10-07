@@ -64,4 +64,22 @@ public class ReglasPortalTests
     {
         Assert.Equal(esperado, MapeoEquipos.Clave(ficha, equipoSap));
     }
+
+    [Fact]
+    public void El_plan_de_una_familia_cubre_todo_el_calendario_del_programa()
+    {
+        static SemanaPlanDto Sem(int n, decimal act) => new()
+        {
+            NoSemana = n, FechaInicio = new DateTime(2026, 7, 6).AddDays(7 * (n - 1)), FechaFin = new DateTime(2026, 7, 12).AddDays(7 * (n - 1)), Actividad = act
+        };
+        var corta = new FamiliaAvanceDto { FamiliaCodigo = "1-1", Semanas = { Sem(1, 10), Sem(2, 5) } };
+        var larga = new FamiliaAvanceDto { FamiliaCodigo = "2-2", Semanas = { Sem(1, 1), Sem(2, 1), Sem(3, 1), Sem(4, 1) } };
+        var reporte = new ConfigAvanceDto { Familias = { corta, larga } };
+
+        var plan = ReglasPortal.PlanEnCalendario(reporte, corta);
+
+        Assert.Equal(new[] { 1, 2, 3, 4 }, plan.Select(s => s.NoSemana));
+        Assert.Equal(new[] { 10m, 5m, 0m, 0m }, plan.Select(s => s.Actividad));
+        Assert.Equal(new DateTime(2026, 7, 27), plan[3].FechaInicio);
+    }
 }

@@ -134,6 +134,24 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
                 : Core.Calculo.BasePlan.Actividades;
 
         /// <summary>
+        /// Plan de una familia sobre el calendario COMPLETO del programa (todas las semanas que tiene
+        /// cualquier familia del reporte), con 0 donde la familia no planificó nada. Así lo que se
+        /// cierra o termina después del plan de la familia cae en la semana en que de verdad ocurrió,
+        /// no en la última semana de su plan (06/10/2026: cierres de septiembre aparecían en agosto).
+        /// </summary>
+        public static List<SemanaPlanDto> PlanEnCalendario(ConfigAvanceDto reporte, FamiliaAvanceDto familia)
+        {
+            var propias = familia.Semanas.ToDictionary(s => s.NoSemana);
+            return reporte.Familias.SelectMany(f => f.Semanas)
+                .GroupBy(s => s.NoSemana)
+                .Select(g => propias.TryGetValue(g.Key, out var p)
+                    ? p
+                    : new SemanaPlanDto { NoSemana = g.Key, Mes = g.First().Mes, FechaInicio = g.First().FechaInicio, FechaFin = g.First().FechaFin })
+                .OrderBy(s => s.NoSemana)
+                .ToList();
+        }
+
+        /// <summary>
         /// Equipos (códigos legados) del programa de una familia en un reporte: los de las OT que
         /// Oracle le tiene asignadas. Una misma familia puede estar en varios reportes con equipos
         /// distintos. Si el reporte no tiene OT asignadas todavía, todos los equipos de la familia.
