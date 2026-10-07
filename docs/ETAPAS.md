@@ -374,6 +374,13 @@ familia → equipo → órdenes. Solo correctivas.
   447 equipos, **6,5 días promedio y 2,0 de mediana**; el mayor peso está en la ejecución (4,2 d) y
   la liberación (2,1 d). Industrial: solo 3 ZI01 finalizadas y 28 en curso.
 
+## Integración con SAP por servicios web (08/10/2026)
+
+El ABAP publicó los 5 servicios web en desarrollo (mandante 320). El cliente SOAP del portal está
+hecho y probado con respuestas armadas; falta confirmar contra los WSDL el parámetro de fecha y las
+tablas de salida, y la primera prueba real (la corre Kelvin con su usuario en un archivo local). Ver
+[INTEGRACION_SAP.md](INTEGRACION_SAP.md). El cliente RFC/NCo se descartó.
+
 ## Qué sigue
 
 1. **8a — Vistas reales:** escritas y probadas en local. Falta correr

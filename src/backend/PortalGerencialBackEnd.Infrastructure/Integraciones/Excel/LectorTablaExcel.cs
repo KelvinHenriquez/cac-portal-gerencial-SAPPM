@@ -35,6 +35,9 @@ namespace PortalGerencialBackEnd.Infrastructure.Integraciones.Excel
             _valores = valores;
         }
 
+        /// <summary>Nombres de columna (normalizados) de la fila.</summary>
+        public IEnumerable<string> Columnas => _valores.Keys;
+
         public object? Valor(params string[] alias)
         {
             foreach (var a in alias)

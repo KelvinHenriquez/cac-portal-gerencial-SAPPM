@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using PortalGerencialBackEnd.Core.Enums;
 using PortalGerencialBackEnd.Core.Interfaces.Common;
 using PortalGerencialBackEnd.Core.Interfaces.Integraciones;
@@ -64,7 +65,8 @@ namespace PortalGerencialBackEnd.Infrastructure.DependencyInjection
             else if (mode == DataSourceMode.Excel)
                 services.AddScoped<ISapExtractionClient, SapExcelExtractionClient>();
             else
-                services.AddScoped<ISapExtractionClient, SapRfcExtractionClient>();
+                services.AddScoped<ISapExtractionClient>(sp => new SapWebServiceExtractionClient(
+                    sp.GetRequiredService<IConfiguration>(), sp.GetRequiredService<ILogger<SapWebServiceExtractionClient>>()));
 
             // Job de extracción y recálculo (sección 6).
             services.AddSingleton(TimeProvider.System);

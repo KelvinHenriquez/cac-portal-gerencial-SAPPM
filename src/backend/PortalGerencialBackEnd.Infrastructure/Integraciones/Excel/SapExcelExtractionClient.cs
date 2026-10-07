@@ -195,12 +195,24 @@ namespace PortalGerencialBackEnd.Infrastructure.Integraciones.Excel
                 datos.Mensajes.Add($"'{t.Origen}' no se reconoció como ningún export (columnas: {string.Join(", ", t.Encabezados.Take(12))}).");
             foreach (var (tipo, lista) in porTipo.Where(p => p.Key != "DESCONOCIDO"))
                 datos.Mensajes.Add($"{tipo}: {string.Join("; ", lista.Select(t => $"'{t.Origen}' ({t.Filas.Count} filas)"))}.");
+            ProcesarPorTipo(porTipo, datos, ahora);
+            return datos;
+        }
 
+        /// <summary>
+        /// Convierte tablas ya clasificadas (ORDENES, HISTORIAL, EQUIPOS, OPERACIONES, CONFIRMACIONES,
+        /// AVISOS) a los DTO de SAP. Lo usa también el cliente de servicios web, que sabe qué trae cada
+        /// respuesta: así Excel y servicios web llegan al mismo staging con las mismas reglas.
+        /// </summary>
+        internal static Datos ProcesarPorTipo(IReadOnlyDictionary<string, List<TablaExcel>> porTipo, Datos datos, DateTime ahora, bool soloLoQueVino = false)
+        {
+            // soloLoQueVino: el cliente de servicios web pide un módulo a la vez; no se avisa de lo que no pidió.
+            bool Leer(string tipo) => !soloLoQueVino || porTipo.ContainsKey(tipo);
             var historial = LeerHistorial(porTipo.GetValueOrDefault("HISTORIAL"), datos);
-            LeerEquipos(porTipo.GetValueOrDefault("EQUIPOS"), datos);
-            LeerOrdenes(porTipo.GetValueOrDefault("ORDENES"), historial, datos, ahora);
-            LeerOperaciones(porTipo.GetValueOrDefault("OPERACIONES"), porTipo.GetValueOrDefault("CONFIRMACIONES"), datos, ahora);
-            LeerAvisos(porTipo.GetValueOrDefault("AVISOS"), datos, ahora);
+            if (Leer("EQUIPOS")) LeerEquipos(porTipo.GetValueOrDefault("EQUIPOS"), datos);
+            if (Leer("ORDENES")) LeerOrdenes(porTipo.GetValueOrDefault("ORDENES"), historial, datos, ahora);
+            if (Leer("OPERACIONES")) LeerOperaciones(porTipo.GetValueOrDefault("OPERACIONES"), porTipo.GetValueOrDefault("CONFIRMACIONES"), datos, ahora);
+            if (Leer("AVISOS")) LeerAvisos(porTipo.GetValueOrDefault("AVISOS"), datos, ahora);
             return datos;
         }
 
@@ -214,8 +226,9 @@ namespace PortalGerencialBackEnd.Infrastructure.Integraciones.Excel
             var activaciones = new Dictionary<(string, string), DateTime>();
             foreach (var f in (tablas ?? new()).SelectMany(t => t.Filas))
             {
-                var objeto = f.Texto(Objeto);
-                // OBJNR de una orden = "OR" + AUFNR con ceros; los de avisos/equipos no interesan.
+                // OBJNR de una orden = "OR" + AUFNR con ceros; los de avisos/equipos no interesan. El
+                // módulo del ABAP puede traer directamente el número de orden.
+                var objeto = f.Texto(Objeto) ?? (f.Texto(Orden) is { } aufnr ? "OR" + aufnr : null);
                 if (objeto == null || !objeto.StartsWith("OR", StringComparison.OrdinalIgnoreCase)) continue;
                 var fecha = f.FechaHora(FechaCambio, HoraCambio, TimeSpan.Zero);
                 var estado = f.Texto(Estado);

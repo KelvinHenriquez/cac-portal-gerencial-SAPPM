@@ -21,6 +21,12 @@ services:
       Database__AplicarMigracionesAlArrancar: ${APLICAR_MIGRACIONES:-true}
       Job__Habilitado: ${JOB_HABILITADO:-true}
       Admin__Usuarios: ${ADMIN_USUARIOS:-}
+      # SAP por servicios web (módulos Z_PM_MF_WS_* del ABAP).
+      SapWs__BaseUrl: ${SAP_WS_URL:-}
+      SapWs__Cliente: ${SAP_WS_CLIENTE:-}
+      SapWs__Usuario: ${SAP_WS_USUARIO:-}
+      SapWs__Password: ${SAP_WS_PASSWORD:-}
+      SapWs__ValidarCertificado: ${SAP_WS_VALIDAR_CERTIFICADO:-true}
       Alertas__Destinatarios: ${ALERTA_DESTINATARIOS:-}
       Alertas__UrlPortal: ${PUBLIC_URL}
       Alertas__Smtp__Host: ${SMTP_HOST:-}

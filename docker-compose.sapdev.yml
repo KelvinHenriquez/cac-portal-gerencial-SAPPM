@@ -1,0 +1,12 @@
+# Prueba del portal contra los servicios web del SAP de DESARROLLO (mandante 320), en la laptop.
+# Se usa encima del entorno del Sprint 0 (misma configuración real de Oracle), cambiando solo de
+# dónde salen los datos de SAP: de los Excel a los servicios web.
+#   1. cp deploy/sap-ws.env.example sprint0/sap_ws/sap.env   y completar usuario y clave
+#   2. docker compose -f docker-compose.dev.yml -f docker-compose.sprint0.yml -f docker-compose.sapdev.yml up -d
+#   3. En el portal: Sistema → Estado de actualización → "Actualizar ahora"
+services:
+  api:
+    environment:
+      - DataSourceMode=Production
+    env_file:
+      - ./sprint0/sap_ws/sap.env
