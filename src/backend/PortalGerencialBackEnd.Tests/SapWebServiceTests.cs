@@ -59,6 +59,7 @@ public class SapWebServiceTests
         var (url, cuerpo, auth) = sap.Peticiones.Single();
         Assert.Equal("https://sap.prueba.local:44300/sap/bc/srt/rfc/sap/z_pm_mf_ws_aviso_mantenimiento/320/zb_pm_mf_ws_aviso_mantenimiento/zb_pm_mf_ws_aviso_mantenimiento?sap-client=320", url);
         Assert.Contains("<IV_FECHA_DESDE>20260701</IV_FECHA_DESDE>", cuerpo);
+        Assert.Contains($"<IV_FECHA_HASTA>{DateTime.Today.AddDays(1):yyyyMMdd}</IV_FECHA_HASTA>", cuerpo);   // solo avisos lo exige
         Assert.Contains("Z_PM_MF_WS_AVISO_MANTENIMIENTO", cuerpo);
         Assert.Equal("Basic " + Convert.ToBase64String(Encoding.UTF8.GetBytes("PORTAL_PM:clave-de-prueba")), auth);
 
@@ -126,5 +127,25 @@ public class SapWebServiceTests
 
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => cliente.GetAvisosModificadosDesdeAsync(new DateTime(2026, 7, 1)));
         Assert.Contains(esperado, ex.Message);
+    }
+
+    [Fact]
+    public async Task Operaciones_del_modulo_distinguen_hoja_de_ruta_de_agregadas()
+    {
+        var (cliente, sap) = Crear();
+        sap.Responder = m => (HttpStatusCode.OK, Respuesta(m, "ZT_OPERACIONES_O",
+            "<AUFNR>000230000000164</AUFNR><VORNR>0010</VORNR><LTXA1>Revisar motor</LTXA1><ARBEI>8.0</ARBEI><ARBEH>H</ARBEH>" +
+            "<FSAVD>2026-07-06</FSAVD><FSEDD>2026-07-08</FSEDD><ISMNW_TOTAL>8.0</ISMNW_TOTAL><ISMNE>H</ISMNE>" +
+            "<FECHA_PRIMERA_CONF>2026-07-07</FECHA_PRIMERA_CONF><FECHA_ULTIMA_CONF>2026-07-08</FECHA_ULTIMA_CONF><CONF_FINAL>X</CONF_FINAL>" +
+            "<ERNAM>PLANIF1</ERNAM><VPLTY>A</VPLTY><VPLNR>00000123</VPLNR>",
+            "<AUFNR>000230000000164</AUFNR><VORNR>0020</VORNR><LTXA1>Cambiar sello extra</LTXA1><ARBEI>2.0</ARBEI><ARBEH>H</ARBEH>" +
+            "<ISMNW_TOTAL>0.0</ISMNW_TOTAL><ERNAM>TALLER1</ERNAM><VPLTY></VPLTY><VPLNR></VPLNR>"));
+
+        var ops = await cliente.GetOperacionesModificadasDesdeAsync(new DateTime(2026, 7, 1));
+
+        Assert.DoesNotContain("IV_FECHA_HASTA", sap.Peticiones.Single().Cuerpo);
+        Assert.True(ops.Single(o => o.Operacion == "0010").Programada);
+        Assert.False(ops.Single(o => o.Operacion == "0020").Programada);
+        Assert.Equal(new DateTime(2026, 7, 8), ops.Single(o => o.Operacion == "0010").FechaUltimaConf);
     }
 }

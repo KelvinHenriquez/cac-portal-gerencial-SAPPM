@@ -29,8 +29,14 @@ namespace PortalGerencialBackEnd.Infrastructure.Integraciones.Produccion
         /// <summary>false solo para pruebas si el certificado es de una CA interna aún no instalada.</summary>
         public bool ValidarCertificado { get; set; } = true;
 
-        /// <summary>Nombre del parámetro de entrada "fecha desde" (según el WSDL).</summary>
+        /// <summary>Nombre del parámetro de entrada "fecha desde" (WSDL del 07/10/2026: IV_FECHA_DESDE, char8).</summary>
         public string ParametroFechaDesde { get; set; } = "IV_FECHA_DESDE";
+
+        /// <summary>Módulos que además exigen "fecha hasta" (en el WSDL no es opcional): se manda mañana.</summary>
+        public Dictionary<string, string> ParametroFechaHasta { get; set; } = new()
+        {
+            ["Z_PM_MF_WS_AVISO_MANTENIMIENTO"] = "IV_FECHA_HASTA"
+        };
 
         /// <summary>
         /// Tablas de salida que hay que mandar vacías en la petición, por módulo (en los servicios
@@ -134,7 +140,11 @@ namespace PortalGerencialBackEnd.Infrastructure.Integraciones.Produccion
         {
             var parametros = new List<XElement>();
             if (desde != null)
+            {
                 parametros.Add(new XElement(_cfg.ParametroFechaDesde, desde.Value.ToString("yyyyMMdd", CultureInfo.InvariantCulture)));
+                if (_cfg.ParametroFechaHasta.TryGetValue(modulo, out var hasta))
+                    parametros.Add(new XElement(hasta, DateTime.Today.AddDays(1).ToString("yyyyMMdd", CultureInfo.InvariantCulture)));
+            }
             foreach (var tabla in _cfg.TablasEnPeticion.GetValueOrDefault(modulo) ?? Array.Empty<string>())
                 parametros.Add(new XElement(tabla));
             var sobre = new XElement(Soap + "Envelope",
@@ -151,7 +161,8 @@ namespace PortalGerencialBackEnd.Infrastructure.Integraciones.Produccion
             {
                 Content = new StringContent(Peticion(modulo, desde), Encoding.UTF8, "text/xml")
             };
-            peticion.Headers.Add("SOAPAction", $"urn:sap-com:document:sap:rfc:functions:{modulo}");
+            // SOAPAction tal como lo publica el WSDL de cada servicio.
+            peticion.Headers.Add("SOAPAction", $"urn:sap-com:document:sap:rfc:functions:{modulo}:{modulo}Request");
 
             HttpResponseMessage respuesta;
             try

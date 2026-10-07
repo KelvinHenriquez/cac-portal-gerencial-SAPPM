@@ -28,15 +28,32 @@ URL de cada servicio: `{SapWs:BaseUrl}/sap/bc/srt/rfc/sap/{módulo}/{mandante}/z
   responde.
 - 5 pruebas automáticas con respuestas SOAP armadas como las de SAP.
 
-## Qué falta (depende de los WSDL)
+## Lo que dicen los WSDL (07/10/2026)
 
-Los WSDL piden usuario y clave, así que los descarga Kelvin (no Claude): abrir cada URL en el
-navegador, entrar con el usuario de SAP y guardar la página (Ctrl+S) en `sprint0\sap_ws\` con el
-nombre del módulo (`Z_PM_MF_WS_MAESTRO_EQUIPO.wsdl`, ...). Con ellos se confirma:
+| Módulo | Entrada | Tabla de salida | Campos relevantes |
+|---|---|---|---|
+| MAESTRO_EQUIPO | — | `ZT_MAESTRO_EQUIPO` | EQUNR, EQKTX, EQART(_DESC), KEY_NUM, INGRP(_DESC), TPLNR(_DESC), ESTADO_EQUIPO |
+| ORDEN_MANTENIMIENTO | IV_FECHA_DESDE | `ZT_ORDEN_MANTENIMIENTO` | AUFNR, AUART, ILART, EQUNR, QMNUM, ERDAT+ERFZEIT, GSTR*/GLTR*, FECHA_TECO+HORA_TECO, STATUS_SISTEMA/USUARIO |
+| OPERACION_ORDEN | IV_FECHA_DESDE | `ZT_OPERACIONES_O` | AUFNR, VORNR, LTXA1, ARBEI, FSAVD/FSEDD, ISMNW_TOTAL, FECHA_*_CONF, CONF_FINAL, ERNAM, ORIGEN_OPERACION, VPLTY, VPLNR |
+| AVISO_MANTENIMIENTO | IV_FECHA_DESDE **e IV_FECHA_HASTA** | `ZT_AVISOS_MANTENIMIENTO` | QMNUM, EQUNR, AUFNR, QMDAT+MZEIT, MSAUS, AUSVN/AUZTV, AUSBS/AUZTB |
+| HISTORIAL_ESTADO | IV_FECHA_DESDE | `ZT_HISTORIAL_ESTADO` | AUFNR, OBJNR, STAT, TXT04, TIPO_STATUS, CHGNR, UDATE, UTIME, CHIND, INACT |
 
-1. el nombre del parámetro de entrada "fecha desde" (hoy se asume `IV_FECHA_DESDE`);
-2. si las tablas de salida hay que mandarlas vacías en la petición (`SapWs:TablasEnPeticion`);
-3. los nombres de campo de cada tabla de salida contra el [Anexo A v3](ANEXO_A_V3_ABAP.md).
+- Las fechas son `char8` (`yyyymmdd`) y **ningún parámetro es opcional**: a avisos el portal le
+  manda como "hasta" el día siguiente.
+- Las tablas son parámetros de salida: no hay que mandarlas en la petición.
+- `SOAPAction` = `urn:sap-com:document:sap:rfc:functions:{MÓDULO}:{MÓDULO}Request`.
+- El WSDL publica la dirección `http://vhazcdc3ci.sap.cac.com:8000/...`; el portal usa la de https
+  (44300). Si Basis prefiere el 8000 para la red interna, se cambia en `SapWs__BaseUrl`.
+- **Actividad del plan o agregada:** con `VPLNR` (hoja de ruta de la que se copió la operación) u
+  `ORIGEN_OPERACION`, mejor que el usuario creador.
+
+## Pendiente con el ABAP
+
+1. **Suboperación (UVORN) en `Z_PM_MF_WS_OPERACION_ORDEN`.** En las órdenes de reparación (ZC03) cada
+   actividad es una suboperación de la operación 0010 (~190 por orden). Sin UVORN, todas llegan con
+   VORNR 0010 y el avance por actividades no se puede calcular. Lo mismo para las confirmaciones
+   (fechas y horas por suboperación).
+2. **Valores de `ORIGEN_OPERACION`** (¿"HOJA_RUTA" / "MANUAL"?), para confirmar la regla.
 
 ## Probar contra el SAP de desarrollo (en la laptop)
 

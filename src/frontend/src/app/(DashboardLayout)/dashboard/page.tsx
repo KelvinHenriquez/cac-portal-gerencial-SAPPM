@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { Box, Card, CardActionArea, CardContent, Chip, Grid2 as Grid, Stack, Typography } from "@mui/material";
-import { IconTractor, IconProgressCheck, IconBuildingFactory2 } from "@tabler/icons-react";
+import { IconTractor, IconProgressCheck, IconBuildingFactory2, IconClockHour4 } from "@tabler/icons-react";
 import { useAuth } from "@/store/AuthContext";
 
 interface Tablero {
@@ -34,14 +34,26 @@ const AREAS: Area[] = [
         href: "/dashboard/taller/avance",
         icon: IconProgressCheck,
       },
+      {
+        titulo: "Tiempo de Permanencia",
+        descripcion: "Días desde el aviso hasta la orden correctiva finalizada, por familia y equipo, con el tiempo de cada paso.",
+        href: "/dashboard/taller/permanencia?area=CDS",
+        icon: IconClockHour4,
+      },
     ],
   },
   {
     nombre: "Área Industrial",
     tableros: [
       {
+        titulo: "Tiempo de Permanencia",
+        descripcion: "Días desde el aviso hasta la orden correctiva (ZI01) finalizada, por familia y equipo.",
+        href: "/dashboard/taller/permanencia?area=IND",
+        icon: IconClockHour4,
+      },
+      {
         titulo: "Próximamente",
-        descripcion: "Los tableros del área industrial se agregarán en una fase posterior.",
+        descripcion: "Reporte por ubicaciones técnicas y otros tableros del área industrial.",
         icon: IconBuildingFactory2,
       },
     ],

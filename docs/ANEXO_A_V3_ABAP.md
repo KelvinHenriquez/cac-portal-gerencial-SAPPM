@@ -193,6 +193,15 @@ UDATE ≥ fecha de entrada. Estados de sistema y de usuario.
   repuestos", se configura en el portal sin cambiar nada más.
 - **Avisos:** QMDAT + MZEIT son el inicio de la permanencia (ya vienen).
 
+## 5c. Revisión de los WSDL (07/10/2026)
+
+- **Falta la suboperación (UVORN) en `Z_PM_MF_WS_OPERACION_ORDEN`**: en las órdenes de reparación
+  (ZC03) cada actividad es una suboperación de la 0010 (~190 por orden, se vio en IW37N). La tabla de
+  salida debe traer una fila por suboperación, con UVORN, sus horas reales, fechas de confirmación y
+  confirmación final.
+- **`ORIGEN_OPERACION`**: ¿qué valores trae? El portal toma como "agregada en la reparación" la que no
+  viene de hoja de ruta (VPLNR vacío).
+
 ## 6. Preguntas para el ABAP
 
 1. ¿KEY_NUM sale de FLEET_NUM? ¿Los equipos sin flota tienen la Ficha en algún otro campo?

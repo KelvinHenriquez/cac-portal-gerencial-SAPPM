@@ -71,6 +71,8 @@ namespace PortalGerencialBackEnd.Infrastructure.Integraciones.Excel
         private static readonly string[] ConfFinal = { "CONF_FINAL" };
         private static readonly string[] CreadoPor = { "ERNAM", "Creado por" };
         private static readonly string[] Suboperacion = { "UVORN", "Suboperación" };
+        private static readonly string[] HojaRuta = { "VPLNR", "Grupo hoja de ruta" };
+        private static readonly string[] OrigenOperacion = { "ORIGEN_OPERACION" };
         private static readonly string[] Sistema = { "SISTEMA" };
         private static readonly string[] Subsistema = { "SUBSISTEMA" };
         private static readonly string[] Componente = { "COMPONENTE" };
@@ -441,6 +443,7 @@ namespace PortalGerencialBackEnd.Infrastructure.Integraciones.Excel
                     FechaUltimaConf = ultima,
                     ConfFinal = final,
                     UsuarioCreacion = Recortar(f.Texto(CreadoPor), 12),
+                    Programada = EsDeHojaRuta(f, tablas),
                     FechaModificacion = ultima ?? ahora
                 });
             }
@@ -494,6 +497,20 @@ namespace PortalGerencialBackEnd.Infrastructure.Integraciones.Excel
             "D" or "TAG" or "DIA" or "DÍA" => valor * 24m,
             _ => valor
         };
+
+        /// <summary>
+        /// ¿La actividad venía en la hoja de ruta (Real Programado) o se agregó en la reparación? El
+        /// módulo del ABAP trae VPLNR (hoja de ruta de la que se copió la operación) y ORIGEN_OPERACION.
+        /// Si el export no trae ninguno de los dos, queda como del plan y decide el parámetro de usuarios.
+        /// </summary>
+        private static bool EsDeHojaRuta(FilaExcel f, List<TablaExcel> tablas)
+        {
+            if (f.Texto(OrigenOperacion) is { } origen)
+                return !origen.Contains("AGREG", StringComparison.OrdinalIgnoreCase) && !origen.Contains("MANUAL", StringComparison.OrdinalIgnoreCase);
+            if (tablas.Any(t => t.Tiene(HojaRuta)))
+                return f.Texto(HojaRuta) != null;
+            return true;
+        }
 
         /// <summary>Operación, o "operación/suboperación" si la fila es una suboperación ("0010/0005").</summary>
         private static string? ClaveActividad(FilaExcel f)

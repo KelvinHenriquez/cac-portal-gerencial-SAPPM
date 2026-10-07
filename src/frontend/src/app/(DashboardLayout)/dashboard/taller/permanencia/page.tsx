@@ -107,11 +107,13 @@ export default function PermanenciaPage() {
   useEffect(() => {
     const pref = leerPreferencias();
     if (pref.vista) setVista(pref.vista);
+    // ?area=IND desde las tarjetas del Inicio; si no, la última área usada.
+    const pedida = new URLSearchParams(window.location.search).get("area")?.toUpperCase();
     permanenciaService
       .getAreas()
       .then((a) => {
         setAreas(a);
-        setArea(a.find((x) => x.codigo === pref.area)?.codigo ?? a[0]?.codigo ?? "");
+        setArea(a.find((x) => x.codigo === pedida)?.codigo ?? a.find((x) => x.codigo === pref.area)?.codigo ?? a[0]?.codigo ?? "");
       })
       .catch((e: ApiError) => setError(e?.errorMessage || "No se pudieron cargar las áreas."));
   }, []);
