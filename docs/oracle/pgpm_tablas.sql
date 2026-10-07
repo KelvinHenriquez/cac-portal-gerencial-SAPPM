@@ -953,3 +953,33 @@ END;
 
 /
 
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "EF_MIGRACIONES_PGPM" WHERE "MigrationId" = N'20261007012213_AvanceFechaOrdenTerminada';
+IF v_Count = 0 THEN
+
+    BEGIN
+    INSERT INTO "PARAMETRO_PGPM" ("CLAVE", "ACTUALIZADO_EN", "ACTUALIZADO_POR", "DESCRIPCION", "VALOR")
+    VALUES ('AVANCE.FECHA_ORDEN_TERMINADA', TO_DATE('2026-10-01 00:00:00', 'YYYY-MM-DD HH24:MI:SS'), NULL, 'Avance por órdenes: una orden cerrada cuenta en la semana de su FIN_REAL (cuando terminó el trabajo) o de su CIERRE_TECNICO en SAP (decisión del 06/10/2026: fin real).', 'FIN_REAL');
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "EF_MIGRACIONES_PGPM" WHERE "MigrationId" = N'20261007012213_AvanceFechaOrdenTerminada';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "EF_MIGRACIONES_PGPM" ("MigrationId", "ProductVersion")
+    VALUES (N''20261007012213_AvanceFechaOrdenTerminada'', N''8.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+

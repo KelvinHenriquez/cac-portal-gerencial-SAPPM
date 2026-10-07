@@ -44,6 +44,13 @@ namespace PortalGerencialBackEnd.Core.Constants
         /// </summary>
         public const string BasePorcentajeDisponibilidad = "DISPONIBILIDAD.BASE_PORCENTAJE";
 
+        /// <summary>
+        /// Fecha con la que una orden del programa cuenta como terminada en el avance "por órdenes":
+        /// FIN_REAL (fin real de la orden, cuando terminó el trabajo) o CIERRE_TECNICO (cuando se hizo
+        /// el cierre técnico en SAP, que puede ser días después y en lote).
+        /// </summary>
+        public const string FechaOrdenTerminadaAvance = "AVANCE.FECHA_ORDEN_TERMINADA";
+
         /// <summary>Clases de orden que cuentan para Avance de Reparación.</summary>
         public const string ClasesOrdenAvance = "AVANCE.CLASES_ORDEN";
 

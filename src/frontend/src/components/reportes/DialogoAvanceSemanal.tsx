@@ -211,7 +211,7 @@ export default function DialogoAvanceSemanal({
                         <TableCell>No. OT</TableCell>
                         <TableCell>Ficha</TableCell>
                         <TableCell>Descripción</TableCell>
-                        <TableCell>Cierre técnico</TableCell>
+                        <TableCell>Terminada</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>

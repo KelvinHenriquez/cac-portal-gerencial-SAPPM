@@ -83,7 +83,8 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
                 EstadosCerrados: p.Lista(ClavesParametro.EstadosCerrados, "Cerrada"),
                 EstadosExcluidos: p.Lista(ClavesParametro.EstadosExcluidos, "Anulada"),
                 TipoPorClase: tipoPorClase,
-                BaseEquipos: string.Equals(p.Texto(ClavesParametro.BasePorcentajeDisponibilidad, "REQUERIDOS"), "EQUIPOS", StringComparison.OrdinalIgnoreCase));
+                BaseEquipos: string.Equals(p.Texto(ClavesParametro.BasePorcentajeDisponibilidad, "REQUERIDOS"), "EQUIPOS", StringComparison.OrdinalIgnoreCase),
+                AvancePorFinReal: !string.Equals(p.Texto(ClavesParametro.FechaOrdenTerminadaAvance, "FIN_REAL"), "CIERRE_TECNICO", StringComparison.OrdinalIgnoreCase));
         }
 
         public static HashSet<string> ClasesAvance(ParametrosPortal p) => p.Lista(ClavesParametro.ClasesOrdenAvance, "ZC03");
@@ -177,9 +178,15 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
                    && referencia < reporte.FechaFin.AddDays(1);
         }
 
-        /// <summary>Fecha de cierre si la orden está cerrada; si no, null.</summary>
-        public static DateTime? CierreSiCerrada(StgSapOrden o, ReglasVentana reglas) =>
-            reglas.EstadosCerrados.Contains(o.EstadoOrden) ? o.FechaCierre ?? o.FechaFinReal : null;
+        /// <summary>
+        /// Avance "por órdenes": fecha en que una orden cerrada cuenta como terminada; null si no está
+        /// cerrada. Por defecto su fin real (cuando terminó el trabajo), no la fecha del cierre técnico,
+        /// que el taller a veces hace en lote días después (06/10/2026: 32 órdenes cerradas el 25/08).
+        /// </summary>
+        public static DateTime? OrdenTerminada(StgSapOrden o, ReglasVentana reglas) =>
+            !reglas.EstadosCerrados.Contains(o.EstadoOrden) ? null
+            : reglas.AvancePorFinReal ? o.FechaFinReal ?? o.FechaCierre
+            : o.FechaCierre ?? o.FechaFinReal;
 
         /// <summary>Actividad terminada = con horas reales; cuenta en la fecha en que se confirmaron.</summary>
         public static DateTime? Terminada(StgSapOperacion op) =>

@@ -969,6 +969,13 @@ namespace PortalGerencialBackEnd.Infrastructure.Persistence.Migrations
                         },
                         new
                         {
+                            Clave = "AVANCE.FECHA_ORDEN_TERMINADA",
+                            ActualizadoEn = new DateTime(2026, 10, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Descripcion = "Avance por órdenes: una orden cerrada cuenta en la semana de su FIN_REAL (cuando terminó el trabajo) o de su CIERRE_TECNICO en SAP (decisión del 06/10/2026: fin real).",
+                            Valor = "FIN_REAL"
+                        },
+                        new
+                        {
                             Clave = "AVANCE.BASE_PLAN",
                             ActualizadoEn = new DateTime(2026, 10, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             Descripcion = "Con qué se arma el % programado de cada semana: DIAS (respuesta del 02/10/2026: por actividades puede engañar si hay muchas actividades chicas) o ACTIVIDADES.",

@@ -1,3 +1,4 @@
+using PortalGerencialBackEnd.Core.Calculo;
 using PortalGerencialBackEnd.Core.Dtos.Estructura;
 using PortalGerencialBackEnd.Core.Entities.Sap;
 using PortalGerencialBackEnd.Infrastructure.Services;
@@ -81,5 +82,22 @@ public class ReglasPortalTests
         Assert.Equal(new[] { 1, 2, 3, 4 }, plan.Select(s => s.NoSemana));
         Assert.Equal(new[] { 10m, 5m, 0m, 0m }, plan.Select(s => s.Actividad));
         Assert.Equal(new DateTime(2026, 7, 27), plan[3].FechaInicio);
+    }
+
+    [Fact]
+    public void Orden_terminada_por_fin_real_o_por_cierre_tecnico()
+    {
+        var orden = new StgSapOrden
+        {
+            OrdenSapId = "230000000229", EstadoOrden = "Cerrada",
+            FechaFinReal = new DateTime(2026, 7, 17), FechaCierre = new DateTime(2026, 8, 25, 11, 4, 0)
+        };
+        var abierta = new StgSapOrden { OrdenSapId = "230000000300", EstadoOrden = "En Proceso", FechaFinReal = new DateTime(2026, 8, 1) };
+        ReglasVentana Reglas(bool finReal) => new(new HashSet<string>(), true, false, new HashSet<string> { "Cerrada" },
+            new HashSet<string>(), new Dictionary<string, string>(), AvancePorFinReal: finReal);
+
+        Assert.Equal(new DateTime(2026, 7, 17), ReglasPortal.OrdenTerminada(orden, Reglas(true)));
+        Assert.Equal(new DateTime(2026, 8, 25, 11, 4, 0), ReglasPortal.OrdenTerminada(orden, Reglas(false)));
+        Assert.Null(ReglasPortal.OrdenTerminada(abierta, Reglas(true)));   // sin cerrar no cuenta
     }
 }

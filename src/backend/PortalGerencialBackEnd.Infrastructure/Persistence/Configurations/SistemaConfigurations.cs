@@ -79,6 +79,8 @@ namespace PortalGerencialBackEnd.Infrastructure.Persistence.Configurations
                     "Base del % de disponibilidad: EQUIPOS (disponibles / equipos de la asignación, como Oracle; decisión del 06/10/2026) o REQUERIDOS (disponibles / requeridos, topado en 100)."),
                 P(ClavesParametro.UsuariosHojaRuta, "-",
                     "Usuarios SAP (separados por coma) que crean las operaciones de la hoja de ruta (Real Programado); las creadas por otros usuarios son agregadas (Real No Programado). \"-\" = sin definir: se usa la marca que traiga SAP (respuesta del 02/10/2026)."),
+                P(ClavesParametro.FechaOrdenTerminadaAvance, "FIN_REAL",
+                    "Avance por órdenes: una orden cerrada cuenta en la semana de su FIN_REAL (cuando terminó el trabajo) o de su CIERRE_TECNICO en SAP (decisión del 06/10/2026: fin real)."),
                 P(ClavesParametro.BasePlanAvance, "DIAS",
                     "Con qué se arma el % programado de cada semana: DIAS (respuesta del 02/10/2026: por actividades puede engañar si hay muchas actividades chicas) o ACTIVIDADES."),
                 P(ClavesParametro.HoraCorridaDiaria, "05:00",

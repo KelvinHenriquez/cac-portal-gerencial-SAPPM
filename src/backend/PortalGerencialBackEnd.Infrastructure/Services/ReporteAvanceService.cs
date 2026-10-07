@@ -217,7 +217,7 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
                 .ToList();
 
             var cerradas = ordenes
-                .Select(o => (Orden: o, Cierre: ReglasPortal.CierreSiCerrada(o, reglas)))
+                .Select(o => (Orden: o, Cierre: ReglasPortal.OrdenTerminada(o, reglas)))
                 .Where(x => EnSemana(x.Cierre))
                 .Select(x => new OrdenCerradaDto { OrdenSapId = x.Orden.OrdenSapId, Ficha = Ficha(x.Orden), Descripcion = x.Orden.Descripcion, FechaCierre = x.Cierre!.Value })
                 .OrderBy(o => o.FechaCierre)

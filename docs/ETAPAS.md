@@ -348,6 +348,9 @@ IW37N). Corrida completa OK con datos reales. Resultado en `sprint0/Comparacion_
 - **Clave de equipo = Ficha o código SAP:** los equipos de fábrica nunca tendrán FLEET_NUM y la
   Ficha se va a eliminar. Ver [IDENTIDAD_EQUIPOS.md](IDENTIDAD_EQUIPOS.md).
 - **Integración con SAP:** el ABAP tiene los módulos y sus WSDL (servicios web SOAP).
+- **Avance por órdenes con la fecha de fin real** (parámetro `AVANCE.FECHA_ORDEN_TERMINADA`), no la
+  del cierre técnico: el taller cerró técnicamente 32 órdenes en lote el 25/08 aunque el trabajo
+  terminó en julio y agosto. Con fin real, Vagones reparte su avance en las semanas 1 a 5 y 10.
 
 ## Qué sigue
 
