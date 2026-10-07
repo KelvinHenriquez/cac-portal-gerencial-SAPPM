@@ -55,4 +55,13 @@ public class ReglasPortalTests
 
         Assert.True(orden.Operaciones.Single().Programada);
     }
+
+    [Theory]
+    [InlineData("F01168", "012-052002-0023", "F01168")]   // con Ficha: la Ficha
+    [InlineData(null, "011-050101-0001", "011-050101-0001")] // equipo de fábrica sin Ficha: el código SAP
+    [InlineData("  ", "10000001", "10000001")]
+    public void Clave_de_equipo_es_la_Ficha_o_el_codigo_SAP(string? ficha, string equipoSap, string esperado)
+    {
+        Assert.Equal(esperado, MapeoEquipos.Clave(ficha, equipoSap));
+    }
 }

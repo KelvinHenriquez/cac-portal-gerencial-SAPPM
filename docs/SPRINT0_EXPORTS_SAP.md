@@ -76,10 +76,23 @@ OT de Oracle que dejaron equipos fuera, y los tipos y estados de OT. Cada result
 `sprint0\oracle_resultados\`. El avance de Oracle ya viene en el export de configuración (columnas
 `REAL_*` de `MA_SUBDET_CONFIG_AVANCE`).
 
-Para comparar con las mismas reglas que Oracle, el portal se corre con
-`DISPONIBILIDAD.BASE_PORCENTAJE=EQUIPOS` y solo la clase SAP equivalente a la OT tipo 1 (Sistema →
-Parámetros). Criterio de aceptación por definir (propuesta: diferencia de 5 puntos o menos en al
-menos el 80 % de los días por asignación).
+Las reglas de Oracle son las del portal por defecto desde el 06/10/2026 (% sobre equipos, solo
+correctivas ZC01, sin la regla del aviso).
+
+## D. Criterio de aceptación (06/10/2026)
+
+Conciliación al nivel en que se publica el reporte (la semana), como en cualquier corrida en paralelo:
+
+| Nivel | Tolerancia | Meta |
+|---|---|---|
+| Reporte (fila "Todas"), por semana | ±3 puntos | ≥ 90 % de las semanas |
+| Asignación, por semana | ±5 puntos | ≥ 80 % de las semanas en cada asignación |
+| Diferencias mayores | — | 100 % con causa identificada (orden solo en un sistema, fechas distintas, equipo sin cruce) |
+
+Medición con julio-septiembre: reporte 26,5 % de las semanas; asignación 60,3 % (91 de 256
+asignaciones cumplen). Todas las diferencias tienen causa identificada (`sprint0/Comparacion_...xlsx`):
+**no se cumple por los datos** (correctivas abiertas en un solo sistema), no por el cálculo. Se vuelve
+a medir después de limpiar las órdenes abiertas.
 
 ---
 

@@ -158,8 +158,8 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
 
             var equiposPrograma = ReglasPortal.EquiposDelPrograma(familia, mapeo);
             var equiposSap = equiposPrograma
-                .Where(mapeo.EquipoSapPorLegado.ContainsKey)
-                .Select(legado => mapeo.EquipoSapPorLegado[legado])
+                .Where(mapeo.EquipoSapPorClave.ContainsKey)
+                .Select(legado => mapeo.EquipoSapPorClave[legado])
                 .ToList();
 
             var ordenes = new List<StgSapOrden>();
@@ -194,7 +194,7 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
                 && (d.Date >= plan.FechaInicio || primera)
                 && (d.Date <= plan.FechaFin || ultima);
 
-            string Ficha(StgSapOrden o) => o.EquipoSapId != null && mapeo.LegadoPorEquipoSap.TryGetValue(o.EquipoSapId, out var l) ? l : "";
+            string Ficha(StgSapOrden o) => o.EquipoSapId != null && mapeo.ClavePorEquipoSap.TryGetValue(o.EquipoSapId, out var l) ? l : "";
 
             var actividades = ordenes
                 .SelectMany(o => o.Operaciones.Select(op => (Orden: o, Op: op, Terminada: ReglasPortal.Terminada(op))))
@@ -272,7 +272,7 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
                 Equipos = ordenes
                     .Select(o =>
                     {
-                        var ficha = o.EquipoSapId != null && mapeo.LegadoPorEquipoSap.TryGetValue(o.EquipoSapId, out var l) ? l : "";
+                        var ficha = o.EquipoSapId != null && mapeo.ClavePorEquipoSap.TryGetValue(o.EquipoSapId, out var l) ? l : "";
                         var desc = mapeo.EquiposOracle.TryGetValue(ficha, out var e) ? e.Descripcion : ficha;
                         return Fila(new AnalisisEquipoDto
                         {

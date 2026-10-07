@@ -89,7 +89,7 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
 
             // Foto actual de cada asignación.
             var instante = b.InstanteFoto(b.Corte.Value);
-            var ventanas = await ProcesoActualizacionService.VentanasAsync(_db, b.Mapeo.LegadoPorEquipoSap, b.Reglas, instante.Date, b.Corte.Value);
+            var ventanas = await ProcesoActualizacionService.VentanasAsync(_db, b.Mapeo.ClavePorEquipoSap, b.Reglas, instante.Date, b.Corte.Value);
             var semanales = (await _db.CalcDisponibilidadSemanal.AsNoTracking().Where(s => s.ReporteId == reporteId).ToListAsync())
                 .ToDictionary(s => (s.AsignacionId, s.NoSemana));
 
@@ -191,7 +191,7 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
                 .FirstOrDefault();
 
             var referencia = b.Referencia(Ahora);
-            var ventanas = await ProcesoActualizacionService.VentanasAsync(_db, b.Mapeo.LegadoPorEquipoSap, b.Reglas, semana.FechaInicio, referencia);
+            var ventanas = await ProcesoActualizacionService.VentanasAsync(_db, b.Mapeo.ClavePorEquipoSap, b.Reglas, semana.FechaInicio, referencia);
             var finSemana = semana.FechaFin.AddDays(1);
             var delaSemana = asignacion.Equipos
                 .SelectMany(e => ventanas[e])
@@ -248,7 +248,7 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
                 return new List<HoraDisponibilidadDto>();
 
             var horas = b.Config.HorasActivas.Where(h => dia < referencia.Date || h <= referencia.Hour).ToList();
-            var ventanas = await ProcesoActualizacionService.VentanasAsync(_db, b.Mapeo.LegadoPorEquipoSap, b.Reglas, dia, referencia);
+            var ventanas = await ProcesoActualizacionService.VentanasAsync(_db, b.Mapeo.ClavePorEquipoSap, b.Reglas, dia, referencia);
             var equipos = asignacion.Equipos.Where(b.Mapeo.CuentaParaDisponibilidad).ToList();
 
             return CalculadoraDisponibilidad.FotosDelDia(equipos, asignacion.CantRequerida, horas, ventanas, dia, b.Reglas.BaseEquipos)
@@ -271,7 +271,7 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
             var asignacion = b.Asignacion(asignacionId);
             var referencia = b.Referencia(Ahora);
             var instante = b.Corte == null ? referencia : b.InstanteFoto(b.Corte.Value);
-            var ventanas = await ProcesoActualizacionService.VentanasAsync(_db, b.Mapeo.LegadoPorEquipoSap, b.Reglas, instante.Date, referencia);
+            var ventanas = await ProcesoActualizacionService.VentanasAsync(_db, b.Mapeo.ClavePorEquipoSap, b.Reglas, instante.Date, referencia);
 
             var activas = asignacion.Equipos
                 .SelectMany(e => ventanas[e])
@@ -282,7 +282,7 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
             var equipos = asignacion.Equipos.Select(legado =>
             {
                 b.Mapeo.EquiposOracle.TryGetValue(legado, out var oracle);
-                var enSap = b.Mapeo.EquipoSapPorLegado.TryGetValue(legado, out var sapId);
+                var enSap = b.Mapeo.EquipoSapPorClave.TryGetValue(legado, out var sapId);
                 var ordenes = detalle[legado].ToList();
                 return new EquipoDetalleDto
                 {

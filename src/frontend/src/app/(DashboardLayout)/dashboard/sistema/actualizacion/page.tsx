@@ -51,8 +51,8 @@ const ESTADO_CORRIDA: Record<EstadoCorrida, { etiqueta: string; color: "success"
 };
 
 const MOTIVO: Record<EquipoSinClasificarDto["motivo"], string> = {
-  SIN_CODIGO_LEGADO: "No tiene código legado en SAP",
-  CODIGO_NO_EXISTE_EN_ORACLE: "Su código legado no existe en Oracle",
+  SIN_CODIGO_LEGADO: "Sin Ficha: su código SAP no está en ningún reporte",
+  CODIGO_NO_EXISTE_EN_ORACLE: "Su Ficha no está en ningún reporte de Oracle",
 };
 
 function duracion(c: { inicio: string; fin: string | null }) {

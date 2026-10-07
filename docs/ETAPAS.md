@@ -338,6 +338,17 @@ IW37N). Corrida completa OK con datos reales. Resultado en `sprint0/Comparacion_
 - Ajustes al importador: etiquetas reales de IW39/IW47/JCDS, Ficha desde la descripción, petición
   de borrado = anulada, cierre = primera activación de CTEC (o CERR).
 
+## Decisiones del 06/10/2026
+
+- **Reglas de Oracle por defecto:** % sobre equipos, solo correctivas (ZC01), sin la regla del
+  aviso. Se pueden cambiar en Sistema → Parámetros.
+- **Criterio de aceptación** semanal (reporte ±3 puntos en 90 % de las semanas; asignación ±5 en
+  80 %; toda diferencia explicada): ver [SPRINT0_EXPORTS_SAP.md](SPRINT0_EXPORTS_SAP.md), sección D.
+  Hoy no se cumple por diferencias de datos entre SAP y Oracle.
+- **Clave de equipo = Ficha o código SAP:** los equipos de fábrica nunca tendrán FLEET_NUM y la
+  Ficha se va a eliminar. Ver [IDENTIDAD_EQUIPOS.md](IDENTIDAD_EQUIPOS.md).
+- **Integración con SAP:** el ABAP tiene los módulos y sus WSDL (servicios web SOAP).
+
 ## Qué sigue
 
 1. **8a — Vistas reales:** escritas y probadas en local. Falta correr

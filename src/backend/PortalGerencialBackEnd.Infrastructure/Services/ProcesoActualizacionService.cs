@@ -353,8 +353,10 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
                 .Select(e => new
                 {
                     Equipo = e,
-                    Motivo = e.CodigoLegado == null ? "SIN_CODIGO_LEGADO"
-                        : c.Equipos.EquiposOracle.ContainsKey(e.CodigoLegado) ? null : "CODIGO_NO_EXISTE_EN_ORACLE"
+                    // Sin Ficha el equipo se busca por su código SAP; solo es "sin clasificar" si
+                    // tampoco así está en la estructura de los reportes.
+                    Motivo = c.Equipos.EquiposOracle.ContainsKey(MapeoEquipos.Clave(e.CodigoLegado, e.EquipoSapId)) ? null
+                        : e.CodigoLegado == null ? "SIN_CODIGO_LEGADO" : "CODIGO_NO_EXISTE_EN_ORACLE"
                 })
                 .Where(x => x.Motivo != null)
                 .Select(x => new CalcEquipoSinClasificar
@@ -415,7 +417,7 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
         private async Task<int> CalcularDisponibilidadAsync(ContextoCalculo c, string corridaId)
         {
             var hoy = c.Ahora.Date;
-            var ventanas = await VentanasAsync(_db, c.Equipos.LegadoPorEquipoSap, c.Reglas, c.DesdeDisponibilidad.AddDays(-7), c.Ahora);
+            var ventanas = await VentanasAsync(_db, c.Equipos.ClavePorEquipoSap, c.Reglas, c.DesdeDisponibilidad.AddDays(-7), c.Ahora);
             var ahora = Ahora;
             var diariaTotal = new List<CalcDisponibilidadDiaria>();
             var semanalTotal = new List<CalcDisponibilidadSemanal>();

@@ -893,3 +893,63 @@ END;
 
 /
 
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "EF_MIGRACIONES_PGPM" WHERE "MigrationId" = N'20261007004355_ReglasDeOracleComoDefecto';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'UPDATE "PARAMETRO_PGPM" SET "DESCRIPCION" = ''Base del % de disponibilidad: EQUIPOS (disponibles / equipos de la asignación, como Oracle; decisión del 06/10/2026) o REQUERIDOS (disponibles / requeridos, topado en 100).'', "VALOR" = ''EQUIPOS''
+    WHERE "CLAVE" = ''DISPONIBILIDAD.BASE_PORCENTAJE'''
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "EF_MIGRACIONES_PGPM" WHERE "MigrationId" = N'20261007004355_ReglasDeOracleComoDefecto';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'UPDATE "PARAMETRO_PGPM" SET "DESCRIPCION" = ''Clases de orden que dejan equipos fuera de servicio, separadas por coma; * = todas. Como Oracle, solo las correctivas (ZC01) (decisión del 06/10/2026; antes ZC01,ZC02).'', "VALOR" = ''ZC01''
+    WHERE "CLAVE" = ''DISPONIBILIDAD.CLASES_ORDEN'''
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "EF_MIGRACIONES_PGPM" WHERE "MigrationId" = N'20261007004355_ReglasDeOracleComoDefecto';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'UPDATE "PARAMETRO_PGPM" SET "DESCRIPCION" = ''S = una correctiva con aviso solo deja el equipo fuera si el aviso indica parada, desde el inicio hasta el fin de la avería. N = como Oracle: toda correctiva abierta lo deja fuera (decisión del 06/10/2026).'', "VALOR" = ''N''
+    WHERE "CLAVE" = ''DISPONIBILIDAD.CORRECTIVAS_SEGUN_AVISO'''
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "EF_MIGRACIONES_PGPM" WHERE "MigrationId" = N'20261007004355_ReglasDeOracleComoDefecto';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "EF_MIGRACIONES_PGPM" ("MigrationId", "ProductVersion")
+    VALUES (N''20261007004355_ReglasDeOracleComoDefecto'', N''8.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+

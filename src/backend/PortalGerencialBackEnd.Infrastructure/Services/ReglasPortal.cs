@@ -9,44 +9,54 @@ using PortalGerencialBackEnd.Infrastructure.Persistence.Context;
 namespace PortalGerencialBackEnd.Infrastructure.Services
 {
     /// <summary>
-    /// Cruce SAP ↔ Oracle por código legado. Lo usan el job y los drill-down de las pantallas, para
-    /// que los dos lleguen siempre al mismo número.
+    /// Cruce SAP ↔ estructura de los reportes por la <b>clave de equipo</b>: la Ficha de Oracle
+    /// (FLEET_NUM) si el equipo la tiene y, si no, su código de equipo de SAP (EQUNR). Los equipos de
+    /// fábrica nunca tendrán Ficha: con el código SAP igual se calculan, y una estructura configurada
+    /// por código SAP (cuando deje de vivir en Oracle) funciona sin cambios. Ver docs/IDENTIDAD_EQUIPOS.md.
+    /// Lo usan el job y los drill-down de las pantallas, para que los dos lleguen al mismo número.
     /// </summary>
     internal sealed class MapeoEquipos
     {
-        /// <summary>Equipo SAP → código legado (solo los que tienen uno).</summary>
-        public Dictionary<string, string> LegadoPorEquipoSap { get; private init; } = default!;
+        /// <summary>Clave de un equipo de SAP: Ficha si la tiene; si no, el código de equipo SAP.</summary>
+        public static string Clave(string? codigoLegado, string equipoSapId) =>
+            string.IsNullOrWhiteSpace(codigoLegado) ? equipoSapId : codigoLegado.Trim();
 
-        /// <summary>Código legado → equipo SAP.</summary>
-        public Dictionary<string, string> EquipoSapPorLegado { get; private init; } = default!;
+        /// <summary>Equipo SAP → clave de equipo (todos los equipos).</summary>
+        public Dictionary<string, string> ClavePorEquipoSap { get; private init; } = default!;
 
-        /// <summary>Códigos legados de equipos marcados inactivos en SAP.</summary>
+        /// <summary>Clave de equipo → equipo SAP.</summary>
+        public Dictionary<string, string> EquipoSapPorClave { get; private init; } = default!;
+
+        /// <summary>Claves de equipos marcados inactivos en SAP.</summary>
         public HashSet<string> InactivosEnSap { get; private init; } = default!;
 
-        /// <summary>Código legado → equipo de Oracle (familia, descripción, activo).</summary>
+        /// <summary>Clave → equipo de la estructura (familia, descripción, activo).</summary>
         public Dictionary<string, EquipoFamiliaDto> EquiposOracle { get; private init; } = default!;
 
         public bool CuentaParaDisponibilidad(string legado) =>
             EquiposOracle.TryGetValue(legado, out var e) && e.Activo && !InactivosEnSap.Contains(legado);
 
         public string? FamiliaDeEquipoSap(string? equipoSapId) =>
-            equipoSapId != null && LegadoPorEquipoSap.TryGetValue(equipoSapId, out var legado)
+            equipoSapId != null && ClavePorEquipoSap.TryGetValue(equipoSapId, out var legado)
                 && EquiposOracle.TryGetValue(legado, out var e) ? e.FamiliaCodigo : null;
 
         public static async Task<MapeoEquipos> CargarAsync(PortalGerencialDbContext db, IStructureSource estructura)
         {
             var oracle = await estructura.GetEquiposFamiliaAsync();
-            var sap = await db.StgSapEquipos.AsNoTracking()
-                .Where(e => e.CodigoLegado != null)
-                .Select(e => new { e.EquipoSapId, e.CodigoLegado, e.Inactivo })
-                .ToListAsync();
+            var sap = (await db.StgSapEquipos.AsNoTracking()
+                    .Select(e => new { e.EquipoSapId, e.CodigoLegado, e.Inactivo })
+                    .ToListAsync())
+                .Select(e => new { e.EquipoSapId, Clave = Clave(e.CodigoLegado, e.EquipoSapId), e.Inactivo })
+                .ToList();
 
             return new MapeoEquipos
             {
-                LegadoPorEquipoSap = sap.ToDictionary(e => e.EquipoSapId, e => e.CodigoLegado!),
-                EquipoSapPorLegado = sap.GroupBy(e => e.CodigoLegado!, StringComparer.OrdinalIgnoreCase)
-                    .ToDictionary(g => g.Key, g => g.First().EquipoSapId, StringComparer.OrdinalIgnoreCase),
-                InactivosEnSap = sap.Where(e => e.Inactivo).Select(e => e.CodigoLegado!).ToHashSet(StringComparer.OrdinalIgnoreCase),
+                ClavePorEquipoSap = sap.ToDictionary(e => e.EquipoSapId, e => e.Clave),
+                // Con Fichas repetidas en SAP se queda el equipo activo.
+                EquipoSapPorClave = sap.GroupBy(e => e.Clave, StringComparer.OrdinalIgnoreCase)
+                    .ToDictionary(g => g.Key, g => g.OrderBy(e => e.Inactivo).First().EquipoSapId, StringComparer.OrdinalIgnoreCase),
+                InactivosEnSap = sap.GroupBy(e => e.Clave, StringComparer.OrdinalIgnoreCase)
+                    .Where(g => g.All(e => e.Inactivo)).Select(g => g.Key).ToHashSet(StringComparer.OrdinalIgnoreCase),
                 EquiposOracle = oracle.GroupBy(e => e.CodigoLegado, StringComparer.OrdinalIgnoreCase)
                     .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase)
             };
@@ -142,7 +152,7 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
         public static bool EsDelPrograma(StgSapOrden o, MapeoEquipos m, ConfigAvanceDto reporte, ISet<string> equiposPrograma, ReglasVentana reglas)
         {
             var referencia = o.FechaInicioPlan ?? o.FechaCreacion;
-            return o.EquipoSapId != null && m.LegadoPorEquipoSap.TryGetValue(o.EquipoSapId, out var legado)
+            return o.EquipoSapId != null && m.ClavePorEquipoSap.TryGetValue(o.EquipoSapId, out var legado)
                    && equiposPrograma.Contains(legado)
                    && !reglas.EstadosExcluidos.Contains(o.EstadoOrden)
                    && referencia >= reporte.FechaInicio.AddDays(-30)
