@@ -49,7 +49,8 @@ URL de cada servicio: `{SapWs:BaseUrl}/sap/bc/srt/rfc/sap/{módulo}/{mandante}/z
 
 ## Pendiente con el ABAP
 
-1. **Suboperación (UVORN) en `Z_PM_MF_WS_OPERACION_ORDEN`.** En las órdenes de reparación (ZC03) cada
+1. ~~**Suboperación (UVORN) en `Z_PM_MF_WS_OPERACION_ORDEN`.**~~ **Resuelto el 07/10/2026:** el WSDL ya trae UVORN y el portal arma la actividad "0010/0005".
+   Texto original: En las órdenes de reparación (ZC03) cada
    actividad es una suboperación de la operación 0010 (~190 por orden). Sin UVORN, todas llegan con
    VORNR 0010 y el avance por actividades no se puede calcular. Lo mismo para las confirmaciones
    (fechas y horas por suboperación).

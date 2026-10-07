@@ -195,7 +195,8 @@ UDATE ≥ fecha de entrada. Estados de sistema y de usuario.
 
 ## 5c. Revisión de los WSDL (07/10/2026)
 
-- **Falta la suboperación (UVORN) en `Z_PM_MF_WS_OPERACION_ORDEN`**: en las órdenes de reparación
+- ~~**Falta la suboperación (UVORN)**~~ Resuelto el 07/10/2026 (UVORN ya viene en el WSDL).
+- Original: **Falta la suboperación (UVORN) en `Z_PM_MF_WS_OPERACION_ORDEN`**: en las órdenes de reparación
   (ZC03) cada actividad es una suboperación de la 0010 (~190 por orden, se vio en IW37N). La tabla de
   salida debe traer una fila por suboperación, con UVORN, sus horas reales, fechas de confirmación y
   confirmación final.

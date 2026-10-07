@@ -394,7 +394,7 @@ namespace PortalGerencialBackEnd.Infrastructure.Integraciones.Excel
             // En las órdenes de reparación (ZC03) cada actividad es una SUBOPERACIÓN de la operación 0010
             // (~190 por orden): la actividad es "0010/0005". La operación madre no cuenta aparte.
             var filasOp = tablas.SelectMany(t => t.Filas).ToList();
-            var conSubops = filasOp.Where(f => f.Texto(Suboperacion) != null)
+            var conSubops = filasOp.Where(f => ClaveActividad(f)?.Contains('/') == true)
                 .Select(f => (EstadosSap.Id(f.Texto(Orden)), NormalizarOperacion(f.Texto(Operacion))))
                 .ToHashSet();
             foreach (var f in filasOp)
@@ -402,7 +402,7 @@ namespace PortalGerencialBackEnd.Infrastructure.Integraciones.Excel
                 var orden = EstadosSap.Id(f.Texto(Orden));
                 var op = ClaveActividad(f);
                 if (orden == null || op == null) continue;
-                if (f.Texto(Suboperacion) == null && conSubops.Contains((orden, op))) continue;
+                if (!op.Contains('/') && conSubops.Contains((orden, op))) continue;
 
                 var conf = notif.GetValueOrDefault((orden, op));
                 decimal real;
@@ -516,7 +516,9 @@ namespace PortalGerencialBackEnd.Infrastructure.Integraciones.Excel
         private static string? ClaveActividad(FilaExcel f)
         {
             var op = NormalizarOperacion(f.Texto(Operacion));
+            // Sin suboperación SAP puede mandar UVORN vacío o "0000".
             var sub = NormalizarOperacion(f.Texto(Suboperacion));
+            if (sub != null && sub.All(c => c == '0')) sub = null;
             return op == null ? null : sub == null ? op : $"{op}/{sub}";
         }
 

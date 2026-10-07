@@ -148,4 +148,25 @@ public class SapWebServiceTests
         Assert.False(ops.Single(o => o.Operacion == "0020").Programada);
         Assert.Equal(new DateTime(2026, 7, 8), ops.Single(o => o.Operacion == "0010").FechaUltimaConf);
     }
+
+    [Fact]
+    public async Task Operaciones_con_UVORN_cada_suboperacion_es_una_actividad()
+    {
+        var (cliente, sap) = Crear();
+        string Op(string vornr, string uvorn, string real, string conf) =>
+            $"<AUFNR>000230000000164</AUFNR><VORNR>{vornr}</VORNR><UVORN>{uvorn}</UVORN><LTXA1>Act {uvorn}</LTXA1><ARBEI>2.0</ARBEI><ARBEH>H</ARBEH>" +
+            $"<FSAVD>2026-07-15</FSAVD><FSEDD>2026-07-15</FSEDD><ISMNW_TOTAL>{real}</ISMNW_TOTAL><ISMNE>H</ISMNE>" +
+            $"<FECHA_PRIMERA_CONF>{conf}</FECHA_PRIMERA_CONF><FECHA_ULTIMA_CONF>{conf}</FECHA_ULTIMA_CONF><CONF_FINAL></CONF_FINAL><VPLNR>00000123</VPLNR>";
+        sap.Responder = m => (HttpStatusCode.OK, Respuesta(m, "ZT_OPERACIONES_O",
+            Op("0010", "", "0.0", "0000-00-00"),            // operación madre: no cuenta aparte
+            Op("0010", "0005", "2.0", "2026-07-20"),
+            Op("0010", "0010", "0.0", "0000-00-00"),
+            Op("0020", "0000", "1.0", "2026-07-21")));      // sin suboperación (UVORN 0000)
+
+        var ops = await cliente.GetOperacionesModificadasDesdeAsync(new DateTime(2026, 7, 1));
+
+        Assert.Equal(new[] { "0010/0005", "0010/0010", "0020" }, ops.Select(o => o.Operacion).OrderBy(o => o));
+        Assert.Equal(new DateTime(2026, 7, 20), ops.Single(o => o.Operacion == "0010/0005").FechaUltimaConf);
+        Assert.Null(ops.Single(o => o.Operacion == "0010/0010").FechaUltimaConf);
+    }
 }
