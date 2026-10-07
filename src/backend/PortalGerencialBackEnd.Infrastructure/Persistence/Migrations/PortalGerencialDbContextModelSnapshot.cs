@@ -1154,6 +1154,13 @@ namespace PortalGerencialBackEnd.Infrastructure.Persistence.Migrations
                         },
                         new
                         {
+                            Clave = "AVANCE.PESO_ACTIVIDAD",
+                            ActualizadoEn = new DateTime(2026, 10, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Descripcion = "Avance por actividades: cuánto vale cada actividad terminada. CANTIDAD = 1 cada una, como Oracle; HORAS_PLAN = su trabajo planificado; DIAS = duración entre sus fechas plan (en SAP suelen ser iguales: daría 0) (07/10/2026).",
+                            Valor = "CANTIDAD"
+                        },
+                        new
+                        {
                             Clave = "AVANCE.FECHA_ORDEN_TERMINADA",
                             ActualizadoEn = new DateTime(2026, 10, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             Descripcion = "Avance por órdenes: una orden cerrada cuenta en la semana de su FIN_REAL (cuando terminó el trabajo) o de su CIERRE_TECNICO en SAP (decisión del 06/10/2026: fin real).",

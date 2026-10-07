@@ -1189,3 +1189,33 @@ END;
 
 /
 
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "EF_MIGRACIONES_PGPM" WHERE "MigrationId" = N'20261007034800_AvancePesoActividad';
+IF v_Count = 0 THEN
+
+    BEGIN
+    INSERT INTO "PARAMETRO_PGPM" ("CLAVE", "ACTUALIZADO_EN", "ACTUALIZADO_POR", "DESCRIPCION", "VALOR")
+    VALUES ('AVANCE.PESO_ACTIVIDAD', TO_DATE('2026-10-01 00:00:00', 'YYYY-MM-DD HH24:MI:SS'), NULL, 'Avance por actividades: cuánto vale cada actividad terminada. CANTIDAD = 1 cada una, como Oracle; HORAS_PLAN = su trabajo planificado; DIAS = duración entre sus fechas plan (en SAP suelen ser iguales: daría 0) (07/10/2026).', 'CANTIDAD');
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "EF_MIGRACIONES_PGPM" WHERE "MigrationId" = N'20261007034800_AvancePesoActividad';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "EF_MIGRACIONES_PGPM" ("MigrationId", "ProductVersion")
+    VALUES (N''20261007034800_AvancePesoActividad'', N''8.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+

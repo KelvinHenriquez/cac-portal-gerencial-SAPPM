@@ -578,7 +578,7 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
                     var delPrograma = ordenes.Where(o => ReglasPortal.EsDelPrograma(o, c.Equipos, reporte, equiposPrograma, c.Reglas)).ToList();
                     var ordenesAvance = delPrograma.Select(o => new OrdenAvance(o.OrdenSapId, ReglasPortal.OrdenTerminada(o, c.Reglas))).ToList();
                     var actividades = delPrograma.SelectMany(o => o.Operaciones)
-                        .Select(op => new ActividadAvance(ReglasPortal.DiasActividad(op), ReglasPortal.Terminada(op), op.Programada))
+                        .Select(op => new ActividadAvance(ReglasPortal.PesoActividad(op, c.Reglas), ReglasPortal.Terminada(op), op.Programada))
                         .ToList();
 
                     var filas = CalculadoraAvance.Calcular(reporte.ReporteId, familia.FamiliaCodigo, ReglasPortal.PlanEnCalendario(reporte, familia), c.BasePlan, ordenesAvance, actividades);

@@ -203,4 +203,26 @@ public class SapExcelImportTests : IDisposable
         Assert.True(op.ConfFinal);
         Assert.DoesNotContain(d.Mensajes, m => m.Contains("IW47"));
     }
+
+    [Fact]
+    public void Las_suboperaciones_son_las_actividades_de_la_reparacion()
+    {
+        Xlsx("IW39.xlsx", null, new[] { "Orden", "Clase de orden", "Equipo", "Estado sistema", "Fecha creación" },
+            new object?[] { "230000000164", "ZC03", "012-040102-0051", "LIBE", "01.07.2026" });
+        Xlsx("IW37N.xlsx", null, new[] { "Orden", "Operación", "Suboperación", "Txt.brv.oper.", "Trabajo", "Unidad trabajo", "Trabajo real", "FechaInicMásTmp", "FechaFinMásTmpr", "Respuesta" },
+            new object?[] { "230000000164", "0010", null, "Reparación general", "0", "H", "0", "06.07.2026", "30.12.2026", null },
+            new object?[] { "230000000164", "0010", "0005", "Revisar motor", "8", "H", "8", "06.07.2026", "08.07.2026", "123" },
+            new object?[] { "230000000164", "0010", "0010", "Cambiar sellos", "4", "HRA", "0", "09.07.2026", "10.07.2026", null });
+        Xlsx("IW47.xlsx", null, new[] { "Orden", "Operación", "Suboperación", "Trabajo real", "Un.trab.(real)", "Fecha contab.", "Creado el", "Confirm.final", "Anulado" },
+            new object?[] { "230000000164", "0010", "0005", "8", "H", "08.07.2026", "09.07.2026", "X", "" });
+
+        var d = SapExcelExtractionClient.LeerCarpeta(_carpeta, new DateTime(2026, 10, 7));
+
+        Assert.Equal(new[] { "0010/0005", "0010/0010" }, d.Operaciones.Select(o => o.Operacion).OrderBy(o => o));
+        var hecha = d.Operaciones.Single(o => o.Operacion == "0010/0005");
+        Assert.Equal(8m, hecha.TrabajoRealHh);
+        Assert.Equal(new DateTime(2026, 7, 9), hecha.FechaUltimaConf);   // fecha en que se digitó
+        Assert.Equal(new DateTime(2026, 7, 6), hecha.FechaInicioPlan);
+        Assert.Equal(new DateTime(2026, 7, 8), hecha.FechaFinPlan);
+    }
 }

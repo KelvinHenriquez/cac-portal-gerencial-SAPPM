@@ -55,21 +55,22 @@ namespace PortalGerencialBackEnd.Infrastructure.Integraciones.Excel
         private static readonly string[] EstadoEquipo = { "ESTADO_EQUIPO", "STTXT", "Status del sistema", "Estado de equipo", "Status sistema" };
 
         private static readonly string[] Operacion = { "VORNR", "Operación", "Op.", "Número de operación", "Nº operación" };
-        private static readonly string[] TextoOperacion = { "LTXA1", "Texto breve operación", "Txt.brv.operación", "Texto de operación", "Texto breve" };
-        private static readonly string[] PuestoOperacion = { "ARBPL", "Puesto de trabajo", "Pto.tbjo.", "Pto.trabajo" };
+        private static readonly string[] TextoOperacion = { "LTXA1", "Texto breve operación", "Txt.brv.operación", "Txt.brv.oper.", "Texto de operación", "Texto breve" };
+        private static readonly string[] PuestoOperacion = { "ARBPL", "Puesto de trabajo", "Pto.tbjo.", "Pto.trabajo", "Pto.tbjo.op." };
         private static readonly string[] Trabajo = { "ARBEI", "Trabajo", "Trabajo planificado" };
         private static readonly string[] UnidadTrabajo = { "ARBEH", "Unidad de trabajo", "Unidad trabajo", "Un.trabajo" };
         private static readonly string[] TrabajoReal = { "ISMNW", "ISMNW_TOTAL", "Trabajo real" };
         private static readonly string[] UnidadTrabajoReal = { "ISMNE", "Unidad trabajo real", "Unidad de trabajo real", "Un.trab.(real)" };
-        private static readonly string[] InicioOperacion = { "FSAVD", "Fecha de inicio más temprana", "Inicio más temprano", "Fecha inicio más temprana", "Inicio programado" };
-        private static readonly string[] HoraInicioOperacion = { "FSAVZ", "Hora de inicio más temprana", "Hora inicio más temprana" };
-        private static readonly string[] FinOperacion = { "FSEDD", "Fecha de fin más temprana", "Fin más temprano", "Fecha fin más temprana", "Fin programado" };
-        private static readonly string[] HoraFinOperacion = { "FSEDZ", "Hora de fin más temprana", "Hora fin más temprana" };
-        private static readonly string[] FinRealOperacion = { "IEDD", "Fecha de fin real", "Fin real", "Fecha fin real" };
+        private static readonly string[] InicioOperacion = { "FSAVD", "Fecha de inicio más temprana", "Inicio más temprano", "Fecha inicio más temprana", "Inicio programado", "FechaInicMásTmp" };
+        private static readonly string[] HoraInicioOperacion = { "FSAVZ", "Hora de inicio más temprana", "Hora inicio más temprana", "HoraInicMásTmpr" };
+        private static readonly string[] FinOperacion = { "FSEDD", "Fecha de fin más temprana", "Fin más temprano", "Fecha fin más temprana", "Fin programado", "FechaFinMásTmpr" };
+        private static readonly string[] HoraFinOperacion = { "FSEDZ", "Hora de fin más temprana", "Hora fin más temprana", "HoraFinMásTempr" };
+        private static readonly string[] FinRealOperacion = { "IEDD", "Fecha de fin real", "Fin real", "Fecha fin real", "Fecha fin de ejec." };
         private static readonly string[] PrimeraConf = { "FECHA_PRIMERA_CONF" };
         private static readonly string[] UltimaConf = { "FECHA_ULTIMA_CONF" };
         private static readonly string[] ConfFinal = { "CONF_FINAL" };
-        private static readonly string[] CreadoPor = { "ERNAM", "Creado por", "Autor" };
+        private static readonly string[] CreadoPor = { "ERNAM", "Creado por" };
+        private static readonly string[] Suboperacion = { "UVORN", "Suboperación" };
         private static readonly string[] Sistema = { "SISTEMA" };
         private static readonly string[] Subsistema = { "SUBSISTEMA" };
         private static readonly string[] Componente = { "COMPONENTE" };
@@ -180,7 +181,7 @@ namespace PortalGerencialBackEnd.Infrastructure.Integraciones.Excel
         /// <summary>Tipo de export según sus columnas.</summary>
         internal static string Clasificar(TablaExcel t) =>
             t.Tiene(Objeto) && t.Tiene(Estado) ? "HISTORIAL"
-            : t.Tiene(Orden) && t.Tiene(Operacion) && (t.Tiene(Notificacion) || t.Tiene(FechaContabilizacion) || t.Tiene(Anulada)) ? "CONFIRMACIONES"
+            : t.Tiene(Orden) && t.Tiene(Operacion) && (t.Tiene(FechaContabilizacion) || t.Tiene(Anulada)) ? "CONFIRMACIONES"
             : t.Tiene(Orden) && t.Tiene(Operacion) ? "OPERACIONES"
             : t.Tiene(Orden) && t.Tiene(ClaseOrden) ? "ORDENES"
             : t.Tiene(Aviso) && (t.Tiene(ClaseAviso) || t.Tiene(Parada)) ? "AVISOS"
@@ -381,18 +382,25 @@ namespace PortalGerencialBackEnd.Infrastructure.Integraciones.Excel
             // Notificaciones válidas por operación: se descartan las anuladas y sus anulaciones.
             var notif = (confirmaciones ?? new()).SelectMany(t => t.Filas)
                 .Where(f => !f.Marca(Anulada) && f.Numero(ContadorAnulacion) == 0)
-                .Select(f => (Orden: EstadosSap.Id(f.Texto(Orden)), Op: NormalizarOperacion(f.Texto(Operacion)), Fila: f))
+                .Select(f => (Orden: EstadosSap.Id(f.Texto(Orden)), Op: ClaveActividad(f), Fila: f))
                 .Where(x => x.Orden != null && x.Op != null)
                 .GroupBy(x => (x.Orden!, x.Op!))
                 .ToDictionary(g => g.Key, g => g.Select(x => x.Fila).ToList());
             if (confirmaciones == null && !tablas.Any(t => t.Tiene(UltimaConf)))
                 datos.Mensajes.Add("No vinieron las confirmaciones (IW47): la semana de cada actividad terminada sale de su fecha de fin real.");
 
-            foreach (var f in tablas.SelectMany(t => t.Filas))
+            // En las órdenes de reparación (ZC03) cada actividad es una SUBOPERACIÓN de la operación 0010
+            // (~190 por orden): la actividad es "0010/0005". La operación madre no cuenta aparte.
+            var filasOp = tablas.SelectMany(t => t.Filas).ToList();
+            var conSubops = filasOp.Where(f => f.Texto(Suboperacion) != null)
+                .Select(f => (EstadosSap.Id(f.Texto(Orden)), NormalizarOperacion(f.Texto(Operacion))))
+                .ToHashSet();
+            foreach (var f in filasOp)
             {
                 var orden = EstadosSap.Id(f.Texto(Orden));
-                var op = NormalizarOperacion(f.Texto(Operacion));
+                var op = ClaveActividad(f);
                 if (orden == null || op == null) continue;
+                if (f.Texto(Suboperacion) == null && conSubops.Contains((orden, op))) continue;
 
                 var conf = notif.GetValueOrDefault((orden, op));
                 decimal real;
@@ -486,6 +494,14 @@ namespace PortalGerencialBackEnd.Infrastructure.Integraciones.Excel
             "D" or "TAG" or "DIA" or "DÍA" => valor * 24m,
             _ => valor
         };
+
+        /// <summary>Operación, o "operación/suboperación" si la fila es una suboperación ("0010/0005").</summary>
+        private static string? ClaveActividad(FilaExcel f)
+        {
+            var op = NormalizarOperacion(f.Texto(Operacion));
+            var sub = NormalizarOperacion(f.Texto(Suboperacion));
+            return op == null ? null : sub == null ? op : $"{op}/{sub}";
+        }
 
         /// <summary>"10" y "0010" son la misma operación: se guarda con 4 dígitos, como en SAP.</summary>
         private static string? NormalizarOperacion(string? op) =>

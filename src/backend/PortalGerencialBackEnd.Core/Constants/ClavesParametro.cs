@@ -63,6 +63,14 @@ namespace PortalGerencialBackEnd.Core.Constants
         /// <summary>Estado de usuario "en espera de repuestos" (p. ej. E0004); "-" = todavía no existe en SAP.</summary>
         public const string EstadoEsperaRepuestos = "PERMANENCIA.ESTADO_ESPERA";
 
+        /// <summary>
+        /// Peso de cada actividad en el avance real "por actividades": CANTIDAD (cada una vale 1, como
+        /// el PL/SQL de Oracle), HORAS_PLAN (trabajo planificado) o DIAS (duración entre sus fechas plan).
+        /// En SAP las suboperaciones de una orden de reparación traen todas la misma fecha plan, así
+        /// que DIAS daría 0 (07/10/2026).
+        /// </summary>
+        public const string PesoActividadAvance = "AVANCE.PESO_ACTIVIDAD";
+
         /// <summary>Clases de orden que cuentan para Avance de Reparación.</summary>
         public const string ClasesOrdenAvance = "AVANCE.CLASES_ORDEN";
 

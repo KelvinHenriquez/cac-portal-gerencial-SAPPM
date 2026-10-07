@@ -13,7 +13,8 @@ namespace PortalGerencialBackEnd.Core.Calculo
         ISet<string> EstadosExcluidos,
         IReadOnlyDictionary<string, string> TipoPorClase,
         bool BaseEquipos = false,
-        bool AvancePorFinReal = true)
+        bool AvancePorFinReal = true,
+        string PesoActividad = "CANTIDAD")
     {
         public string Tipo(string claseOrden) =>
             TipoPorClase.TryGetValue(claseOrden, out var t) ? t : TiposOrden.Planificada;

@@ -284,7 +284,7 @@ export default function AvancePage() {
               Programado = plan semanal de Oracle ({reporte.basePlan === "DIAS" ? "días" : "actividades"} de la semana / total de
               la familia). Real {medida === "ORDENES"
                 ? "por órdenes = órdenes del programa cerradas cuyo trabajo terminó (fin real) en la semana / total de órdenes del programa"
-                : "por actividades = días de las actividades terminadas (con horas reales) en la semana / días de todas las actividades"}
+                : "por actividades = actividades terminadas (con horas reales) en la semana / total de actividades del programa, como Oracle (el peso de cada actividad se cambia en Parámetros)"}
               . La semana resaltada es la actual.
             </Typography>
           </Box>

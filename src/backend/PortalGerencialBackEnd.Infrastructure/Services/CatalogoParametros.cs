@@ -44,6 +44,7 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
             [ClavesParametro.CorrectivasSegunAviso] = new("Disponibilidad", "Correctivas según la parada del aviso", new[] { "S", "N" }),
             [ClavesParametro.ClasesOrdenAvance] = new("Avance", "Clases de orden del programa de reparación", Validar: Lista),
             [ClavesParametro.BasePlanAvance] = new("Avance", "Base del % programado", new[] { "DIAS", "ACTIVIDADES" }),
+            [ClavesParametro.PesoActividadAvance] = new("Avance", "Peso de cada actividad en el avance real", new[] { "CANTIDAD", "HORAS_PLAN", "DIAS" }),
             [ClavesParametro.FechaOrdenTerminadaAvance] = new("Avance", "Fecha en que una orden cuenta como terminada", new[] { "FIN_REAL", "CIERRE_TECNICO" }),
             [ClavesParametro.UsuariosHojaRuta] = new("Avance", "Usuarios SAP que crean la hoja de ruta", Validar: Lista),
             [ClavesParametro.ClasesOrdenPermanencia] = new("Permanencia", "Clases de orden correctivas", Validar: Lista),

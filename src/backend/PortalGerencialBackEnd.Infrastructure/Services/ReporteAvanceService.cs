@@ -251,16 +251,18 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
         public async Task<AnalisisAvanceDto> GetAnalisisAsync(int reporteId, string familiaCodigo)
         {
             var config = await ConfigAsync(reporteId);
-            var (ordenes, mapeo, _, familia) = await ProgramaAsync(config, familiaCodigo);
+            var (ordenes, mapeo, reglas, familia) = await ProgramaAsync(config, familiaCodigo);
 
-            static T Fila<T>(T fila, IReadOnlyCollection<StgSapOperacion> ops) where T : AnalisisFilaDto
+            T Fila<T>(T fila, IReadOnlyCollection<StgSapOperacion> ops) where T : AnalisisFilaDto
             {
                 var terminadas = ops.Where(o => ReglasPortal.Terminada(o) != null).ToList();
                 fila.ActTotal = ops.Count;
                 fila.ActTerminadas = terminadas.Count;
                 fila.DiasActProg = Math.Round(ops.Sum(ReglasPortal.DiasActividad), 2);
                 fila.DiasActTerm = Math.Round(terminadas.Sum(ReglasPortal.DiasActividad), 2);
-                fila.AvancePct = fila.DiasActProg == 0 ? 0 : Math.Round(100 * fila.DiasActTerm / fila.DiasActProg, 0);
+                // Avance con el mismo peso que el cálculo semanal (cantidad, horas o días).
+                var total = ops.Sum(o => ReglasPortal.PesoActividad(o, reglas));
+                fila.AvancePct = total == 0 ? 0 : Math.Round(100 * terminadas.Sum(o => ReglasPortal.PesoActividad(o, reglas)) / total, 0);
                 return fila;
             }
 

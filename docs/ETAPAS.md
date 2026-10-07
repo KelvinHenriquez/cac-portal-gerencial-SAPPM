@@ -381,6 +381,19 @@ hecho y probado con respuestas armadas; falta confirmar contra los WSDL el pará
 tablas de salida, y la primera prueba real (la corre Kelvin con su usuario en un archivo local). Ver
 [INTEGRACION_SAP.md](INTEGRACION_SAP.md). El cliente RFC/NCo se descartó.
 
+## Avance por actividades con IW37N (07/10/2026)
+
+- En SAP, cada orden de reparación (ZC03) tiene **una operación (0010) con ~190 suboperaciones**:
+  **cada suboperación es una actividad**. El portal las guarda como "0010/0005"; la operación madre
+  no cuenta aparte. Las confirmaciones de IW47 se cruzan por operación y suboperación.
+- Las suboperaciones traen **la misma fecha plan de inicio y fin**, así que la duración en días da 0.
+  Nuevo parámetro `AVANCE.PESO_ACTIVIDAD`: **CANTIDAD** por defecto (cada actividad vale 1, como
+  Oracle), HORAS_PLAN o DIAS. El % programado sigue saliendo del plan de Oracle por días.
+- Resultado (Programa de Reparación 2026): 64.912 actividades; con horas reales en SAP solo el 31 %.
+  El portal da menos avance que Oracle (p. ej. Tractores 28 % vs. 90 %, Cabezales 4 % vs. 61 %,
+  Vagones 50 % vs. 55 %) porque **el taller registra el avance en Oracle y confirma poco en SAP**.
+  Mientras dure el paralelo, el avance del portal será tan completo como las confirmaciones en SAP.
+
 ## Qué sigue
 
 1. **8a — Vistas reales:** escritas y probadas en local. Falta correr

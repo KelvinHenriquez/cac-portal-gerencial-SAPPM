@@ -84,7 +84,8 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
                 EstadosExcluidos: p.Lista(ClavesParametro.EstadosExcluidos, "Anulada"),
                 TipoPorClase: tipoPorClase,
                 BaseEquipos: string.Equals(p.Texto(ClavesParametro.BasePorcentajeDisponibilidad, "REQUERIDOS"), "EQUIPOS", StringComparison.OrdinalIgnoreCase),
-                AvancePorFinReal: !string.Equals(p.Texto(ClavesParametro.FechaOrdenTerminadaAvance, "FIN_REAL"), "CIERRE_TECNICO", StringComparison.OrdinalIgnoreCase));
+                AvancePorFinReal: !string.Equals(p.Texto(ClavesParametro.FechaOrdenTerminadaAvance, "FIN_REAL"), "CIERRE_TECNICO", StringComparison.OrdinalIgnoreCase),
+                PesoActividad: p.Texto(ClavesParametro.PesoActividadAvance, "CANTIDAD").ToUpperInvariant());
         }
 
         public static HashSet<string> ClasesAvance(ParametrosPortal p) => p.Lista(ClavesParametro.ClasesOrdenAvance, "ZC03");
@@ -211,6 +212,14 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
         /// <summary>Actividad terminada = con horas reales; cuenta en la fecha en que se confirmaron.</summary>
         public static DateTime? Terminada(StgSapOperacion op) =>
             op.TrabajoRealHh > 0 ? op.FechaUltimaConf ?? op.FechaPrimeraConf : null;
+
+        /// <summary>Lo que vale una actividad en el avance real (parámetro AVANCE.PESO_ACTIVIDAD).</summary>
+        public static decimal PesoActividad(StgSapOperacion op, ReglasVentana reglas) => reglas.PesoActividad switch
+        {
+            "HORAS_PLAN" => op.TrabajoPlanHh,
+            "DIAS" => DiasActividad(op),
+            _ => 1m
+        };
 
         /// <summary>Días de una actividad = duración entre sus fechas plan (respuesta del 01/10/2026).</summary>
         public static decimal DiasActividad(StgSapOperacion op) =>
