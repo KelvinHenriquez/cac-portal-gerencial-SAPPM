@@ -10,6 +10,11 @@ namespace PortalGerencialBackEnd.Core.Dtos.Disponibilidad
         public decimal UmbralRojo { get; set; }
         public decimal UmbralNaranja { get; set; }
 
+        /// <summary>Reglas vigentes (Sistema → Parámetros), para explicarlas al pie del reporte.</summary>
+        public bool BaseEquipos { get; set; }
+        public bool CorrectivasSegunAviso { get; set; }
+        public string ClasesOrden { get; set; } = "";
+
         /// <summary>Instante de la foto de las columnas actuales: el de la última actualización exitosa.</summary>
         public DateTime? FechaCorte { get; set; }
 

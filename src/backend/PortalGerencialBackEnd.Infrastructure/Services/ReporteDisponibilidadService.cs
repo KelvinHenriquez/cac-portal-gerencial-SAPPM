@@ -75,6 +75,9 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
                 Descripcion = b.Config.Descripcion,
                 UmbralRojo = b.Config.UmbralRojo,
                 UmbralNaranja = b.Config.UmbralNaranja,
+                BaseEquipos = b.Reglas.BaseEquipos,
+                CorrectivasSegunAviso = b.Reglas.CorrectivasSegunAviso,
+                ClasesOrden = b.Reglas.ClasesIncluidas.Count == 0 ? "todas" : string.Join(", ", b.Reglas.ClasesIncluidas.OrderBy(c => c)),
                 FechaCorte = b.Corte == null ? null : b.InstanteFoto(b.Corte.Value),
                 Semanas = b.Config.Semanas.Select(s => new SemanaColumnaDto
                 {

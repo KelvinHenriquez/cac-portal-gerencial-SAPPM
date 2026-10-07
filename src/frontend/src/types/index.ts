@@ -125,6 +125,9 @@ export interface ReporteDisponibilidadDto {
   descripcion: string;
   umbralRojo: number;
   umbralNaranja: number;
+  baseEquipos: boolean;
+  correctivasSegunAviso: boolean;
+  clasesOrden: string;
   fechaCorte: string | null;
   semanas: SemanaColumnaDto[];
   todas: FilaDisponibilidadDto | null;

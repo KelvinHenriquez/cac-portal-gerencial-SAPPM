@@ -263,11 +263,18 @@ export default function DisponibilidadPage() {
           </TableContainer>
           <Box sx={{ px: 2, py: 1.5, borderTop: 1, borderColor: "divider" }}>
             <Typography variant="caption" color="text.secondary" component="p">
-              Se mide cada hora configurada en el reporte: un equipo está fuera de servicio desde que se crea su orden hasta su
-              cierre técnico (las correctivas, según el aviso de parada). Disponibilidad % = disponibles / requeridos, máximo
-              100. Potencial % = disponibles / requeridos, sin tope. Cada semana es el promedio de sus días. &quot;Todas&quot;
-              = total disponible / total requerido, sin que lo que sobra en una asignación compense lo que falta en otra. Una
-              fila cuyos equipos ya están todos en un grupo se muestra, pero en &quot;Todas&quot; solo cuenta el grupo.
+              Se mide cada hora configurada en el reporte: un equipo está fuera de servicio desde que se crea su orden (clases{" "}
+              {reporte.clasesOrden}) hasta su cierre técnico
+              {reporte.correctivasSegunAviso ? " (las correctivas, según el aviso de parada)" : ""}.{" "}
+              {reporte.baseEquipos
+                ? "Disponibilidad % = disponibles / equipos de la asignación, como en Oracle."
+                : "Disponibilidad % = disponibles / requeridos, máximo 100."}{" "}
+              Potencial % = disponibles / requeridos, sin tope. Cada semana es el promedio de sus días. &quot;Todas&quot; ={" "}
+              {reporte.baseEquipos
+                ? "total disponible / total de equipos."
+                : "total disponible / total requerido, sin que lo que sobra en una asignación compense lo que falta en otra."}{" "}
+              Una fila cuyos equipos ya están todos en un grupo se muestra, pero en &quot;Todas&quot; solo cuenta el grupo. Las
+              reglas se cambian en Sistema → Parámetros.
             </Typography>
           </Box>
         </Paper>
