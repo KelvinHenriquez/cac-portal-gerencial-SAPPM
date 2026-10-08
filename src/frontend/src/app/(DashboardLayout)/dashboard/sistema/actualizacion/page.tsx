@@ -190,8 +190,14 @@ export default function ActualizacionPage() {
           <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
             <Dato
               titulo="Origen de los datos de SAP"
-              valor={estado.modo === "LOCAL" ? "SAP simulado" : "SAP PM (RFC)"}
-              detalle={estado.modo === "LOCAL" ? "Datos de prueba generados localmente" : "Módulos Z_PM_TALLERES_*"}
+              valor={estado.modo === "LOCAL" ? "SAP simulado" : estado.modo === "EXCEL" ? "Exports de SAP (Excel)" : "SAP PM (servicios web)"}
+              detalle={
+                estado.modo === "LOCAL"
+                  ? "Datos de prueba generados localmente"
+                  : estado.modo === "EXCEL"
+                    ? "Archivos de la carpeta del Sprint 0"
+                    : "Módulos Z_PM_MF_WS_*"
+              }
             />
           </Grid>
           <Grid size={{ xs: 12, sm: 6, lg: 3 }}>

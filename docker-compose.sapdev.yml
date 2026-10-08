@@ -8,5 +8,9 @@ services:
   api:
     environment:
       - DataSourceMode=Production
+      # Raíz de la CA interna de CAC (exportada desde el navegador) para validar el HTTPS de SAP.
+      - SapWs__CertificadoCa=/sap_ws/ca_cac.cer
     env_file:
       - ./sprint0/sap_ws/sap.env
+    volumes:
+      - ./sprint0/sap_ws:/sap_ws:ro

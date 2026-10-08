@@ -29,6 +29,12 @@ namespace PortalGerencialBackEnd.Infrastructure.Integraciones.Produccion
         /// <summary>false solo para pruebas si el certificado es de una CA interna aún no instalada.</summary>
         public bool ValidarCertificado { get; set; } = true;
 
+        /// <summary>
+        /// Certificado raíz de la CA interna de CAC (.cer / .pem) con el que SAP firma su certificado
+        /// HTTPS. Con él el portal valida la conexión sin desactivar nada (08/10/2026: "UntrustedRoot").
+        /// </summary>
+        public string? CertificadoCa { get; set; }
+
         /// <summary>Nombre del parámetro de entrada "fecha desde" (WSDL del 07/10/2026: IV_FECHA_DESDE, char8).</summary>
         public string ParametroFechaDesde { get; set; } = "IV_FECHA_DESDE";
 
@@ -171,7 +177,12 @@ namespace PortalGerencialBackEnd.Infrastructure.Integraciones.Produccion
             }
             catch (HttpRequestException ex)
             {
-                throw new InvalidOperationException($"No se pudo conectar con SAP ({modulo}): {ex.Message}", ex);
+                var detalle = ex.InnerException?.Message ?? "";
+                var ayuda = detalle.Contains("UntrustedRoot") || detalle.Contains("certificate chain")
+                    ? $" El certificado de SAP es de una CA que el portal no conoce (la CA interna de CAC): exporte el certificado raíz"
+                      + $" desde el navegador y guárdelo en {(string.IsNullOrWhiteSpace(_cfg.CertificadoCa) ? "SapWs:CertificadoCa" : _cfg.CertificadoCa)}."
+                    : "";
+                throw new InvalidOperationException($"No se pudo conectar con SAP ({modulo}): {ex.Message}{ayuda}", ex);
             }
             using (respuesta)
             {
@@ -234,8 +245,38 @@ namespace PortalGerencialBackEnd.Infrastructure.Integraciones.Produccion
         {
             var handler = new HttpClientHandler();
             if (!cfg.ValidarCertificado)
+            {
                 handler.ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
+                return handler;
+            }
+            // Si el archivo todavía no está, se valida con las CA del sistema (y el error lo explica).
+            if (!string.IsNullOrWhiteSpace(cfg.CertificadoCa) && File.Exists(cfg.CertificadoCa))
+            {
+                var contenido = File.ReadAllText(cfg.CertificadoCa);
+                // Se acepta el .cer en Base-64 (PEM) o binario (DER), como lo exporta el navegador.
+                var raiz = contenido.Contains("-----BEGIN CERTIFICATE-----")
+                    ? System.Security.Cryptography.X509Certificates.X509Certificate2.CreateFromPem(contenido)
+                    : new System.Security.Cryptography.X509Certificates.X509Certificate2(File.ReadAllBytes(cfg.CertificadoCa));
+                handler.ServerCertificateCustomValidationCallback = (_, certificado, cadena, errores) =>
+                    certificado != null && ValidarConCa(certificado, raiz, errores);
+            }
             return handler;
+        }
+
+        /// <summary>
+        /// El certificado del servidor es válido si encadena a la CA de CAC indicada (además del resto de
+        /// comprobaciones: nombre del servidor, vigencia). Solo se tolera el error de "raíz no confiable".
+        /// </summary>
+        internal static bool ValidarConCa(System.Security.Cryptography.X509Certificates.X509Certificate2 certificado,
+            System.Security.Cryptography.X509Certificates.X509Certificate2 raiz, System.Net.Security.SslPolicyErrors errores)
+        {
+            if (errores == System.Net.Security.SslPolicyErrors.None) return true;
+            if ((errores & ~System.Net.Security.SslPolicyErrors.RemoteCertificateChainErrors) != 0) return false;
+            using var cadena = new System.Security.Cryptography.X509Certificates.X509Chain();
+            cadena.ChainPolicy.TrustMode = System.Security.Cryptography.X509Certificates.X509ChainTrustMode.CustomRootTrust;
+            cadena.ChainPolicy.CustomTrustStore.Add(raiz);
+            cadena.ChainPolicy.RevocationMode = System.Security.Cryptography.X509Certificates.X509RevocationMode.NoCheck;
+            return cadena.Build(certificado);
         }
     }
 }

@@ -1,0 +1,1 @@
+# Aquí va ca_cac.cer: certificado raíz de la CA interna de CAC (público, no es secreto).

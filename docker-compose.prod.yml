@@ -27,6 +27,7 @@ services:
       SapWs__Usuario: ${SAP_WS_USUARIO:-}
       SapWs__Password: ${SAP_WS_PASSWORD:-}
       SapWs__ValidarCertificado: ${SAP_WS_VALIDAR_CERTIFICADO:-true}
+      SapWs__CertificadoCa: /certs-sap/ca_cac.cer
       Alertas__Destinatarios: ${ALERTA_DESTINATARIOS:-}
       Alertas__UrlPortal: ${PUBLIC_URL}
       Alertas__Smtp__Host: ${SMTP_HOST:-}
@@ -40,6 +41,9 @@ services:
       Jwt__Audience: PortalGerencialApi
       Jwt__RequireHttpsMetadata: "true"
       AppSettings__FrontendUrl: ${PUBLIC_URL}
+    volumes:
+      # Raíz de la CA interna de CAC (deploy/certs-sap/ca_cac.cer) para validar el HTTPS de SAP.
+      - ./deploy/certs-sap:/certs-sap:ro
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://localhost:8080/api/salud"]
       interval: 30s

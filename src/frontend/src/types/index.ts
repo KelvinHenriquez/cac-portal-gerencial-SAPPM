@@ -24,7 +24,7 @@ export interface EstadoActualizacionDto {
   corridaEnCurso: boolean;
   ultimoErrorFecha: string | null;
   ultimoErrorMensaje: string | null;
-  modo: "LOCAL" | "PRODUCTION";
+  modo: "LOCAL" | "PRODUCTION" | "EXCEL";
   jobHabilitado: boolean;
   proximaCorrida: string | null;
 }
