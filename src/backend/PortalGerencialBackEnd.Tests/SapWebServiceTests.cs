@@ -32,12 +32,13 @@ public class SapWebServiceTests
         </n0:{modulo}Response></soap-env:Body></soap-env:Envelope>
         """;
 
-    private static (SapWebServiceExtractionClient Cliente, SapFalso Sap) Crear()
+    private static (SapWebServiceExtractionClient Cliente, SapFalso Sap) Crear(
+        string baseUrl = "https://sap.prueba.local:44300", string mandante = "320")
     {
         var config = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
         {
-            ["SapWs:BaseUrl"] = "https://sap.prueba.local:44300",
-            ["SapWs:Cliente"] = "320",
+            ["SapWs:BaseUrl"] = baseUrl,
+            ["SapWs:Cliente"] = mandante,
             ["SapWs:Usuario"] = "PORTAL_PM",
             ["SapWs:Password"] = "clave-de-prueba"
         }).Build();
@@ -70,6 +71,19 @@ public class SapWebServiceTests
         Assert.Equal(new DateTime(2026, 7, 23, 9, 21, 45), a.FechaAviso);
         Assert.Equal(new DateTime(2026, 7, 23, 9, 0, 0), a.InicioAveria);
         Assert.Null(a.FinAveria);   // 0000-00-00 = vacío
+    }
+
+    /// <summary>Direcciones que publicó el ABAP para PRODUCCIÓN (08/10/2026): servidor vhazcpc1ci, mandante 100.</summary>
+    [Theory]
+    [InlineData("Z_PM_MF_WS_AVISO_MANTENIMIENTO", "z_pm_mf_ws_aviso_mantenimiento/100/zb_pm_mf_ws_aviso_mantenimiento/zb_pm_mf_ws_aviso_mantenimiento")]
+    [InlineData("Z_PM_MF_WS_HISTORIAL_ESTADO", "z_pm_mf_ws_historial_estado/100/zb_pm_mf_ws_historial_estado/zb_pm_mf_ws_historial_estado")]
+    [InlineData("Z_PM_MF_WS_MAESTRO_EQUIPO", "z_pm_mf_ws_maestro_equipo/100/zb_pm_mf_ws_maestro_equipo/zb_pm_mf_ws_maestro_equipo")]
+    [InlineData("Z_PM_MF_WS_OPERACION_ORDEN", "z_pm_mf_ws_operacion_orden/100/zb_pm_mf_ws_operacion_orden/zb_pm_mf_ws_operacion_orden")]
+    [InlineData("Z_PM_MF_WS_ORDEN_MANTENIMIENTO", "z_pm_mf_ws_orden_mantenimiento/100/zb_pm_mf_ws_orden_mantenimiento/zb_pm_mf_ws_orden_mantenimiento")]
+    public void Arma_las_direcciones_de_produccion(string modulo, string ruta)
+    {
+        var (cliente, _) = Crear("https://vhazcpc1ci.sap.cac.com:44300", "100");
+        Assert.Equal($"https://vhazcpc1ci.sap.cac.com:44300/sap/bc/srt/rfc/sap/{ruta}?sap-client=100", cliente.Url(modulo));
     }
 
     [Fact]

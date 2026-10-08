@@ -17,6 +17,16 @@ licenciar NCo, y todo corre en el mismo contenedor Linux del servidor.
 URL de cada servicio: `{SapWs:BaseUrl}/sap/bc/srt/rfc/sap/{módulo}/{mandante}/zb_.../zb_...?sap-client={mandante}`
 (se arma sola; si algún servicio tiene otra ruta, se configura en `SapWs:Rutas`).
 
+## Producción (mandante 100 — 08/10/2026)
+
+- Servidor `https://vhazcpc1ci.sap.cac.com:44300`, mandante **100**, usuario técnico **`ZRFCCONN`**.
+  Mismos 5 módulos y mismo formato de dirección que desarrollo (probado en `SapWebServiceTests`):
+  `/sap/bc/srt/rfc/sap/{modulo}/100/zb_{...}/zb_{...}?sap-client=100`.
+- En `.env.prod`: `SAP_WS_URL`, `SAP_WS_CLIENTE=100`, `SAP_WS_USUARIO=ZRFCCONN`; la clave solo ahí.
+- Pedir a Basis: que `ZRFCCONN` sea de tipo **sistema o servicio** (la clave no vence ni pide cambio)
+  y tenga autorización para los 5 servicios en el mandante 100; y confirmar que el HTTPS de
+  producción está firmado por la misma CA interna (`deploy/certs-sap/ca_cac.cer`).
+
 ## Qué está hecho
 
 - `SapWebServiceExtractionClient` (DataSourceMode=Production): arma la petición SOAP con la fecha
