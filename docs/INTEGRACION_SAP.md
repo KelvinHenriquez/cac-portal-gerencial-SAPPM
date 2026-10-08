@@ -54,7 +54,10 @@ URL de cada servicio: `{SapWs:BaseUrl}/sap/bc/srt/rfc/sap/{módulo}/{mandante}/z
    actividad es una suboperación de la operación 0010 (~190 por orden). Sin UVORN, todas llegan con
    VORNR 0010 y el avance por actividades no se puede calcular. Lo mismo para las confirmaciones
    (fechas y horas por suboperación).
-2. **Valores de `ORIGEN_OPERACION`** (¿"HOJA_RUTA" / "MANUAL"?), para confirmar la regla.
+2. ~~**Valores de `ORIGEN_OPERACION`**~~ **Resuelto el 08/10/2026:** trae `INICIAL` (de la hoja de ruta = programada)
+   o `AGREGADA` (agregada en la reparación = no programada). Con SAP DEV: 133 iniciales y 5 agregadas.
+3. **Espera de repuestos:** el ABAP confirma que **no hay estado** para eso en SAP; solo la reserva queda
+   pendiente de despacho. `PERMANENCIA.ESTADO_ESPERA` sigue en `-` (la espera queda dentro de la ejecución).
 
 ## Probar contra el SAP de desarrollo (en la laptop)
 

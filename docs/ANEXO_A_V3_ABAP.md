@@ -200,8 +200,8 @@ UDATE ≥ fecha de entrada. Estados de sistema y de usuario.
   (ZC03) cada actividad es una suboperación de la 0010 (~190 por orden, se vio en IW37N). La tabla de
   salida debe traer una fila por suboperación, con UVORN, sus horas reales, fechas de confirmación y
   confirmación final.
-- **`ORIGEN_OPERACION`**: ¿qué valores trae? El portal toma como "agregada en la reparación" la que no
-  viene de hoja de ruta (VPLNR vacío).
+- **`ORIGEN_OPERACION`**: trae `INICIAL` (de la hoja de ruta) o `AGREGADA` (agregada en la reparación);
+  confirmado por el ABAP el 08/10/2026. Si viniera vacío, el portal usa VPLNR.
 
 ## 6. Preguntas para el ABAP
 

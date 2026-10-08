@@ -366,7 +366,9 @@ familia → equipo → órdenes. Solo correctivas.
   mediana. Días de calendario.
 - **Pasos:** respuesta (aviso → orden), liberación (→ LIB), espera de inicio (→ ENPR), ejecución
   (→ FINL). **Espera de repuestos:** parámetro `PERMANENCIA.ESTADO_ESPERA` para cuando exista un
-  estado de usuario en SAP; mide el tiempo en ese estado aunque entre y salga varias veces.
+  estado de usuario en SAP; mide el tiempo en ese estado aunque entre y salga varias veces. El ABAP
+  confirmó (08/10/2026) que hoy no existe tal estado: la espera solo se ve en la reserva pendiente de
+  despacho. Opción futura: un módulo de reservas (RESB) con la fecha de la salida de material.
 - Staging: el equipo guarda tipo de equipo, grupo de planificación y **ubicación técnica** (para el
   futuro reporte por ubicación del área industrial); el historial de estados guarda si el cambio dejó
   el estado inactivo. Resultado en `CALC_PERMANENCIA_PGPM` (una fila por orden, se recalcula entera).
