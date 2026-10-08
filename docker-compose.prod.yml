@@ -18,6 +18,7 @@ services:
       Oracle__DataSourceLogin: ${ORACLE_DATA_SOURCE}
       Oracle__Esquema: ${ORACLE_ESQUEMA:-}
       Oracle__VersionSql: ${ORACLE_VERSION_SQL:-19}
+      Oracle__RolAcceso: ${ORACLE_ROL_ACCESO:-ROL_PORTAL_GERENCIAL}
       Database__AplicarMigracionesAlArrancar: ${APLICAR_MIGRACIONES:-true}
       Job__Habilitado: ${JOB_HABILITADO:-true}
       Admin__Usuarios: ${ADMIN_USUARIOS:-}

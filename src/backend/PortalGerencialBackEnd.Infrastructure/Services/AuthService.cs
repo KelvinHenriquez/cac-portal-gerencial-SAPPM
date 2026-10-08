@@ -64,6 +64,10 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
                 case ResultadoValidacionOracle.CuentaBloqueada:
                     throw new ForbiddenException("Su usuario está bloqueado en Oracle. Contacte al DBA para desbloquearlo.");
 
+                case ResultadoValidacionOracle.SinRolDeAcceso:
+                    // Clave correcta: no cuenta como intento fallido.
+                    throw new ForbiddenException("Su usuario de Oracle no tiene acceso al Portal Gerencial. Solicítelo al administrador del portal.");
+
                 case ResultadoValidacionOracle.PasswordVencido:
                     throw new ForbiddenException("Su contraseña de Oracle venció. Pida al DBA que la restablezca y vuelva a intentar.");
 

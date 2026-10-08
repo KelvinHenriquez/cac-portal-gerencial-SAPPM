@@ -57,25 +57,33 @@ reescribir nada). Se define al empezar la Etapa 8b, con NCo en la mano.
 
 ## 2. Lo que hace el DBA en Oracle (una vez)
 
-1. Usuario técnico del portal (dueño de los objetos `_PGPM`), con tablespace y cuota:
-   ```sql
-   CREATE USER <PORTAL> IDENTIFIED BY "<clave>" DEFAULT TABLESPACE <TS> QUOTA UNLIMITED ON <TS>;
-   GRANT CREATE SESSION, CREATE TABLE, CREATE VIEW, CREATE SEQUENCE, CREATE SYNONYM TO <PORTAL>;
-   ```
-2. Tablas del portal: correr [oracle/pgpm_tablas.sql](oracle/pgpm_tablas.sql) como `<PORTAL>`
-   (idempotente). Alternativa: dejar `APLICAR_MIGRACIONES=true` y que la API las cree al arrancar.
-   Si el DBA prefiere que el usuario técnico no tenga DDL, usar el script y `APLICAR_MIGRACIONES=false`.
-3. Permisos de lectura sobre MAQUINARIAN y sobre `PARGER.PG_PERIODO` (directos, no por rol): la
-   lista está al inicio de [oracle/vistas_produccion.sql](oracle/vistas_produccion.sql).
-4. Vistas: correr `vistas_produccion.sql` como `<PORTAL>` (pide `ID_EMPRESA`: **30**).
-5. Usuarios nombrados (los gerentes): no necesitan nada nuevo; entran al portal con su usuario y
-   clave de Oracle. Solo hace falta `CREATE SESSION`, que ya tienen.
+Dos scripts en `docs/oracle`, en este orden (SQL Developer, abrir y F5). Los demás `.sql` de esa
+carpeta son de exploración o del Sprint 0, o los llaman estos dos: no hay que correrlos aparte.
+
+1. [oracle/1_DBA_usuario_y_permisos.sql](oracle/1_DBA_usuario_y_permisos.sql), **como DBA**: crea el
+   usuario técnico del portal (pregunta nombre, sugerido `PGPM`; contraseña y tablespace), le da
+   `SELECT` directo sobre las 15 tablas de MAQUINARIAN y `PARGER.PG_PERIODO`, y crea el rol
+   **`ROL_PORTAL_GERENCIAL`**. Al final lista los 15 permisos.
+2. [oracle/2_PORTAL_tablas_y_vistas.sql](oracle/2_PORTAL_tablas_y_vistas.sql), **conectado como el
+   usuario técnico**: corre `pgpm_tablas.sql` (14 tablas, idempotente) y `vistas_produccion.sql`
+   (11 vistas, empresa 30), y verifica: 0 objetos inválidos y cuántas filas ve cada vista.
+   Tiene que estar en la misma carpeta que esos dos archivos.
+3. **Quién entra al portal:** cada persona entra con su usuario y clave de Oracle de siempre, pero
+   solo si tiene el rol: `GRANT ROL_PORTAL_GERENCIAL TO <USUARIO>;` (quitar: `REVOKE ... FROM`).
+   El rol no da permisos sobre tablas; los reportes se leen con el usuario técnico. Ojo: Oracle le
+   da el rol automáticamente a quien lo crea (el DBA que corrió el paso 1).
+
+Con eso, en `.env.prod`: `ORACLE_USUARIO_TECNICO`/`ORACLE_PASSWORD_TECNICO` del paso 1,
+`APLICAR_MIGRACIONES=false` y `ORACLE_ROL_ACCESO=ROL_PORTAL_GERENCIAL` (vacío = entra cualquier
+usuario válido de la base; no recomendado).
+
+Probados el 08/10/2026 contra la réplica local de MAQUINARIAN: mismo esquema que desarrollo.
 
 ## 3. Red y nombre
 
 - Servidor → Oracle: puerto del listener (1521).
-- Servidor → SAP: gateway 33xx (Etapa 8b).
-- Usuarios → servidor: 443 (y 80, que solo redirige a 443).
+- Servidor → SAP: HTTPS a los servicios web (en DEV, puerto 44300).
+- Usuarios → servidor: 8443 (y 8081, que solo redirige); 443/80 los usa Pago en Efectivo.
 - Nombre DNS interno (p. ej. `portal-gerencial.cac.com.do`) y **certificado** emitido para ese
   nombre (CA interna de CAC o comercial) en `deploy/certs/fullchain.pem` y `deploy/certs/privkey.pem`.
 - Correo (opcional): servidor SMTP para la alerta de datos desactualizados.

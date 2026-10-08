@@ -6,7 +6,9 @@ namespace PortalGerencialBackEnd.Core.Interfaces.Integraciones
         CredencialesInvalidas = 2,
         CuentaBloqueada = 3,
         PasswordVencido = 4,
-        OracleNoDisponible = 5
+        OracleNoDisponible = 5,
+        /// <summary>Usuario y clave correctos, pero sin el rol de acceso al portal (Oracle:RolAcceso).</summary>
+        SinRolDeAcceso = 6
     }
 
     /// <summary>

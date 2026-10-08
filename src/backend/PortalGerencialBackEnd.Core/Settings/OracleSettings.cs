@@ -23,5 +23,12 @@ namespace PortalGerencialBackEnd.Core.Settings
         /// stack local corre Oracle 11g XE para que cualquier desliz falle en desarrollo.
         /// </summary>
         public int VersionSql { get; set; } = 19;
+
+        /// <summary>
+        /// Rol de Oracle que habilita la entrada al portal: solo entra quien tenga este rol (dado
+        /// directo o a través de otro rol). Así el acceso se da y se quita en Oracle, como en Forms.
+        /// Vacío = entra cualquier usuario válido de la base (no recomendado en producción).
+        /// </summary>
+        public string? RolAcceso { get; set; } = "ROL_PORTAL_GERENCIAL";
     }
 }
