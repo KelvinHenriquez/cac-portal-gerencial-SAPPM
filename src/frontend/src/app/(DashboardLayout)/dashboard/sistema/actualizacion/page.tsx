@@ -6,6 +6,10 @@ import {
   Button,
   Chip,
   Collapse,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Grid2 as Grid,
   IconButton,
   Paper,
@@ -16,6 +20,7 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  TextField,
   Typography,
 } from "@mui/material";
 import { IconChevronDown, IconChevronRight, IconRefresh } from "@tabler/icons-react";
@@ -106,15 +111,27 @@ export default function ActualizacionPage() {
     setAlertas(a);
   }, []);
 
+  const [esAdmin, setEsAdmin] = useState(false);
+  const [dialogoDesde, setDialogoDesde] = useState(false);
+  const [fechaDesde, setFechaDesde] = useState("2026-06-01");
+
+  useEffect(() => {
+    sistemaService
+      .getParametros()
+      .then((p) => setEsAdmin(p.puedeEditar))
+      .catch(() => setEsAdmin(false));
+  }, []);
+
   useEffect(() => {
     cargar().catch((e: ApiError) => setMensaje({ tipo: "error", texto: e?.errorMessage || "No se pudo cargar el estado." }));
   }, [cargar]);
 
-  const actualizarAhora = async () => {
+  const actualizarAhora = async (desde?: string) => {
     setMensaje(null);
-    showLoading("Actualizando datos desde SAP y recalculando...");
+    setDialogoDesde(false);
+    showLoading(desde ? `Trayendo de SAP desde el ${desde.split("-").reverse().join("/")} y recalculando...` : "Actualizando datos desde SAP y recalculando...");
     try {
-      const corrida = await sistemaService.ejecutarCorrida();
+      const corrida = await sistemaService.ejecutarCorrida(desde);
       setMensaje(
         corrida.estado === "OK"
           ? { tipo: "success", texto: `Actualización completada en ${duracion(corrida)}.` }
@@ -141,16 +158,46 @@ export default function ActualizacionPage() {
             actualización falla, los reportes siguen mostrando los últimos datos buenos.
           </Typography>
         </Box>
+        {esAdmin && (
+          <Button variant="outlined" onClick={() => setDialogoDesde(true)} disabled={!estado || estado.corridaEnCurso} sx={{ flexShrink: 0 }}>
+            Actualizar desde…
+          </Button>
+        )}
         <Button
           variant="contained"
           startIcon={<IconRefresh size={18} />}
-          onClick={actualizarAhora}
+          onClick={() => actualizarAhora()}
           disabled={!estado || estado.corridaEnCurso}
           sx={{ flexShrink: 0 }}
         >
           Actualizar ahora
         </Button>
       </Stack>
+
+      <Dialog open={dialogoDesde} onClose={() => setDialogoDesde(false)} maxWidth="xs" fullWidth>
+        <DialogTitle>Volver a traer de SAP desde una fecha</DialogTitle>
+        <DialogContent dividers>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Normalmente cada actualización trae solo lo que cambió desde la anterior. Úselo para recargar un período (por ejemplo,
+            después de una corrección en SAP). Mientras más atrás, más tarda.
+          </Typography>
+          <TextField
+            type="date"
+            label="Desde"
+            size="small"
+            fullWidth
+            value={fechaDesde}
+            onChange={(e) => setFechaDesde(e.target.value)}
+            slotProps={{ inputLabel: { shrink: true } }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDialogoDesde(false)}>Cancelar</Button>
+          <Button variant="contained" onClick={() => actualizarAhora(fechaDesde)} disabled={!fechaDesde}>
+            Traer y recalcular
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {mensaje && (
         <Alert severity={mensaje.tipo} onClose={() => setMensaje(null)}>

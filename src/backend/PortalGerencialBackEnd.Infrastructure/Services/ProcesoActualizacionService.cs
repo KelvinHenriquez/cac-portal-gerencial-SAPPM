@@ -52,7 +52,7 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
 
         private DateTime Ahora => _time.GetLocalNow().DateTime;
 
-        public async Task<CorridaDto> EjecutarAsync(string origen, CancellationToken ct = default)
+        public async Task<CorridaDto> EjecutarAsync(string origen, DateTime? desdeForzado = null, CancellationToken ct = default)
         {
             var corridaId = Guid.NewGuid().ToString();
             var origenLog = $"{origen}:{_modo}";
@@ -63,10 +63,10 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
 
             var ok =
                 await PasoAsync(corridaId, origenLog, FuentesLog.SapEquipos, null, _ => ExtraerEquiposAsync(ct))
-                && await PasoAsync(corridaId, origenLog, FuentesLog.SapOrdenes, await DesdeAsync(FuentesLog.SapOrdenes, cargaInicial), d => ExtraerOrdenesAsync(d, ct))
-                && await PasoAsync(corridaId, origenLog, FuentesLog.SapOperaciones, await DesdeAsync(FuentesLog.SapOperaciones, cargaInicial), d => ExtraerOperacionesAsync(d, ct))
-                && await PasoAsync(corridaId, origenLog, FuentesLog.SapAvisos, await DesdeAsync(FuentesLog.SapAvisos, cargaInicial), d => ExtraerAvisosAsync(d, ct))
-                && await PasoAsync(corridaId, origenLog, FuentesLog.SapHistorial, await DesdeAsync(FuentesLog.SapHistorial, cargaInicial), d => ExtraerHistorialAsync(d, ct));
+                && await PasoAsync(corridaId, origenLog, FuentesLog.SapOrdenes, await DesdeAsync(FuentesLog.SapOrdenes, cargaInicial, desdeForzado), d => ExtraerOrdenesAsync(d, ct))
+                && await PasoAsync(corridaId, origenLog, FuentesLog.SapOperaciones, await DesdeAsync(FuentesLog.SapOperaciones, cargaInicial, desdeForzado), d => ExtraerOperacionesAsync(d, ct))
+                && await PasoAsync(corridaId, origenLog, FuentesLog.SapAvisos, await DesdeAsync(FuentesLog.SapAvisos, cargaInicial, desdeForzado), d => ExtraerAvisosAsync(d, ct))
+                && await PasoAsync(corridaId, origenLog, FuentesLog.SapHistorial, await DesdeAsync(FuentesLog.SapHistorial, cargaInicial, desdeForzado), d => ExtraerHistorialAsync(d, ct));
 
             if (ok)
             {
@@ -122,8 +122,10 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
         /// Delta: desde el día de la última extracción OK de esa fuente, menos un día de solape. La
         /// primera vez, la fecha de carga inicial (salida en vivo de SAP).
         /// </summary>
-        private async Task<DateTime> DesdeAsync(string fuente, DateTime cargaInicial)
+        private async Task<DateTime> DesdeAsync(string fuente, DateTime cargaInicial, DateTime? desdeForzado = null)
         {
+            if (desdeForzado != null)
+                return desdeForzado.Value.Date;
             var ultimaOk = await _db.LogExtracciones
                 .Where(l => l.Fuente == fuente && l.Estado == EstadosLog.Ok)
                 .MaxAsync(l => (DateTime?)l.Inicio);

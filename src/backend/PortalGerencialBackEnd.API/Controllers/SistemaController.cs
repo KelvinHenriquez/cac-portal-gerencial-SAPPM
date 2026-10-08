@@ -38,12 +38,15 @@ namespace PortalGerencialBackEnd.API.Controllers
         /// recalcula resultados propios del portal: no modifica nada en SAP ni en la estructura de
         /// Oracle (sección 10).
         /// </summary>
+        /// <param name="desde">Solo administradores: volver a traer de SAP desde esa fecha (yyyy-MM-dd).</param>
         [HttpPost("corridas")]
-        public async Task<ActionResult<CorridaDto>> EjecutarCorrida()
+        public async Task<ActionResult<CorridaDto>> EjecutarCorrida([FromQuery] DateTime? desde = null)
         {
+            if (desde != null && !_sistema.EsAdministrador(UsuarioActual))
+                throw new ForbiddenException("Solo los administradores del portal pueden volver a traer datos desde una fecha.");
             // Sin el CancellationToken de la request: si el usuario cierra la pestaña, la corrida
             // termina igual en vez de quedar a medias.
-            var (ejecutada, corrida) = await _coordinador.IntentarAsync(() => _proceso.EjecutarAsync("MANUAL"));
+            var (ejecutada, corrida) = await _coordinador.IntentarAsync(() => _proceso.EjecutarAsync(desde == null ? "MANUAL" : "RECARGA", desde));
             if (!ejecutada)
                 throw new ConflictException("Ya hay una actualización en curso. Espere a que termine.");
             return Ok(corrida);

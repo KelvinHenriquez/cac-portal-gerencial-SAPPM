@@ -178,6 +178,8 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
             };
         }
 
+        public bool EsAdministrador(string usuario) => _administradores.Contains(usuario);
+
         public async Task<ParametroDto> ActualizarParametroAsync(string clave, string valor, string usuario)
         {
             if (!_administradores.Contains(usuario))

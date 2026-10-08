@@ -125,6 +125,9 @@ namespace PortalGerencialBackEnd.Infrastructure.Integraciones.Produccion
         private SapExcelExtractionClient.Datos Procesar(Dictionary<string, List<TablaExcel>> tablas)
         {
             var datos = SapExcelExtractionClient.ProcesarPorTipo(tablas, new SapExcelExtractionClient.Datos(), DateTime.Now, soloLoQueVino: true);
+            // Sin filas (nada cambió en SAP desde la fecha pedida) no hay nada que advertir.
+            if (tablas.Values.Sum(l => l.Sum(t => t.Filas.Count)) == 0)
+                return datos;
             foreach (var m in datos.Mensajes)
                 _logger.LogWarning("SAP (servicios web): {Mensaje}", m);
             return datos;

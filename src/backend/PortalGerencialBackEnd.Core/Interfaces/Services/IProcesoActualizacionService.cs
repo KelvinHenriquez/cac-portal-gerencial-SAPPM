@@ -11,7 +11,8 @@ namespace PortalGerencialBackEnd.Core.Interfaces.Services
     public interface IProcesoActualizacionService
     {
         /// <param name="origen">PROGRAMADA (Background Service) o MANUAL (botón en el portal).</param>
-        Task<CorridaDto> EjecutarAsync(string origen, CancellationToken ct = default);
+        /// <param name="desdeForzado">Si viene, SAP se pide desde esa fecha en vez de desde la última extracción buena (recarga).</param>
+        Task<CorridaDto> EjecutarAsync(string origen, DateTime? desdeForzado = null, CancellationToken ct = default);
     }
 
     public interface ISistemaService
@@ -22,6 +23,7 @@ namespace PortalGerencialBackEnd.Core.Interfaces.Services
         Task<List<EquipoSinClasificarDto>> GetEquiposSinClasificarAsync();
         Task<List<AlertaDto>> GetAlertasAsync(int cantidad);
         Task<ParametrosDto> GetParametrosAsync(string usuario);
+        bool EsAdministrador(string usuario);
         Task<ParametroDto> ActualizarParametroAsync(string clave, string valor, string usuario);
     }
 }

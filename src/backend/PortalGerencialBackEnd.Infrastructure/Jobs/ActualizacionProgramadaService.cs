@@ -75,7 +75,7 @@ namespace PortalGerencialBackEnd.Infrastructure.Jobs
                 {
                     using var scope = _scopeFactory.CreateScope();
                     var proceso = scope.ServiceProvider.GetRequiredService<IProcesoActualizacionService>();
-                    return await proceso.EjecutarAsync("PROGRAMADA", ct);
+                    return await proceso.EjecutarAsync("PROGRAMADA", ct: ct);
                 });
 
                 if (!ejecutada)

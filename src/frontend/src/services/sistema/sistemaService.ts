@@ -16,8 +16,12 @@ export const sistemaService = {
   },
 
   /** Corre extracción + recálculo ahora y devuelve el resultado (tarda unos segundos). */
-  ejecutarCorrida: async (): Promise<CorridaDto> => {
-    const { data } = await axiosInstance.post<CorridaDto>("/sistema/corridas", null, { timeout: 15 * 60 * 1000 });
+  /** desde (yyyy-MM-dd, solo administradores): volver a traer de SAP desde esa fecha. */
+  ejecutarCorrida: async (desde?: string): Promise<CorridaDto> => {
+    const { data } = await axiosInstance.post<CorridaDto>("/sistema/corridas", null, {
+      timeout: 30 * 60 * 1000,
+      params: desde ? { desde } : undefined,
+    });
     window.dispatchEvent(new Event(EVENTO_DATOS_ACTUALIZADOS));
     return data;
   },
