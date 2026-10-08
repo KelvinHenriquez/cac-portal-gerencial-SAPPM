@@ -69,7 +69,7 @@ function duracion(c: { inicio: string; fin: string | null }) {
 function origen(o: string | null) {
   if (!o) return "—";
   const [quien, modo] = o.split(":");
-  const q = quien === "MANUAL" ? "Manual" : quien === "PROGRAMADA" ? "Programada" : quien;
+  const q = quien === "MANUAL" ? "Manual" : quien === "PROGRAMADA" ? "Programada" : quien === "RECARGA" ? "Recarga desde fecha" : quien;
   return modo === "LOCAL" ? `${q} · SAP simulado` : q;
 }
 
