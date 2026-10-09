@@ -76,3 +76,4 @@ PROMPT Listo. Siguiente: conectarse como &&USUARIO_PORTAL y correr 2_PORTAL_tabl
 -- El cambio vale desde el próximo inicio de sesión; quien ya está adentro sigue hasta que vence
 -- su sesión del portal. Quién puede cambiar parámetros se define aparte (ADMIN_USUARIOS en .env.prod).
 -- =====================================================================================
+
