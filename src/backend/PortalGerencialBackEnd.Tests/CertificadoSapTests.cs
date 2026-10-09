@@ -38,4 +38,33 @@ public class CertificadoSapTests
         Assert.False(SapWebServiceExtractionClient.ValidarConCa(servidor, caCac,
             SslPolicyErrors.RemoteCertificateChainErrors | SslPolicyErrors.RemoteCertificateNameMismatch));
     }
+
+    [Fact]
+    public void Confia_en_todos_los_certificados_de_la_carpeta_y_explica_el_rechazo()
+    {
+        var caDev = Ca("SAP DEV");
+        var caPrd = Ca("SAP PRD");
+        var carpeta = Directory.CreateTempSubdirectory("certs-sap").FullName;
+        try
+        {
+            // DEV en PEM (como ca_cac.cer) y PRD en binario (DER), como lo exporta el navegador.
+            File.WriteAllText(Path.Combine(carpeta, "ca_cac.cer"), caDev.ExportCertificatePem());
+            File.WriteAllBytes(Path.Combine(carpeta, "sap_prd.cer"), caPrd.Export(X509ContentType.Cert));
+            File.WriteAllText(Path.Combine(carpeta, "LEEME.txt"), "no es un certificado");
+
+            var raices = SapWebServiceExtractionClient.CargarRaices(Path.Combine(carpeta, "ca_cac.cer"));
+            Assert.Equal(2, raices.Count);
+            Assert.True(SapWebServiceExtractionClient.ValidarConCa(Servidor(caDev), raices, SslPolicyErrors.RemoteCertificateChainErrors, null, out _));
+            Assert.True(SapWebServiceExtractionClient.ValidarConCa(Servidor(caPrd), raices, SslPolicyErrors.RemoteCertificateChainErrors, null, out _));
+
+            var ajeno = Servidor(Ca("Otra CA"));
+            Assert.False(SapWebServiceExtractionClient.ValidarConCa(ajeno, raices, SslPolicyErrors.RemoteCertificateChainErrors, null, out var motivo));
+            Assert.Contains("Otra CA", motivo);
+            Assert.Contains(ajeno.Thumbprint, motivo);
+        }
+        finally
+        {
+            Directory.Delete(carpeta, true);
+        }
+    }
 }

@@ -1,6 +1,8 @@
 using System.Globalization;
 using System.Net;
 using System.Net.Http.Headers;
+using System.Net.Security;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Xml.Linq;
 using Microsoft.Extensions.Configuration;
@@ -32,6 +34,8 @@ namespace PortalGerencialBackEnd.Infrastructure.Integraciones.Produccion
         /// <summary>
         /// Certificado raíz de la CA interna de CAC (.cer / .pem) con el que SAP firma su certificado
         /// HTTPS. Con él el portal valida la conexión sin desactivar nada (08/10/2026: "UntrustedRoot").
+        /// Se confía en TODOS los certificados (.cer/.crt/.pem) de la carpeta de este archivo: así
+        /// conviven el de desarrollo y el de producción (09/10/2026: SAP PRD usa otro certificado).
         /// </summary>
         public string? CertificadoCa { get; set; }
 
@@ -75,12 +79,14 @@ namespace PortalGerencialBackEnd.Infrastructure.Integraciones.Produccion
         private readonly HttpClient _http;
         private readonly ILogger<SapWebServiceExtractionClient> _logger;
         private readonly Dictionary<string, List<TablaExcel>> _historialPorDesde = new();
+        // Por qué se rechazó el último certificado de SAP, para decirlo en el error.
+        private string? _ultimoRechazo;
 
         public SapWebServiceExtractionClient(IConfiguration configuration, ILogger<SapWebServiceExtractionClient> logger, HttpMessageHandler? handler = null)
         {
             _cfg = configuration.GetSection("SapWs").Get<SapWsSettings>() ?? new SapWsSettings();
             _logger = logger;
-            _http = new HttpClient(handler ?? CrearHandler(_cfg), disposeHandler: handler == null)
+            _http = new HttpClient(handler ?? CrearHandler(_cfg, m => _ultimoRechazo = m), disposeHandler: handler == null)
             {
                 Timeout = TimeSpan.FromSeconds(_cfg.TimeoutSegundos)
             };
@@ -181,9 +187,12 @@ namespace PortalGerencialBackEnd.Infrastructure.Integraciones.Produccion
             catch (HttpRequestException ex)
             {
                 var detalle = ex.InnerException?.Message ?? "";
-                var ayuda = detalle.Contains("UntrustedRoot") || detalle.Contains("certificate chain")
+                var carpeta = string.IsNullOrWhiteSpace(_cfg.CertificadoCa) ? "SapWs:CertificadoCa" : Path.GetDirectoryName(_cfg.CertificadoCa);
+                var ayuda = _ultimoRechazo != null
+                    ? $" {_ultimoRechazo} Si ese certificado es el de SAP, guárdelo (.cer o .pem) en {carpeta}."
+                    : detalle.Contains("UntrustedRoot") || detalle.Contains("certificate chain")
                     ? $" El certificado de SAP es de una CA que el portal no conoce (la CA interna de CAC): exporte el certificado raíz"
-                      + $" desde el navegador y guárdelo en {(string.IsNullOrWhiteSpace(_cfg.CertificadoCa) ? "SapWs:CertificadoCa" : _cfg.CertificadoCa)}."
+                      + $" desde el navegador y guárdelo en {carpeta}."
                     : "";
                 throw new InvalidOperationException($"No se pudo conectar con SAP ({modulo}): {ex.Message}{ayuda}", ex);
             }
@@ -244,7 +253,7 @@ namespace PortalGerencialBackEnd.Infrastructure.Integraciones.Produccion
                 .ToList();
         }
 
-        private static HttpMessageHandler CrearHandler(SapWsSettings cfg)
+        private static HttpMessageHandler CrearHandler(SapWsSettings cfg, Action<string> alRechazar)
         {
             var handler = new HttpClientHandler();
             if (!cfg.ValidarCertificado)
@@ -253,33 +262,71 @@ namespace PortalGerencialBackEnd.Infrastructure.Integraciones.Produccion
                 return handler;
             }
             // Si el archivo todavía no está, se valida con las CA del sistema (y el error lo explica).
-            if (!string.IsNullOrWhiteSpace(cfg.CertificadoCa) && File.Exists(cfg.CertificadoCa))
-            {
-                var contenido = File.ReadAllText(cfg.CertificadoCa);
-                // Se acepta el .cer en Base-64 (PEM) o binario (DER), como lo exporta el navegador.
-                var raiz = contenido.Contains("-----BEGIN CERTIFICATE-----")
-                    ? System.Security.Cryptography.X509Certificates.X509Certificate2.CreateFromPem(contenido)
-                    : new System.Security.Cryptography.X509Certificates.X509Certificate2(File.ReadAllBytes(cfg.CertificadoCa));
+            var raices = CargarRaices(cfg.CertificadoCa);
+            if (raices.Count > 0)
                 handler.ServerCertificateCustomValidationCallback = (_, certificado, cadena, errores) =>
-                    certificado != null && ValidarConCa(certificado, raiz, errores);
-            }
+                {
+                    if (certificado == null) return false;
+                    if (ValidarConCa(certificado, raices, errores, cadena, out var motivo)) return true;
+                    alRechazar(motivo);
+                    return false;
+                };
             return handler;
+        }
+
+        /// <summary>
+        /// Certificados de confianza: todos los .cer/.crt/.pem de la carpeta de SapWs:CertificadoCa (o
+        /// de esa carpeta si apunta a una). Cada archivo puede traer uno o varios, en PEM o binario (DER).
+        /// </summary>
+        internal static X509Certificate2Collection CargarRaices(string? ruta)
+        {
+            var raices = new X509Certificate2Collection();
+            if (string.IsNullOrWhiteSpace(ruta)) return raices;
+            var carpeta = Directory.Exists(ruta) ? ruta : File.Exists(ruta) ? Path.GetDirectoryName(ruta) : null;
+            if (carpeta == null) return raices;
+            foreach (var archivo in Directory.GetFiles(carpeta).Where(a =>
+                         new[] { ".cer", ".crt", ".pem" }.Contains(Path.GetExtension(a).ToLowerInvariant())).OrderBy(a => a))
+            {
+                if (File.ReadAllText(archivo).Contains("-----BEGIN CERTIFICATE-----"))
+                    raices.ImportFromPemFile(archivo);
+                else
+                    raices.Import(File.ReadAllBytes(archivo));
+            }
+            return raices;
         }
 
         /// <summary>
         /// El certificado del servidor es válido si encadena a la CA de CAC indicada (además del resto de
         /// comprobaciones: nombre del servidor, vigencia). Solo se tolera el error de "raíz no confiable".
         /// </summary>
-        internal static bool ValidarConCa(System.Security.Cryptography.X509Certificates.X509Certificate2 certificado,
-            System.Security.Cryptography.X509Certificates.X509Certificate2 raiz, System.Net.Security.SslPolicyErrors errores)
+        internal static bool ValidarConCa(X509Certificate2 certificado, X509Certificate2 raiz, SslPolicyErrors errores)
+            => ValidarConCa(certificado, new X509Certificate2Collection(raiz), errores, null, out _);
+
+        internal static bool ValidarConCa(X509Certificate2 certificado, X509Certificate2Collection raices, SslPolicyErrors errores,
+            X509Chain? cadenaDelServidor, out string motivo)
         {
-            if (errores == System.Net.Security.SslPolicyErrors.None) return true;
-            if ((errores & ~System.Net.Security.SslPolicyErrors.RemoteCertificateChainErrors) != 0) return false;
-            using var cadena = new System.Security.Cryptography.X509Certificates.X509Chain();
-            cadena.ChainPolicy.TrustMode = System.Security.Cryptography.X509Certificates.X509ChainTrustMode.CustomRootTrust;
-            cadena.ChainPolicy.CustomTrustStore.Add(raiz);
-            cadena.ChainPolicy.RevocationMode = System.Security.Cryptography.X509Certificates.X509RevocationMode.NoCheck;
-            return cadena.Build(certificado);
+            motivo = "";
+            if (errores == SslPolicyErrors.None) return true;
+            var quien = $"SAP presentó el certificado \"{certificado.Subject}\", emitido por \"{certificado.Issuer}\"" +
+                        $" (vence {certificado.NotAfter:dd/MM/yyyy}, huella {certificado.Thumbprint}).";
+            if ((errores & ~SslPolicyErrors.RemoteCertificateChainErrors) != 0)
+            {
+                motivo = $"{quien} Rechazado: {errores} (el nombre del servidor no coincide o no envió certificado).";
+                return false;
+            }
+            using var cadena = new X509Chain();
+            cadena.ChainPolicy.TrustMode = X509ChainTrustMode.CustomRootTrust;
+            cadena.ChainPolicy.CustomTrustStore.AddRange(raices);
+            cadena.ChainPolicy.RevocationMode = X509RevocationMode.NoCheck;
+            // Intermedios que mandó el propio servidor.
+            if (cadenaDelServidor != null)
+                foreach (var e in cadenaDelServidor.ChainElements)
+                    if (e.Certificate.Thumbprint != certificado.Thumbprint)
+                        cadena.ChainPolicy.ExtraStore.Add(e.Certificate);
+            if (cadena.Build(certificado)) return true;
+            motivo = $"{quien} No encadena a ninguno de los {raices.Count} certificado(s) de confianza del portal" +
+                     $" ({string.Join(", ", cadena.ChainStatus.Select(c => c.Status).Distinct())}).";
+            return false;
         }
     }
 }

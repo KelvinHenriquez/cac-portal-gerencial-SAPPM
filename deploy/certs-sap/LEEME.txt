@@ -1,1 +1,7 @@
-# Aquí va ca_cac.cer: certificado raíz de la CA interna de CAC (público, no es secreto).
+# Certificados de confianza para el HTTPS de SAP (públicos, no son secretos).
+# El portal confía en TODOS los .cer / .crt / .pem de esta carpeta (PEM o binario):
+#   ca_cac.cer   SAP de desarrollo (vhazcdc3ci), *.sap.cac.com, autofirmado por SAP HEC.
+#   sap_prd.pem  SAP de producción (vhazcpc1ci): se baja en el servidor con
+#     openssl s_client -connect vhazcpc1ci.sap.cac.com:44300 -servername vhazcpc1ci.sap.cac.com -showcerts </dev/null 2>/dev/null \
+#       | sed -n '/-----BEGIN CERTIFICATE-----/,/-----END CERTIFICATE-----/p' > deploy/certs-sap/sap_prd.pem
+# Después de agregar o cambiar uno: reiniciar la api.
