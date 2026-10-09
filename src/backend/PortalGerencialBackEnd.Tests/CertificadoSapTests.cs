@@ -39,6 +39,29 @@ public class CertificadoSapTests
             SslPolicyErrors.RemoteCertificateChainErrors | SslPolicyErrors.RemoteCertificateNameMismatch));
     }
 
+    /// <summary>SAP PRD: autofirmado, X.509 v3 de servidor (CA:FALSE, sin keyCertSign): no sirve como raíz.</summary>
+    [Fact]
+    public void Acepta_el_certificado_de_servidor_autofirmado_si_es_exactamente_el_guardado()
+    {
+        X509Certificate2 Autofirmado()
+        {
+            using var clave = RSA.Create(2048);
+            var req = new CertificateRequest("CN=*.sap.cac.com, OU=SAP-HEC, O=SAP SE, C=DE", clave, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+            req.CertificateExtensions.Add(new X509BasicConstraintsExtension(false, false, 0, true));
+            req.CertificateExtensions.Add(new X509KeyUsageExtension(X509KeyUsageFlags.DigitalSignature | X509KeyUsageFlags.KeyEncipherment, true));
+            return req.CreateSelfSigned(DateTimeOffset.Now.AddDays(-1), DateTimeOffset.Now.AddYears(10));
+        }
+        var prd = Autofirmado();
+        var guardados = new X509Certificate2Collection { Ca("SAP DEV"), new X509Certificate2(prd.Export(X509ContentType.Cert)) };
+
+        Assert.True(SapWebServiceExtractionClient.ValidarConCa(prd, guardados, SslPolicyErrors.RemoteCertificateChainErrors, null, out _));
+        // Mismo nombre, otra clave: no.
+        Assert.False(SapWebServiceExtractionClient.ValidarConCa(Autofirmado(), guardados, SslPolicyErrors.RemoteCertificateChainErrors, null, out _));
+        // El nombre del servidor se sigue exigiendo.
+        Assert.False(SapWebServiceExtractionClient.ValidarConCa(prd, guardados,
+            SslPolicyErrors.RemoteCertificateChainErrors | SslPolicyErrors.RemoteCertificateNameMismatch, null, out _));
+    }
+
     [Fact]
     public void Confia_en_todos_los_certificados_de_la_carpeta_y_explica_el_rechazo()
     {

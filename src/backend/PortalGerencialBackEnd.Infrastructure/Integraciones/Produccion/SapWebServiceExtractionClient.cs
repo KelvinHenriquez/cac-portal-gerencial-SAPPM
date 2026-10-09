@@ -314,6 +314,17 @@ namespace PortalGerencialBackEnd.Infrastructure.Integraciones.Produccion
                 motivo = $"{quien} Rechazado: {errores} (el nombre del servidor no coincide o no envió certificado).";
                 return false;
             }
+            // Certificado fijado: SAP presenta exactamente uno de los guardados. Hace falta para el de
+            // producción (09/10/2026): es autofirmado pero X.509 v3 marcado como de servidor, y .NET no
+            // lo acepta como raíz de una cadena (el de desarrollo es v1 y sí). Sigue exigiendo el nombre
+            // del servidor (arriba) y la vigencia.
+            var ahora = DateTime.Now;
+            if (raices.Any(r => r.RawData.AsSpan().SequenceEqual(certificado.RawData)))
+            {
+                if (ahora >= certificado.NotBefore && ahora <= certificado.NotAfter) return true;
+                motivo = $"{quien} Es uno de los certificados guardados, pero no está vigente.";
+                return false;
+            }
             using var cadena = new X509Chain();
             cadena.ChainPolicy.TrustMode = X509ChainTrustMode.CustomRootTrust;
             cadena.ChainPolicy.CustomTrustStore.AddRange(raices);
