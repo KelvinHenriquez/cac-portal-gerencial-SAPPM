@@ -26,6 +26,7 @@ import {
 import { IconChevronDown, IconChevronRight, IconRefresh } from "@tabler/icons-react";
 import { sistemaService } from "@/services/sistema/sistemaService";
 import { useGlobalLoading } from "@/store/LoadingContext";
+import EquiposSinClasificar from "@/components/sistema/EquiposSinClasificar";
 import { AlertaDto, ApiError, CorridaDto, EquipoSinClasificarDto, EstadoActualizacionDto, EstadoCorrida } from "@/types";
 
 const fmtFechaHora = new Intl.DateTimeFormat("es-DO", {
@@ -46,6 +47,7 @@ const NOMBRE_PASO: Record<string, string> = {
   SAP_HISTORIAL: "Historial de estados de SAP",
   CALC_SIN_CLASIFICAR: "Equipos sin clasificar",
   CALC_DISPONIBILIDAD: "Cálculo de disponibilidad",
+  CALC_PERMANENCIA: "Cálculo de permanencia",
   CALC_AVANCE: "Cálculo de avance",
 };
 
@@ -53,11 +55,6 @@ const ESTADO_CORRIDA: Record<EstadoCorrida, { etiqueta: string; color: "success"
   OK: { etiqueta: "Exitosa", color: "success" },
   ERROR: { etiqueta: "Falló", color: "error" },
   EN_CURSO: { etiqueta: "En curso", color: "info" },
-};
-
-const MOTIVO: Record<EquipoSinClasificarDto["motivo"], string> = {
-  SIN_CODIGO_LEGADO: "Sin Ficha: su código SAP no está en ningún reporte",
-  CODIGO_NO_EXISTE_EN_ORACLE: "Su Ficha no está en ningún reporte de Oracle",
 };
 
 function duracion(c: { inicio: string; fin: string | null }) {
@@ -369,48 +366,7 @@ export default function ActualizacionPage() {
         </TableContainer>
       </Paper>
 
-      <Paper variant="outlined">
-        <Box sx={{ px: 2, pt: 2, pb: 1 }}>
-          <Typography variant="subtitle1" fontWeight={700}>
-            Equipos sin clasificar ({sinClasificar.length})
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Equipos de SAP que no se pudieron asignar a ninguna familia de Oracle por su código legado. No entran en
-            los reportes hasta que se corrija el código en SAP o se agregue el equipo en Oracle.
-          </Typography>
-        </Box>
-        <TableContainer>
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell>Equipo SAP</TableCell>
-                <TableCell>Código legado</TableCell>
-                <TableCell>Descripción</TableCell>
-                <TableCell>Motivo</TableCell>
-                <TableCell align="right">Órdenes</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {sinClasificar.map((e) => (
-                <TableRow key={e.equipoSapId} hover>
-                  <TableCell sx={{ fontVariantNumeric: "tabular-nums" }}>{e.equipoSapId}</TableCell>
-                  <TableCell>{e.codigoLegado ?? "—"}</TableCell>
-                  <TableCell>{e.descripcion ?? "—"}</TableCell>
-                  <TableCell>{MOTIVO[e.motivo] ?? e.motivo}</TableCell>
-                  <TableCell align="right">{e.cantOrdenes}</TableCell>
-                </TableRow>
-              ))}
-              {sinClasificar.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={5} align="center" sx={{ py: 4, color: "text.secondary" }}>
-                    Todos los equipos de SAP tienen familia.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </Paper>
+      <EquiposSinClasificar equipos={sinClasificar} />
     </Stack>
   );
 }
