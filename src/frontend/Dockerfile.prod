@@ -2,7 +2,8 @@
 FROM node:20-alpine AS build
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci
+# Red del servidor lenta o con cortes (ECONNRESET el 09/10/2026): más reintentos y paciencia.
+RUN npm ci --no-audit --no-fund --fetch-retries=6 --fetch-retry-mintimeout=20000 --fetch-retry-maxtimeout=180000 --fetch-timeout=600000
 COPY . .
 # Vacío = llamadas relativas (/api/...) al mismo dominio; nginx enruta /api hacia la API.
 ARG NEXT_PUBLIC_API_URL=""
