@@ -1,11 +1,11 @@
-// Misma paleta base que usa la plantilla de TPresto (Modernize) — el teal "#0acaab" es el color
-// de marca de esa plantilla, no de CAC. Es el único archivo que hay que tocar para cambiarlo por
-// un color propio de CAC más adelante (basta con reemplazar primary.main/light/dark).
+// Colores institucionales del Consorcio Azucarero Central (logo oficial, 10/10/2026):
+// verde CAC #009845 (letras "CAC") como color principal y verde lima #93d500 (triángulo) como
+// acento. light = fondo suave para hover/selección; dark = hover de botones.
 const baseLightTheme = {
   palette: {
-    primary: { main: "#0acaab", light: "#E6FFFA", dark: "#13deb9", contrastText: "#ffffff" },
-    secondary: { main: "#49BEFF", light: "#E8F7FF", dark: "#23afdb", contrastText: "#ffffff" },
-    success: { main: "#0acaab", light: "#E6FFFA", dark: "#13deb9", contrastText: "#ffffff" },
+    primary: { main: "#009845", light: "#E6F5EC", dark: "#007A37", contrastText: "#ffffff" },
+    secondary: { main: "#93d500", light: "#F4FBE5", dark: "#6E9F00", contrastText: "#1E2A00" },
+    success: { main: "#009845", light: "#E6F5EC", dark: "#007A37", contrastText: "#ffffff" },
     info: { main: "#539BFF", light: "#EBF3FE", dark: "#1682d4", contrastText: "#ffffff" },
     error: { main: "#FA896B", light: "#FDEDE8", dark: "#f3704d", contrastText: "#ffffff" },
     warning: { main: "#FFAE1F", light: "#FEF5E5", dark: "#ae8e59", contrastText: "#ffffff" },

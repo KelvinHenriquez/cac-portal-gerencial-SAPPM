@@ -1,7 +1,8 @@
 "use client";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Box, CircularProgress } from "@mui/material";
+import { Box } from "@mui/material";
+import { TarjetaCargando } from "@/store/LoadingContext";
 import { useAuth } from "@/store/AuthContext";
 import { SidebarProvider } from "@/store/SidebarContext";
 import Sidebar from "@/components/layout/Sidebar";
@@ -35,8 +36,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   if (loading || !usuario) {
     return (
-      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
-        <CircularProgress />
+      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh", bgcolor: "background.default" }}>
+        <TarjetaCargando mensaje="Verificando sesión..." />
       </Box>
     );
   }

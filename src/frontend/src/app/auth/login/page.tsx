@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Box, Paper, TextField, Button, Typography, Alert, Stack } from "@mui/material";
+import LogoCac from "@/components/layout/LogoCac";
 import { useAuth } from "@/store/AuthContext";
 import { useGlobalLoading } from "@/store/LoadingContext";
 import { ApiError } from "@/types";
@@ -39,16 +40,15 @@ export default function LoginPage() {
         alignItems: "center",
         justifyContent: "center",
         bgcolor: "background.default",
+        backgroundImage: "linear-gradient(160deg, rgba(0,152,69,0.10) 0%, rgba(147,213,0,0.06) 45%, rgba(0,0,0,0) 75%)",
         p: 2,
       }}
     >
-      <Paper elevation={3} sx={{ p: 4, width: "100%", maxWidth: 400 }}>
-        <Stack spacing={1} sx={{ mb: 3, textAlign: "center" }}>
-          <Typography variant="h5" fontWeight={700}>
+      <Paper elevation={3} sx={{ p: 4, width: "100%", maxWidth: 400, borderTop: 4, borderColor: "primary.main" }}>
+        <Stack spacing={1.5} alignItems="center" sx={{ mb: 3, textAlign: "center" }}>
+          <LogoCac variante="completo" alto={170} />
+          <Typography variant="h5" fontWeight={700} sx={{ pt: 1 }}>
             Portal Gerencial SAP PM
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Consorcio Azucarero Central
           </Typography>
         </Stack>
 

@@ -2,7 +2,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Box from "@mui/material/Box";
-import CircularProgress from "@mui/material/CircularProgress";
+import { TarjetaCargando } from "@/store/LoadingContext";
 import { useAuth } from "@/store/AuthContext";
 
 export default function Home() {
@@ -15,8 +15,8 @@ export default function Home() {
   }, [usuario, loading, router]);
 
   return (
-    <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
-      <CircularProgress />
+    <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh", bgcolor: "background.default" }}>
+      <TarjetaCargando mensaje="Cargando..." />
     </Box>
   );
 }

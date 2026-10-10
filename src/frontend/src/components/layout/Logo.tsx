@@ -2,40 +2,36 @@
 import Link from "next/link";
 import { Box, Typography } from "@mui/material";
 import { useSidebar } from "@/store/SidebarContext";
+import LogoCac from "./LogoCac";
 
-// CAC no tiene todavía un archivo de logo — placeholder tipográfico en el mismo lugar y peso
-// visual que el <Image> de TPresto (Logo.tsx), fácil de reemplazar por una imagen real después.
+// Logo institucional en el menú: triángulo + "CAC" con el nombre del portal al lado; con el menú
+// contraído, solo el triángulo. El nombre de la empresa va como texto (en el logo completo es
+// demasiado fino para leerse a este tamaño).
 export default function Logo() {
   const { isCollapsed, isHovering } = useSidebar();
   const hideText = isCollapsed && !isHovering;
 
   return (
     <Link href="/dashboard" style={{ display: "block", textDecoration: "none" }}>
-      <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, height: 40 }}>
-        <Box
-          sx={{
-            width: 40,
-            height: 40,
-            borderRadius: "10px",
-            bgcolor: "primary.main",
-            color: "primary.contrastText",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontWeight: 700,
-            fontSize: "1.1rem",
-            flexShrink: 0,
-          }}
-        >
-          CAC
-        </Box>
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: hideText ? "center" : "flex-start",
+          gap: 1.5,
+          height: 56,
+        }}
+      >
+        {hideText ? <LogoCac variante="icono" alto={44} /> : <LogoCac variante="marca" alto={56} />}
         {!hideText && (
-          <Box sx={{ overflow: "hidden" }}>
-            <Typography variant="h6" fontWeight={700} color="text.primary" noWrap>
+          <Box sx={{ overflow: "hidden", borderLeft: 1, borderColor: "divider", pl: 1.5 }}>
+            <Typography variant="h6" fontWeight={700} color="text.primary" noWrap sx={{ lineHeight: 1.2 }}>
               Portal Gerencial
             </Typography>
-            <Typography variant="caption" color="text.secondary" noWrap>
-              SAP PM · Consorcio Azucarero Central
+            <Typography variant="caption" color="text.secondary" component="div" sx={{ lineHeight: 1.3 }}>
+              Consorcio Azucarero
+              <br />
+              Central · SAP PM
             </Typography>
           </Box>
         )}

@@ -7,9 +7,8 @@ import shadows from "./Shadows";
 import components from "./Components";
 
 // Mismo sistema visual que la plantilla de TPresto (Modernize): tipografía Plus Jakarta Sans,
-// sombras suaves, tarjetas redondeadas, botones sin sombra. Sección 12 lo toma como acelerador
-// de patrones igual que el resto de la arquitectura — el color de marca (teal) se puede
-// reemplazar por uno propio de CAC en DefaultColors.ts sin tocar nada más.
+// sombras suaves, tarjetas redondeadas, botones sin sombra. Los colores son los institucionales
+// de CAC (DefaultColors.ts).
 const theme = createTheme(
   {
     ...baseLightTheme,
