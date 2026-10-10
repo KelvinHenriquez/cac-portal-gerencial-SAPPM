@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
+using PortalGerencialBackEnd.Core.Dtos.Auth;
 using PortalGerencialBackEnd.Core.Interfaces.Common;
 
 namespace PortalGerencialBackEnd.Infrastructure.Services
@@ -19,7 +20,8 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
         public string Usuario => User.FindFirst(ClaimTypes.NameIdentifier)?.Value
             ?? throw new InvalidOperationException("El token no contiene un usuario.");
 
-        public string Rol => User.FindFirst(ClaimTypes.Role)?.Value
-            ?? throw new InvalidOperationException("El token no contiene un rol.");
+        public IReadOnlyList<string> Roles => User.FindAll(ClaimTypes.Role).Select(c => c.Value).ToList();
+
+        public PermisosDto Permisos => PermisosDto.De(Roles);
     }
 }

@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using PortalGerencialBackEnd.Core.Constants;
 using PortalGerencialBackEnd.Core.Enums;
+using PortalGerencialBackEnd.Core.Dtos.Auth;
 using PortalGerencialBackEnd.Core.Dtos.Sistema;
 using PortalGerencialBackEnd.Core.Entities;
 using PortalGerencialBackEnd.Core.Exceptions;
@@ -19,7 +20,6 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
         private readonly TimeProvider _time;
         private readonly string _modo;
         private readonly bool _jobHabilitado;
-        private readonly HashSet<string> _administradores;
 
         public SistemaService(PortalGerencialDbContext db, CoordinadorCorridas coordinador, TimeProvider time, IConfiguration configuration)
         {
@@ -28,10 +28,6 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
             _time = time;
             _modo = (configuration.GetValue<DataSourceMode?>("DataSourceMode") ?? DataSourceMode.Local).ToString().ToUpperInvariant();
             _jobHabilitado = configuration.GetValue("Job:Habilitado", true);
-            // Usuarios de Oracle que pueden cambiar parámetros (el resto solo los ve).
-            _administradores = (configuration["Admin:Usuarios"] ?? "")
-                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                .ToHashSet(StringComparer.OrdinalIgnoreCase);
         }
 
         public async Task<EstadoActualizacionDto> GetEstadoActualizacionAsync()
@@ -164,26 +160,26 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
     
         // ------------------------------------------------------------ parámetros
 
-        public async Task<ParametrosDto> GetParametrosAsync(string usuario)
+        public async Task<ParametrosDto> GetParametrosAsync(PermisosDto permisos)
         {
             var orden = CatalogoParametros.Definiciones.Keys.Select((k, i) => (k, i)).ToDictionary(x => x.k, x => x.i);
             var parametros = await _db.Parametros.AsNoTracking().ToListAsync();
             return new ParametrosDto
             {
-                PuedeEditar = _administradores.Contains(usuario),
+                PuedeEditar = permisos.EditarParametros,
                 Parametros = parametros
                     .OrderBy(p => orden.GetValueOrDefault(p.Clave, int.MaxValue)).ThenBy(p => p.Clave)
-                    .Select(ADto)
+                    .Select(p => ADto(p, permisos))
                     .ToList()
             };
         }
 
-        public bool EsAdministrador(string usuario) => _administradores.Contains(usuario);
-
-        public async Task<ParametroDto> ActualizarParametroAsync(string clave, string valor, string usuario)
+        public async Task<ParametroDto> ActualizarParametroAsync(string clave, string valor, string usuario, PermisosDto permisos)
         {
-            if (!_administradores.Contains(usuario))
-                throw new ForbiddenException("Solo los administradores del portal pueden cambiar parámetros.");
+            if (!permisos.EditarParametros)
+                throw new ForbiddenException("Su usuario puede ver los parámetros pero no cambiarlos (hace falta el rol ROL_PORTAL_PARAMETROS).");
+            if (CatalogoParametros.EsTecnico(clave) && !permisos.EditarParametrosTecnicos)
+                throw new ForbiddenException("Los parámetros técnicos (SAP y horario de la actualización) solo los cambia TI.");
             // Sin SingleOrDefault en la base: en Oracle 11g EF lo traduce a FETCH FIRST, que no existe.
             var parametro = (await _db.Parametros.Where(p => p.Clave == clave).ToListAsync()).SingleOrDefault()
                             ?? throw new NotFoundException($"No existe el parámetro '{clave}'.");
@@ -195,12 +191,13 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
             parametro.ActualizadoEn = _time.GetLocalNow().DateTime;
             parametro.ActualizadoPor = usuario.ToUpperInvariant();
             await _db.SaveChangesAsync();
-            return ADto(parametro);
+            return ADto(parametro, permisos);
         }
 
-        private static ParametroDto ADto(Parametro p)
+        private static ParametroDto ADto(Parametro p, PermisosDto permisos)
         {
             var d = CatalogoParametros.Definiciones.GetValueOrDefault(p.Clave);
+            var tecnico = CatalogoParametros.EsTecnico(p.Clave);
             return new ParametroDto
             {
                 Clave = p.Clave,
@@ -210,7 +207,9 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
                 Valor = p.Valor,
                 Opciones = d?.Opciones,
                 ActualizadoEn = p.ActualizadoEn,
-                ActualizadoPor = p.ActualizadoPor
+                ActualizadoPor = p.ActualizadoPor,
+                Tecnico = tecnico,
+                Editable = permisos.EditarParametros && (!tecnico || permisos.EditarParametrosTecnicos)
             };
         }
     }

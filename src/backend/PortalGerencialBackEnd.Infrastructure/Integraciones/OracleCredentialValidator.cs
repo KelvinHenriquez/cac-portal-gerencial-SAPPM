@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Oracle.ManagedDataAccess.Client;
+using PortalGerencialBackEnd.Core.Constants;
 using PortalGerencialBackEnd.Core.Interfaces.Integraciones;
 using PortalGerencialBackEnd.Core.Settings;
 
@@ -22,7 +23,7 @@ namespace PortalGerencialBackEnd.Infrastructure.Integraciones
             _logger = logger;
         }
 
-        public async Task<(ResultadoValidacionOracle Resultado, bool PasswordPorVencer)> ValidarAsync(string usuario, string password)
+        public async Task<(ResultadoValidacionOracle Resultado, bool PasswordPorVencer, IReadOnlyList<string> Roles)> ValidarAsync(string usuario, string password)
         {
             // El builder escapa los valores: un usuario con ';' o '=' no puede inyectar otras claves
             // en la cadena de conexión (p. ej. otro Data Source).
@@ -41,8 +42,10 @@ namespace PortalGerencialBackEnd.Infrastructure.Integraciones
             try
             {
                 await connection.OpenAsync();
-                var resultado = await TieneRolDeAccesoAsync(connection) ? ResultadoValidacionOracle.Valido : ResultadoValidacionOracle.SinRolDeAcceso;
-                return (resultado, resultado == ResultadoValidacionOracle.Valido && await ClavePorVencerAsync(connection));
+                var roles = await RolesDelPortalAsync(connection);
+                return roles.Count == 0
+                    ? (ResultadoValidacionOracle.SinRolDeAcceso, false, roles)
+                    : (ResultadoValidacionOracle.Valido, await ClavePorVencerAsync(connection), roles);
             }
             catch (OracleException ex)
             {
@@ -50,39 +53,54 @@ namespace PortalGerencialBackEnd.Infrastructure.Integraciones
                 {
                     case 1017: // usuario/clave inválidos
                     case 1005: // clave nula
-                        return (ResultadoValidacionOracle.CredencialesInvalidas, false);
+                        return (ResultadoValidacionOracle.CredencialesInvalidas, false, Array.Empty<string>());
                     case 28000: // cuenta bloqueada
-                        return (ResultadoValidacionOracle.CuentaBloqueada, false);
+                        return (ResultadoValidacionOracle.CuentaBloqueada, false, Array.Empty<string>());
                     case 28001: // clave vencida
-                        return (ResultadoValidacionOracle.PasswordVencido, false);
+                        return (ResultadoValidacionOracle.PasswordVencido, false, Array.Empty<string>());
                     case 28002: // la clave vence en N días: la conexión sí se abre
-                        return (await RolConClavePorVencerAsync(connection), true);
+                    {
+                        // El driver avisa la expiración por excepción; si la sesión quedó abierta se ven los roles.
+                        if (connection.State != System.Data.ConnectionState.Open)
+                        {
+                            _logger.LogWarning("No se pudieron leer los roles de un usuario con la clave por vencer.");
+                            return (ResultadoValidacionOracle.SinRolDeAcceso, true, Array.Empty<string>());
+                        }
+                        var rolesGracia = await RolesDelPortalAsync(connection);
+                        return (rolesGracia.Count == 0 ? ResultadoValidacionOracle.SinRolDeAcceso : ResultadoValidacionOracle.Valido, true, rolesGracia);
+                    }
                     default:
                         _logger.LogError(ex, "Oracle no respondió al validar credenciales (ORA-{Numero}).", ex.Number);
-                        return (ResultadoValidacionOracle.OracleNoDisponible, false);
+                        return (ResultadoValidacionOracle.OracleNoDisponible, false, Array.Empty<string>());
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "No se pudo contactar Oracle para validar credenciales.");
-                return (ResultadoValidacionOracle.OracleNoDisponible, false);
+                return (ResultadoValidacionOracle.OracleNoDisponible, false, Array.Empty<string>());
             }
         }
 
         /// <summary>
-        /// ¿El usuario tiene el rol de acceso? USER_ROLE_PRIVS ve los roles dados directo (aunque no
-        /// sean por defecto); SESSION_ROLES, los habilitados, incluidos los que vienen dentro de otro rol.
+        /// Roles del portal (ROL_PORTAL_*) que tiene el usuario. USER_ROLE_PRIVS ve los dados directo
+        /// (aunque no sean por defecto); SESSION_ROLES, los habilitados, incluidos los que vienen
+        /// dentro de otro rol.
         /// </summary>
-        private async Task<bool> TieneRolDeAccesoAsync(OracleConnection connection)
+        private static async Task<IReadOnlyList<string>> RolesDelPortalAsync(OracleConnection connection)
         {
-            if (string.IsNullOrWhiteSpace(_settings.RolAcceso))
-                return true;
             await using var cmd = connection.CreateCommand();
             cmd.BindByName = true;
+            var nombres = Roles.Todos.Select((r, i) => (Param: $":r{i}", Rol: r)).ToList();
             cmd.CommandText =
-                "SELECT COUNT(*) FROM (SELECT GRANTED_ROLE AS ROL FROM USER_ROLE_PRIVS UNION SELECT ROLE FROM SESSION_ROLES) WHERE ROL = :rol";
-            cmd.Parameters.Add(new OracleParameter("rol", _settings.RolAcceso.Trim().ToUpperInvariant()));
-            return Convert.ToInt32(await cmd.ExecuteScalarAsync()) > 0;
+                "SELECT DISTINCT ROL FROM (SELECT GRANTED_ROLE AS ROL FROM USER_ROLE_PRIVS UNION SELECT ROLE FROM SESSION_ROLES) " +
+                $"WHERE ROL IN ({string.Join(", ", nombres.Select(n => n.Param))})";
+            foreach (var n in nombres)
+                cmd.Parameters.Add(new OracleParameter(n.Param.TrimStart(':'), n.Rol));
+            var roles = new List<string>();
+            await using var lector = await cmd.ExecuteReaderAsync();
+            while (await lector.ReadAsync())
+                roles.Add(lector.GetString(0));
+            return roles;
         }
 
         /// <summary>
@@ -104,22 +122,6 @@ namespace PortalGerencialBackEnd.Infrastructure.Integraciones
                 _logger.LogWarning("No se pudo leer el vencimiento de la clave (ORA-{Numero}).", ex.Number);
                 return false;
             }
-        }
-
-        /// <summary>
-        /// Con ORA-28002 el driver avisa por excepción pero la sesión queda abierta: se ve el rol en
-        /// ella. Si no quedara abierta, no hay cómo verificarlo y no se deja pasar.
-        /// </summary>
-        private async Task<ResultadoValidacionOracle> RolConClavePorVencerAsync(OracleConnection connection)
-        {
-            if (string.IsNullOrWhiteSpace(_settings.RolAcceso))
-                return ResultadoValidacionOracle.Valido;
-            if (connection.State != System.Data.ConnectionState.Open)
-            {
-                _logger.LogWarning("No se pudo verificar el rol de acceso de un usuario con la clave por vencer.");
-                return ResultadoValidacionOracle.SinRolDeAcceso;
-            }
-            return await TieneRolDeAccesoAsync(connection) ? ResultadoValidacionOracle.Valido : ResultadoValidacionOracle.SinRolDeAcceso;
         }
     }
 }

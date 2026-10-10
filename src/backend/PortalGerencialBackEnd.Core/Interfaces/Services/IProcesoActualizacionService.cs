@@ -1,3 +1,4 @@
+using PortalGerencialBackEnd.Core.Dtos.Auth;
 using PortalGerencialBackEnd.Core.Dtos.Sistema;
 
 namespace PortalGerencialBackEnd.Core.Interfaces.Services
@@ -22,8 +23,7 @@ namespace PortalGerencialBackEnd.Core.Interfaces.Services
         Task<CorridaDto?> GetCorridaAsync(string corridaId);
         Task<List<EquipoSinClasificarDto>> GetEquiposSinClasificarAsync();
         Task<List<AlertaDto>> GetAlertasAsync(int cantidad);
-        Task<ParametrosDto> GetParametrosAsync(string usuario);
-        bool EsAdministrador(string usuario);
-        Task<ParametroDto> ActualizarParametroAsync(string clave, string valor, string usuario);
+        Task<ParametrosDto> GetParametrosAsync(PermisosDto permisos);
+        Task<ParametroDto> ActualizarParametroAsync(string clave, string valor, string usuario, PermisosDto permisos);
     }
 }

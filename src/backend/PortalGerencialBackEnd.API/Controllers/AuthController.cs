@@ -33,6 +33,6 @@ namespace PortalGerencialBackEnd.API.Controllers
         /// <summary>Usuario de la sesión actual — permite al frontend confirmar que el token sigue vigente.</summary>
         [HttpGet("me")]
         [Authorize]
-        public ActionResult<object> Me() => Ok(new { usuario = _userContext.Usuario, rol = _userContext.Rol });
+        public ActionResult<object> Me() => Ok(new { usuario = _userContext.Usuario, roles = _userContext.Roles, permisos = _userContext.Permisos });
     }
 }

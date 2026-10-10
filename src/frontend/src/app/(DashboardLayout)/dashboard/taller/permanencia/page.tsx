@@ -1,5 +1,6 @@
 "use client";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Alert,
   Box,
@@ -20,6 +21,7 @@ import { fechaHora, fechaLarga } from "@/utils/formato";
 import { BarraPasos, dias, duracion, LeyendaPasos, PASOS, sumaPasos, useColoresPasos } from "@/components/reportes/permanencia/comunesPermanencia";
 import ListaPermanencia, { VistaPermanencia } from "@/components/reportes/permanencia/ListaPermanencia";
 import DialogoEquipoPermanencia from "@/components/reportes/permanencia/DialogoEquipoPermanencia";
+import { useSidebar } from "@/store/SidebarContext";
 
 const CLAVE_PREFERENCIAS = "portalgerencial_permanencia";
 
@@ -93,7 +95,7 @@ function Desglose({ indicador }: { indicador: IndicadorPermanenciaDto }) {
   );
 }
 
-export default function PermanenciaPage() {
+function Permanencia() {
   const { showLoading, hideLoading } = useGlobalLoading();
   const [areas, setAreas] = useState<AreaPermanenciaDto[]>([]);
   const [area, setArea] = useState<string>("");
@@ -103,20 +105,31 @@ export default function PermanenciaPage() {
   const [familia, setFamilia] = useState<FamiliaPermanenciaDto | null>(null);
   const [equipo, setEquipo] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
+  const { setAreaActiva } = useSidebar();
+  // ?area= viene del menú o del Inicio (Centro de Servicios / Industrial); la API solo devuelve
+  // las áreas que el usuario ve.
+  const pedida = useSearchParams().get("area")?.toUpperCase() ?? null;
 
   useEffect(() => {
     const pref = leerPreferencias();
     if (pref.vista) setVista(pref.vista);
-    // ?area=IND desde las tarjetas del Inicio; si no, la última área usada.
-    const pedida = new URLSearchParams(window.location.search).get("area")?.toUpperCase();
     permanenciaService
       .getAreas()
-      .then((a) => {
-        setAreas(a);
-        setArea(a.find((x) => x.codigo === pedida)?.codigo ?? a.find((x) => x.codigo === pref.area)?.codigo ?? a[0]?.codigo ?? "");
-      })
+      .then(setAreas)
       .catch((e: ApiError) => setError(e?.errorMessage || "No se pudieron cargar las áreas."));
   }, []);
+
+  // El área abierta sigue a la URL; si la pedida no está permitida, la última usada o la primera.
+  useEffect(() => {
+    if (areas.length === 0) return;
+    const elegida =
+      areas.find((x) => x.codigo === pedida)?.codigo ??
+      areas.find((x) => x.codigo === leerPreferencias().area)?.codigo ??
+      areas[0].codigo;
+    setArea(elegida);
+    if (elegida !== pedida) router.replace(`/dashboard/taller/permanencia?area=${elegida}`);
+  }, [areas, pedida, router]);
 
   const cargar = useCallback(async () => {
     if (!area || !periodo.desde || !periodo.hasta) return;
@@ -140,6 +153,12 @@ export default function PermanenciaPage() {
     if (area) guardarPreferencias({ area, vista });
   }, [area, vista]);
 
+  // El menú marca "Tiempo de Permanencia" del área abierta.
+  useEffect(() => {
+    setAreaActiva(area || null);
+    return () => setAreaActiva(null);
+  }, [area, setAreaActiva]);
+
   const abrirFamilia = async (f: IndicadorPermanenciaDto) => {
     showLoading("Cargando equipos...");
     try {
@@ -158,7 +177,7 @@ export default function PermanenciaPage() {
     <Stack spacing={2}>
       <Paper variant="outlined" sx={{ p: 2 }}>
         <Stack direction={{ xs: "column", md: "row" }} spacing={2} alignItems={{ md: "center" }} flexWrap="wrap" useFlexGap>
-          <ToggleButtonGroup size="small" exclusive value={area} onChange={(_, v) => v && setArea(v)} aria-label="Área">
+          <ToggleButtonGroup size="small" exclusive value={area} onChange={(_, v) => v && router.replace(`/dashboard/taller/permanencia?area=${v}`)} aria-label="Área">
             {areas.map((a) => (
               <ToggleButton key={a.codigo} value={a.codigo} sx={{ px: 2 }}>
                 {a.nombre}
@@ -285,5 +304,14 @@ export default function PermanenciaPage() {
         onClose={() => setEquipo(null)}
       />
     </Stack>
+  );
+}
+
+export default function PermanenciaPage() {
+  // useSearchParams necesita un Suspense para la compilación estática de Next.
+  return (
+    <Suspense fallback={null}>
+      <Permanencia />
+    </Suspense>
   );
 }

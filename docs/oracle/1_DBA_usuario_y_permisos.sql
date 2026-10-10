@@ -6,8 +6,7 @@
 --   1. Crea el usuario técnico del portal (dueño de las tablas y vistas *_PGPM).
 --   2. Le da permiso de SOLO LECTURA (SELECT) sobre las 15 tablas de Oracle Forms que leen las
 --      vistas del portal (MAQUINARIAN) y sobre PARGER.PG_PERIODO.
---   3. Crea el rol ROL_PORTAL_GERENCIAL: solo entra al portal quien lo tenga. El rol no da ningún
---      permiso sobre tablas; es solo la "llave" del portal. Al final del archivo está cómo darlo.
+--   3. Los roles del portal (ROL_PORTAL_*) se crean con 3_DBA_roles_portal.sql, después de este.
 --   No crea tablas, no toca datos de MAQUINARIAN ni de PARGER.
 --
 -- Al correrlo, SQL Developer pregunta tres valores:
@@ -49,13 +48,7 @@ GRANT SELECT ON MAQUINARIAN.MA_ENC_SEMANA_OT          TO &&USUARIO_PORTAL;
 GRANT SELECT ON MAQUINARIAN.MA_DET_SEMANA_OT          TO &&USUARIO_PORTAL;
 GRANT SELECT ON PARGER.PG_PERIODO                     TO &&USUARIO_PORTAL;
 
-PROMPT ===== 3. Rol de acceso al portal =====
-WHENEVER SQLERROR CONTINUE
--- Si ya existe da ORA-01921 y sigue.
-CREATE ROLE ROL_PORTAL_GERENCIAL;
-WHENEVER SQLERROR EXIT FAILURE
-
-PROMPT ===== 4. Verificación: deben salir 15 filas =====
+PROMPT ===== 3. Verificación: deben salir 15 filas =====
 SELECT OWNER, TABLE_NAME, PRIVILEGE
 FROM   DBA_TAB_PRIVS
 WHERE  GRANTEE = UPPER('&&USUARIO_PORTAL')
@@ -64,16 +57,4 @@ ORDER BY OWNER, TABLE_NAME;
 UNDEFINE CLAVE_PORTAL
 PROMPT Listo. Siguiente: conectarse como &&USUARIO_PORTAL y correr 2_PORTAL_tablas_y_vistas.sql
 
--- =====================================================================================
--- DAR Y QUITAR ACCESO AL PORTAL (cuando haga falta, como DBA). Su usuario de Oracle de siempre:
---
---   GRANT  ROL_PORTAL_GERENCIAL TO <USUARIO>;      -- puede entrar
---   REVOKE ROL_PORTAL_GERENCIAL FROM <USUARIO>;    -- ya no puede entrar
---
--- Quién lo tiene hoy:
---   SELECT GRANTEE FROM DBA_ROLE_PRIVS WHERE GRANTED_ROLE = 'ROL_PORTAL_GERENCIAL' ORDER BY 1;
---
--- El cambio vale desde el próximo inicio de sesión; quien ya está adentro sigue hasta que vence
--- su sesión del portal. Quién puede cambiar parámetros se define aparte (ADMIN_USUARIOS en .env.prod).
--- =====================================================================================
-
+-- Siguiente, también como DBA: 3_DBA_roles_portal.sql (roles del portal y su administrador).

@@ -68,14 +68,24 @@ carpeta son de exploración o del Sprint 0, o los llaman estos dos: no hay que c
    usuario técnico**: corre `pgpm_tablas.sql` (14 tablas, idempotente) y `vistas_produccion.sql`
    (11 vistas, empresa 30), y verifica: 0 objetos inválidos y cuántas filas ve cada vista.
    Tiene que estar en la misma carpeta que esos dos archivos.
-3. **Quién entra al portal:** cada persona entra con su usuario y clave de Oracle de siempre, pero
-   solo si tiene el rol: `GRANT ROL_PORTAL_GERENCIAL TO <USUARIO>;` (quitar: `REVOKE ... FROM`).
-   El rol no da permisos sobre tablas; los reportes se leen con el usuario técnico. Ojo: Oracle le
-   da el rol automáticamente a quien lo crea (el DBA que corrió el paso 1).
+3. [oracle/3_DBA_roles_portal.sql](oracle/3_DBA_roles_portal.sql), **como DBA**: crea los roles del
+   portal y da `ROL_PORTAL_ADMIN` al usuario de TI.
+**Quién entra y qué puede hacer** (roles de Oracle; se suman; hace falta al menos uno):
 
-Con eso, en `.env.prod`: `ORACLE_USUARIO_TECNICO`/`ORACLE_PASSWORD_TECNICO` del paso 1,
-`APLICAR_MIGRACIONES=false` y `ORACLE_ROL_ACCESO=ROL_PORTAL_GERENCIAL` (vacío = entra cualquier
-usuario válido de la base; no recomendado).
+| Rol | Ve | Puede |
+| --- | --- | --- |
+| `ROL_PORTAL_CDS` | Centro de Servicios: Disponibilidad, Avance, Permanencia CDS | Solo consultar |
+| `ROL_PORTAL_IND` | Industrial: Permanencia IND | Solo consultar |
+| `ROL_PORTAL_GERENCIAL` | Las dos áreas | Solo consultar |
+| `ROL_PORTAL_PARAMETROS` | Lo de sus otros roles | Cambiar parámetros de negocio |
+| `ROL_PORTAL_ADMIN` | Todo | Todo: parámetros técnicos, Actualizar ahora y desde |
+
+Estado de actualización y Parámetros los ven todos en modo consulta. La API aplica estos permisos
+en cada consulta, no solo esconde botones. Se dan con `GRANT <rol> TO <usuario>;` y valen desde el
+próximo inicio de sesión. Oracle le da cada rol al DBA que lo crea: quitárselo si no debe entrar.
+
+Con eso, en `.env.prod`: `ORACLE_USUARIO_TECNICO`/`ORACLE_PASSWORD_TECNICO` del paso 1 y
+`APLICAR_MIGRACIONES=false`.
 
 Probados el 08/10/2026 contra la réplica local de MAQUINARIAN: mismo esquema que desarrollo.
 
@@ -94,7 +104,7 @@ En el servidor (dentro de Ubuntu/WSL2 si es la opción A):
 
 ```bash
 git clone <repositorio> /opt/portal-gerencial && cd /opt/portal-gerencial
-cp .env.prod.example .env.prod      # completar TODOS los valores (ADMIN_USUARIOS, puertos...); chmod 600 .env.prod
+cp .env.prod.example .env.prod      # completar TODOS los valores (Oracle, SAP, puertos...); chmod 600 .env.prod
 # copiar el certificado a deploy/certs/
 docker compose --env-file .env.prod -f docker-compose.prod.yml up -d --build
 ```
@@ -117,7 +127,7 @@ pantallas sin datos de SAP, o esperar a la Etapa 8b.
 | Actualizar versión | `git pull` y el mismo `up -d --build`; las migraciones nuevas se aplican solas (o el DBA corre el `pgpm_tablas.sql` nuevo) |
 | Volver a la versión anterior | `git checkout <commit anterior>` y `up -d --build`. Las migraciones solo agregan; no hace falta tocar Oracle |
 | Correr la actualización a mano | botón "Actualizar ahora" en Sistema → Estado de actualización |
-| Cambiar una regla de cálculo | Sistema → Parámetros (solo los usuarios de `ADMIN_USUARIOS`; queda quién y cuándo) |
+| Cambiar una regla de cálculo | Sistema → Parámetros (`ROL_PORTAL_PARAMETROS`; los técnicos, `ROL_PORTAL_ADMIN`; queda quién y cuándo) |
 | Respaldo | nada en el servidor: el respaldo es el de Oracle |
 | Reinicio del servidor | los contenedores tienen `restart: unless-stopped`: suben solos con Docker |
 

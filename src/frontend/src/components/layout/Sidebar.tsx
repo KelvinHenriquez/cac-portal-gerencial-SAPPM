@@ -6,6 +6,7 @@ import NavItem from "./NavItem";
 import NavGroup from "./NavGroup";
 import SidebarProfile from "./SidebarProfile";
 import { MENU_ITEMS } from "./MenuItems";
+import { usePermisos } from "@/store/AuthContext";
 import { useSidebar, SIDEBAR_WIDTH, MINI_SIDEBAR_WIDTH } from "@/store/SidebarContext";
 
 // Mismo patrón que Sidebar.tsx de la plantilla de TPresto: drawer permanente y colapsable en
@@ -14,6 +15,8 @@ export default function Sidebar() {
   const theme = useTheme();
   const isDesktop = useMediaQuery(theme.breakpoints.up("lg"));
   const { isCollapsed, isHovering, isMobileOpen, setHovering, closeMobile } = useSidebar();
+  const permisos = usePermisos();
+  const visibles = MENU_ITEMS.filter((item) => !item.area || permisos.veArea(item.area));
 
   const hideText = isDesktop && isCollapsed && !isHovering;
   const width = isDesktop && isCollapsed && !isHovering ? MINI_SIDEBAR_WIDTH : SIDEBAR_WIDTH;
@@ -25,9 +28,9 @@ export default function Sidebar() {
       </Box>
       <Box sx={{ flex: 1, overflowY: "auto", overflowX: "hidden", px: 2 }}>
         <List sx={{ pt: 0 }}>
-          {MENU_ITEMS.map((item) => (
+          {visibles.map((item, i) => (
             <Box key={item.id}>
-              {item.subheader && <NavGroup label={item.subheader} hideText={hideText} />}
+              {item.grupo && item.grupo !== visibles[i - 1]?.grupo && <NavGroup label={item.grupo} hideText={hideText} />}
               <NavItem item={item} hideText={hideText} onClick={isDesktop ? undefined : closeMobile} />
             </Box>
           ))}

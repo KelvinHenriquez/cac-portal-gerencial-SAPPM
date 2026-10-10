@@ -49,9 +49,13 @@ El login valida contra Oracle, igual que en producción (sección 4.3): no hay t
 
 | Usuario | Clave | Para qué |
 |---|---|---|
-| `gerente1`, `gerente2` | `Gerente2026` | Entrar al portal |
+| `gerente1` | `Gerente2026` | Administrador (TI): todo |
+| `gerente2` | `Gerente2026` | Gerencia: las dos áreas, solo ver |
+| `cds1` | `Gerente2026` | Centro de Servicios, solo ver |
+| `ind1` | `Gerente2026` | Industrial, solo ver |
+| `param1` | `Gerente2026` | Centro de Servicios + cambia parámetros de negocio |
 | `bloqueado1` | `Gerente2026` | Ver el mensaje de cuenta bloqueada en Oracle |
-| `sinacceso1` | `Gerente2026` | Ver el mensaje de usuario sin el rol `ROL_PORTAL_GERENCIAL` |
+| `sinacceso1` | `Gerente2026` | Ver el mensaje de usuario sin ningún rol del portal |
 | `PGPM` | `PgpmLocal2026` | Usuario técnico del portal (dueño de las tablas `_pgpm`) |
 | `SYSTEM` | `OracleLocal2026` | Administración de la base local |
 

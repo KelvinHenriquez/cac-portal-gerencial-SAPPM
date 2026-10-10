@@ -91,7 +91,8 @@ export default function ParametrosPage() {
         <Typography variant="h6">Parámetros de cálculo</Typography>
         <Typography variant="body2" color="text.secondary">
           Reglas con las que el portal calcula la disponibilidad y el avance.{" "}
-          {datos && !datos.puedeEditar && "Solo los administradores del portal pueden cambiarlas."}
+          {datos && !datos.puedeEditar && "Puede consultarlas; para cambiarlas hace falta el rol de parámetros."}
+          {datos?.puedeEditar && "Los parámetros técnicos (SAP y horario de la actualización) solo los cambia TI."}
         </Typography>
       </Paper>
 
@@ -134,9 +135,15 @@ export default function ParametrosPage() {
                     </TableCell>
                     {datos?.puedeEditar && (
                       <TableCell align="right">
-                        <Button size="small" startIcon={<IconPencil size={16} />} onClick={() => abrir(p)}>
-                          Cambiar
-                        </Button>
+                        {p.editable ? (
+                          <Button size="small" startIcon={<IconPencil size={16} />} onClick={() => abrir(p)}>
+                            Cambiar
+                          </Button>
+                        ) : (
+                          <Typography variant="caption" color="text.secondary">
+                            Solo TI
+                          </Typography>
+                        )}
                       </TableCell>
                     )}
                   </TableRow>

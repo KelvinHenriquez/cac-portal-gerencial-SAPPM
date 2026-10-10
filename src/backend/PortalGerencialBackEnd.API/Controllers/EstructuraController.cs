@@ -1,3 +1,4 @@
+using PortalGerencialBackEnd.Core.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PortalGerencialBackEnd.Core.Dtos.Estructura;
@@ -12,7 +13,8 @@ namespace PortalGerencialBackEnd.API.Controllers
     /// </summary>
     [ApiController]
     [Route("api/estructura")]
-    [Authorize]
+    // Reportes de Centro de Servicios: Disponibilidad y Avance se configuran por Ficha en Oracle.
+    [Authorize(Roles = Roles.VenCentroServicios)]
     public class EstructuraController : ControllerBase
     {
         private readonly IStructureSource _structureSource;

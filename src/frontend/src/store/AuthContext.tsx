@@ -4,13 +4,14 @@ import Cookies from "js-cookie";
 import { useRouter } from "next/navigation";
 import { authService } from "@/services/auth/authService";
 import { ACCESS_TOKEN_COOKIE } from "@/services/axios";
-import { LoginResponse, RolUsuario } from "@/types";
+import { LoginResponse, Permisos, RolUsuario } from "@/types";
 
 const USER_STORAGE_KEY = "portalgerencial_user";
 
 export interface SesionUsuario {
   usuario: string;
-  rol: RolUsuario;
+  roles: RolUsuario[];
+  permisos: Permisos;
   passwordPorVencer: boolean;
 }
 
@@ -28,7 +29,8 @@ function guardarSesion(response: LoginResponse) {
   Cookies.set(ACCESS_TOKEN_COOKIE, response.accessToken, { expires, sameSite: "lax" });
   const sesion: SesionUsuario = {
     usuario: response.usuario,
-    rol: response.rol,
+    roles: response.roles,
+    permisos: response.permisos,
     passwordPorVencer: response.passwordPorVencer,
   };
   localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(sesion));
@@ -45,7 +47,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const raw = typeof window !== "undefined" ? localStorage.getItem(USER_STORAGE_KEY) : null;
     if (token && raw) {
       try {
-        setUsuario(JSON.parse(raw));
+        const sesion = JSON.parse(raw) as SesionUsuario;
+        // Sesión de antes de los roles (10/10/2026): sin permisos, hay que volver a entrar.
+        if (sesion?.permisos?.areas) setUsuario(sesion);
+        else {
+          Cookies.remove(ACCESS_TOKEN_COOKIE);
+          localStorage.removeItem(USER_STORAGE_KEY);
+        }
       } catch {
         setUsuario(null);
       }
@@ -71,6 +79,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     <AuthContext.Provider value={{ usuario, loading, login, logout }}>{children}</AuthContext.Provider>
   );
 };
+
+/** Permisos del usuario en sesión (todo en falso si no hay sesión). */
+export function usePermisos(): Permisos & { veArea: (area: string) => boolean } {
+  const { usuario } = useAuth();
+  const p = usuario?.permisos ?? { areas: [], editarParametros: false, editarParametrosTecnicos: false, actualizar: false };
+  return { ...p, veArea: (area: string) => p.areas.includes(area.toUpperCase()) };
+}
 
 export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);

@@ -26,6 +26,7 @@ import {
 import { IconChevronDown, IconChevronRight, IconRefresh } from "@tabler/icons-react";
 import { sistemaService } from "@/services/sistema/sistemaService";
 import { useGlobalLoading } from "@/store/LoadingContext";
+import { usePermisos } from "@/store/AuthContext";
 import EquiposSinClasificar from "@/components/sistema/EquiposSinClasificar";
 import { AlertaDto, ApiError, CorridaDto, EquipoSinClasificarDto, EstadoActualizacionDto, EstadoCorrida } from "@/types";
 
@@ -108,16 +109,10 @@ export default function ActualizacionPage() {
     setAlertas(a);
   }, []);
 
-  const [esAdmin, setEsAdmin] = useState(false);
+  // Actualizar a mano (ahora o desde una fecha) es solo de TI; el resto ve el estado.
+  const puedeActualizar = usePermisos().actualizar;
   const [dialogoDesde, setDialogoDesde] = useState(false);
   const [fechaDesde, setFechaDesde] = useState("2026-06-01");
-
-  useEffect(() => {
-    sistemaService
-      .getParametros()
-      .then((p) => setEsAdmin(p.puedeEditar))
-      .catch(() => setEsAdmin(false));
-  }, []);
 
   useEffect(() => {
     cargar().catch((e: ApiError) => setMensaje({ tipo: "error", texto: e?.errorMessage || "No se pudo cargar el estado." }));
@@ -155,20 +150,22 @@ export default function ActualizacionPage() {
             actualización falla, los reportes siguen mostrando los últimos datos buenos.
           </Typography>
         </Box>
-        {esAdmin && (
-          <Button variant="outlined" onClick={() => setDialogoDesde(true)} disabled={!estado || estado.corridaEnCurso} sx={{ flexShrink: 0 }}>
-            Actualizar desde…
-          </Button>
+        {puedeActualizar && (
+          <>
+            <Button variant="outlined" onClick={() => setDialogoDesde(true)} disabled={!estado || estado.corridaEnCurso} sx={{ flexShrink: 0 }}>
+              Actualizar desde…
+            </Button>
+            <Button
+              variant="contained"
+              startIcon={<IconRefresh size={18} />}
+              onClick={() => actualizarAhora()}
+              disabled={!estado || estado.corridaEnCurso}
+              sx={{ flexShrink: 0 }}
+            >
+              Actualizar ahora
+            </Button>
+          </>
         )}
-        <Button
-          variant="contained"
-          startIcon={<IconRefresh size={18} />}
-          onClick={() => actualizarAhora()}
-          disabled={!estado || estado.corridaEnCurso}
-          sx={{ flexShrink: 0 }}
-        >
-          Actualizar ahora
-        </Button>
       </Stack>
 
       <Dialog open={dialogoDesde} onClose={() => setDialogoDesde(false)} maxWidth="xs" fullWidth>

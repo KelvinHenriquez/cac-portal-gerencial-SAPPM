@@ -81,10 +81,12 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
             };
         }
 
-        public async Task<EquipoPermanenciaDto> GetEquipoAsync(string equipoSapId, DateTime? desde, DateTime? hasta)
+        public async Task<EquipoPermanenciaDto> GetEquipoAsync(string equipoSapId, DateTime? desde, DateTime? hasta, IReadOnlyCollection<string> areas)
         {
             var (d, h) = Periodo(desde, hasta);
-            var filas = await FilasAsync(q => q.Where(p => p.EquipoSapId == equipoSapId));
+            var filas = (await FilasAsync(q => q.Where(p => p.EquipoSapId == equipoSapId)))
+                .Where(f => areas.Contains(f.Area, StringComparer.OrdinalIgnoreCase))
+                .ToList();
             if (filas.Count == 0)
                 throw new NotFoundException($"El equipo '{equipoSapId}' no tiene órdenes correctivas.");
             var equipo = Indicador(equipoSapId, filas[0].EquipoDescripcion ?? equipoSapId, filas, d, h);

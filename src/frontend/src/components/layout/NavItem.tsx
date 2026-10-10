@@ -3,7 +3,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Box, ListItemButton, ListItemIcon, ListItemText, Tooltip } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
-import { MenuItem } from "./MenuItems";
+import { MenuItem, rutaDe } from "./MenuItems";
+import { useSidebar } from "@/store/SidebarContext";
 
 // Mismo estilo (pill redondeada, color de fondo al seleccionar, ícono 24/stroke 1.5) que
 // NavItem.tsx de la plantilla de TPresto.
@@ -17,11 +18,17 @@ export default function NavItem({
   onClick?: () => void;
 }) {
   const pathname = usePathname();
+  const { areaActiva } = useSidebar();
   const theme = useTheme();
   const Icon = item.icon;
+  const ruta = rutaDe(item.href);
+  // El mismo reporte para dos áreas (?area=CDS / ?area=IND): se marca el del área abierta, que
+  // avisa la propia página (leer la URL aquí obligaría a envolver el menú en un Suspense).
+  const areaDelItem = new URLSearchParams(item.href.split("?")[1] ?? "").get("area");
+  const mismaConsulta = !areaDelItem || areaDelItem === areaActiva;
   const isSelected = item.exact
-    ? pathname === item.href
-    : pathname === item.href || pathname?.startsWith(item.href + "/");
+    ? pathname === ruta
+    : (pathname === ruta || pathname?.startsWith(ruta + "/")) && mismaConsulta;
 
   const content = (
     <ListItemButton

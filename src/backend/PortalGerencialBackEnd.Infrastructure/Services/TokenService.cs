@@ -17,7 +17,7 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
             _jwtSettings = jwtSettings.Value;
         }
 
-        public (string token, DateTimeOffset expiresAt) GenerateJwtToken(string usuario, string rol)
+        public (string token, DateTimeOffset expiresAt) GenerateJwtToken(string usuario, IEnumerable<string> roles)
         {
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = Encoding.UTF8.GetBytes(_jwtSettings.Key);
@@ -28,9 +28,10 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
                 new(JwtRegisteredClaimNames.Sub, usuario),
                 new(ClaimTypes.NameIdentifier, usuario),
                 new(ClaimTypes.Name, usuario),
-                new(ClaimTypes.Role, rol),
                 new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
+            // Un claim por rol de Oracle: [Authorize(Roles = ...)] y los permisos salen de ahí.
+            claims.AddRange(roles.Select(r => new Claim(ClaimTypes.Role, r)));
 
             var tokenDescriptor = new SecurityTokenDescriptor
             {

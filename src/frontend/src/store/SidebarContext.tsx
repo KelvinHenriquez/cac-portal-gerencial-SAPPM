@@ -13,6 +13,9 @@ interface SidebarContextType {
   setHovering: (v: boolean) => void;
   toggleMobile: () => void;
   closeMobile: () => void;
+  /** Área abierta en un reporte que existe para las dos (Permanencia): marca su opción del menú. */
+  areaActiva: string | null;
+  setAreaActiva: (area: string | null) => void;
 }
 
 const SidebarContext = createContext<SidebarContextType | undefined>(undefined);
@@ -24,6 +27,7 @@ export const SidebarProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isHovering, setIsHovering] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [areaActiva, setAreaActiva] = useState<string | null>(null);
 
   const toggleCollapsed = useCallback(() => setIsCollapsed((v) => !v), []);
   const setHovering = useCallback((v: boolean) => setIsHovering(v), []);
@@ -32,7 +36,7 @@ export const SidebarProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   return (
     <SidebarContext.Provider
-      value={{ isCollapsed, isHovering, isMobileOpen, toggleCollapsed, setHovering, toggleMobile, closeMobile }}
+      value={{ isCollapsed, isHovering, isMobileOpen, toggleCollapsed, setHovering, toggleMobile, closeMobile, areaActiva, setAreaActiva }}
     >
       {children}
     </SidebarContext.Provider>

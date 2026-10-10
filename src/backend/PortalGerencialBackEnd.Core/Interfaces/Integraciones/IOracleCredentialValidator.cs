@@ -7,7 +7,7 @@ namespace PortalGerencialBackEnd.Core.Interfaces.Integraciones
         CuentaBloqueada = 3,
         PasswordVencido = 4,
         OracleNoDisponible = 5,
-        /// <summary>Usuario y clave correctos, pero sin el rol de acceso al portal (Oracle:RolAcceso).</summary>
+        /// <summary>Usuario y clave correctos, pero sin ningún rol del portal (ROL_PORTAL_*).</summary>
         SinRolDeAcceso = 6
     }
 
@@ -18,6 +18,7 @@ namespace PortalGerencialBackEnd.Core.Interfaces.Integraciones
     /// </summary>
     public interface IOracleCredentialValidator
     {
-        Task<(ResultadoValidacionOracle Resultado, bool PasswordPorVencer)> ValidarAsync(string usuario, string password);
+        /// <returns>Además del resultado, los roles del portal (ROL_PORTAL_*) que tiene el usuario.</returns>
+        Task<(ResultadoValidacionOracle Resultado, bool PasswordPorVencer, IReadOnlyList<string> Roles)> ValidarAsync(string usuario, string password);
     }
 }

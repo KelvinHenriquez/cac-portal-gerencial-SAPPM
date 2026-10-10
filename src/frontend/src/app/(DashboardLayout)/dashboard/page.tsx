@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { Box, Card, CardActionArea, CardContent, Chip, Grid2 as Grid, Stack, Typography } from "@mui/material";
 import { IconTractor, IconProgressCheck, IconBuildingFactory2, IconClockHour4 } from "@tabler/icons-react";
-import { useAuth } from "@/store/AuthContext";
+import { useAuth, usePermisos } from "@/store/AuthContext";
 
 interface Tablero {
   titulo: string;
@@ -12,6 +12,8 @@ interface Tablero {
 }
 
 interface Area {
+  /** Código del área (CDS / IND): solo se muestra a quien la ve. */
+  codigo: string;
   nombre: string;
   tableros: Tablero[];
 }
@@ -20,6 +22,7 @@ interface Area {
 // el portal se lea desde el primer día como el lugar de todos los reportes gerenciales.
 const AREAS: Area[] = [
   {
+    codigo: "CDS",
     nombre: "Centro de Servicios (Taller)",
     tableros: [
       {
@@ -43,6 +46,7 @@ const AREAS: Area[] = [
     ],
   },
   {
+    codigo: "IND",
     nombre: "Área Industrial",
     tableros: [
       {
@@ -53,7 +57,7 @@ const AREAS: Area[] = [
       },
       {
         titulo: "Próximamente",
-        descripcion: "Reporte por ubicaciones técnicas y otros tableros del área industrial.",
+        descripcion: "Avance de órdenes industriales, reporte por ubicaciones técnicas y otros tableros (segunda fase).",
         icon: IconBuildingFactory2,
       },
     ],
@@ -105,6 +109,8 @@ function TarjetaTablero({ tablero }: { tablero: Tablero }) {
 
 export default function InicioPage() {
   const { usuario } = useAuth();
+  const permisos = usePermisos();
+  const areas = AREAS.filter((a) => permisos.veArea(a.codigo));
 
   return (
     <Stack spacing={4}>
@@ -117,7 +123,7 @@ export default function InicioPage() {
         </Typography>
       </Box>
 
-      {AREAS.map((area) => (
+      {areas.map((area) => (
         <Box key={area.nombre}>
           <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1.5 }}>
             <Typography variant="h6" fontWeight={600}>

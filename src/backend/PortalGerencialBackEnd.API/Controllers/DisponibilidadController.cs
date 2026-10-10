@@ -1,3 +1,4 @@
+using PortalGerencialBackEnd.Core.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PortalGerencialBackEnd.Core.Dtos.Disponibilidad;
@@ -8,7 +9,8 @@ namespace PortalGerencialBackEnd.API.Controllers
     /// <summary>Disponibilidad de Equipos (como el reporte de Oracle). Solo lectura.</summary>
     [ApiController]
     [Route("api/disponibilidad/{reporteId:int}")]
-    [Authorize]
+    // Reportes de Centro de Servicios: Disponibilidad y Avance se configuran por Ficha en Oracle.
+    [Authorize(Roles = Roles.VenCentroServicios)]
     public class DisponibilidadController : ControllerBase
     {
         private readonly IReporteDisponibilidadService _reporte;

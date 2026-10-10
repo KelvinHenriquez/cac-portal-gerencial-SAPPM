@@ -60,6 +60,10 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
             [ClavesParametro.HorasAlertaFrescura] = new("Actualización", "Horas sin actualizar para alertar", Validar: Entero)
         };
 
+        /// <summary>Técnicos = cómo se conecta y cuándo corre (secciones SAP y Actualización): solo TI.</summary>
+        public static bool EsTecnico(string clave) =>
+            Definiciones.TryGetValue(clave, out var d) && d.Seccion is "SAP" or "Actualización";
+
         /// <summary>Valor normalizado, o el motivo por el que no es válido.</summary>
         public static (string? Valor, string? Error) Validar(string clave, string? valor)
         {

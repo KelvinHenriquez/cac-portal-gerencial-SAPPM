@@ -1,7 +1,17 @@
 // Tipos espejo de los DTOs del backend (PortalGerencialBackEnd.Core.Dtos).
 
 // Sección 7: un único rol de solo consulta.
-export type RolUsuario = "Gerencial";
+/** Roles de Oracle del portal (10/10/2026). */
+export type RolUsuario = "ROL_PORTAL_ADMIN" | "ROL_PORTAL_PARAMETROS" | "ROL_PORTAL_GERENCIAL" | "ROL_PORTAL_CDS" | "ROL_PORTAL_IND";
+
+/** Lo que la API calcula a partir de los roles; la API además lo aplica en cada consulta. */
+export interface Permisos {
+  /** Áreas que ve: "CDS" y/o "IND". */
+  areas: string[];
+  editarParametros: boolean;
+  editarParametrosTecnicos: boolean;
+  actualizar: boolean;
+}
 
 export interface LoginRequest {
   usuario: string;
@@ -12,7 +22,8 @@ export interface LoginResponse {
   accessToken: string;
   expiresAt: string;
   usuario: string;
-  rol: RolUsuario;
+  roles: RolUsuario[];
+  permisos: Permisos;
   passwordPorVencer: boolean;
 }
 
@@ -319,6 +330,10 @@ export interface ParametroDto {
   opciones: string[] | null;
   actualizadoEn: string;
   actualizadoPor: string | null;
+  /** Técnico (SAP, horario): solo TI. */
+  tecnico: boolean;
+  /** El usuario actual puede cambiarlo. */
+  editable: boolean;
 }
 
 export interface ParametrosDto {

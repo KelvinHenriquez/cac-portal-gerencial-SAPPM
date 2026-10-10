@@ -86,11 +86,17 @@ namespace PortalGerencialBackEnd.Core.Dtos.Sistema
 
         public DateTime ActualizadoEn { get; set; }
         public string? ActualizadoPor { get; set; }
+
+        /// <summary>Técnico (SAP, horario): solo lo edita ROL_PORTAL_ADMIN.</summary>
+        public bool Tecnico { get; set; }
+
+        /// <summary>El usuario actual puede cambiar este parámetro.</summary>
+        public bool Editable { get; set; }
     }
 
     public class ParametrosDto
     {
-        /// <summary>El usuario está en Admin:Usuarios y puede cambiar valores.</summary>
+        /// <summary>El usuario puede cambiar al menos los parámetros de negocio (ROL_PORTAL_PARAMETROS o ADMIN).</summary>
         public bool PuedeEditar { get; set; }
 
         public List<ParametroDto> Parametros { get; set; } = new();

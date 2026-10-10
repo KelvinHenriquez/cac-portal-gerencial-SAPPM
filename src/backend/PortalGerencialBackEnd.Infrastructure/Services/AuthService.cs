@@ -1,5 +1,4 @@
 using System.Text.RegularExpressions;
-using PortalGerencialBackEnd.Core.Constants;
 using PortalGerencialBackEnd.Core.Dtos.Auth;
 using PortalGerencialBackEnd.Core.Exceptions;
 using PortalGerencialBackEnd.Core.Interfaces.Integraciones;
@@ -37,19 +36,20 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
             if (bloqueadoHasta != null)
                 throw new TooManyRequestsException(MensajeBloqueo(bloqueadoHasta.Value));
 
-            var (resultado, porVencer) = await _validator.ValidarAsync(usuario, password);
+            var (resultado, porVencer, roles) = await _validator.ValidarAsync(usuario, password);
 
             switch (resultado)
             {
                 case ResultadoValidacionOracle.Valido:
                     _limiter.RegistrarExito(usuario);
-                    var (token, expiresAt) = _tokenService.GenerateJwtToken(usuario, Roles.Gerencial);
+                    var (token, expiresAt) = _tokenService.GenerateJwtToken(usuario, roles);
                     return new LoginResponseDto
                     {
                         AccessToken = token,
                         ExpiresAt = expiresAt,
                         Usuario = usuario,
-                        Rol = Roles.Gerencial,
+                        Roles = roles.ToList(),
+                        Permisos = PermisosDto.De(roles),
                         PasswordPorVencer = porVencer
                     };
 

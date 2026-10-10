@@ -1,3 +1,5 @@
+using PortalGerencialBackEnd.Core.Dtos.Auth;
+
 namespace PortalGerencialBackEnd.Core.Interfaces.Common
 {
     /// <summary>
@@ -7,6 +9,8 @@ namespace PortalGerencialBackEnd.Core.Interfaces.Common
     public interface IUserContextService
     {
         string Usuario { get; }
-        string Rol { get; }
+        /// <summary>Roles de Oracle del portal (ROL_PORTAL_*) con que inició sesión.</summary>
+        IReadOnlyList<string> Roles { get; }
+        PermisosDto Permisos { get; }
     }
 }
