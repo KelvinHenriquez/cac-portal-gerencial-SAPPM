@@ -12,11 +12,17 @@ namespace PortalGerencialBackEnd.Infrastructure.Jobs
 {
     /// <summary>
     /// Background Service del job (patrón "Background Services" de TPresto): una corrida diaria a
-    /// la hora de JOB.HORA_CORRIDA_DIARIA, más una al arrancar si hoy todavía no hubo una exitosa
-    /// (p. ej. el servidor estuvo apagado a esa hora). Se apaga con Job:Habilitado=false.
+    /// la hora de JOB.HORA_CORRIDA_DIARIA y, si esa falla, un reintento cada hora durante el día.
+    /// Mira el reloj cada minuto en vez de dormir hasta la hora: una espera larga se atrasa si el
+    /// servidor se pausa (respaldo de la VM, Docker/WSL dormido) y la corrida se perdía (10/10/2026).
+    /// Si el servidor estuvo apagado a esa hora, corre al arrancar. Se apaga con Job:Habilitado=false.
     /// </summary>
     public class ActualizacionProgramadaService : BackgroundService
     {
+        private static readonly TimeSpan Revision = TimeSpan.FromMinutes(1);
+        private static readonly TimeSpan Reintento = TimeSpan.FromHours(1);
+        private static readonly TimeSpan RelecturaHora = TimeSpan.FromMinutes(15);
+
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly CoordinadorCorridas _coordinador;
         private readonly TimeProvider _time;
@@ -45,26 +51,55 @@ namespace PortalGerencialBackEnd.Infrastructure.Jobs
                 return;
             }
 
+            var hora = new TimeSpan(5, 0, 0);
+            DateTime? horaLeida = null, hechaPara = null, ultimoIntento = null;
             try
             {
                 // Deja que la API termine de arrancar y de aplicar migraciones.
                 await Task.Delay(TimeSpan.FromSeconds(20), _time, stoppingToken);
 
-                if (!await HuboCorridaExitosaHoyAsync())
-                    await CorrerAsync(stoppingToken);
-
                 while (!stoppingToken.IsCancellationRequested)
                 {
-                    var espera = await TiempoHastaProximaCorridaAsync();
-                    _logger.LogInformation("Próxima corrida programada en {Horas:F1} h.", espera.TotalHours);
-                    await Task.Delay(espera, _time, stoppingToken);
-                    await CorrerAsync(stoppingToken);
+                    var ahora = _time.GetLocalNow().DateTime;
+                    if (horaLeida == null || ahora - horaLeida >= RelecturaHora)
+                    {
+                        var leida = await LeerHoraAsync(hora);
+                        if (horaLeida == null || leida != hora)
+                            _logger.LogInformation("Corrida diaria a las {Hora}; si falla, se reintenta cada hora.", leida.ToString(@"hh\:mm"));
+                        hora = leida;
+                        horaLeida = ahora;
+                    }
+
+                    var objetivo = ahora.Date + hora;
+                    if (hechaPara != objetivo && TocaIntentar(ahora, hora, ultimoIntento))
+                    {
+                        if (await UltimaExitosaAsync() is { } ok && ok >= objetivo)
+                            hechaPara = objetivo; // ya corrió hoy después de la hora (p. ej. a mano)
+                        else
+                        {
+                            ultimoIntento = ahora;
+                            await CorrerAsync(stoppingToken);
+                        }
+                    }
+
+                    await Task.Delay(Revision, _time, stoppingToken);
                 }
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {
                 // apagado normal
             }
+        }
+
+        /// <summary>
+        /// ¿Toca intentar la corrida del día? Ya pasó la hora y no se intentó desde entonces, o el
+        /// último intento fue hace una hora o más. Si ya hay una exitosa lo decide el job con la bitácora.
+        /// </summary>
+        public static bool TocaIntentar(DateTime ahora, TimeSpan hora, DateTime? ultimoIntento)
+        {
+            var objetivo = ahora.Date + hora;
+            if (ahora < objetivo) return false;
+            return ultimoIntento == null || ultimoIntento < objetivo || ahora - ultimoIntento >= Reintento;
         }
 
         private async Task CorrerAsync(CancellationToken ct)
@@ -84,44 +119,42 @@ namespace PortalGerencialBackEnd.Infrastructure.Jobs
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
                 // Los errores de cada paso ya quedan en la bitácora; esto es para fallas fuera de un
-                // paso (p. ej. Oracle caído). El servicio sigue vivo para la próxima corrida.
+                // paso (p. ej. Oracle caído). Se reintenta en una hora.
                 _logger.LogError(ex, "La corrida programada falló.");
             }
         }
 
-        private async Task<bool> HuboCorridaExitosaHoyAsync()
+        /// <summary>Inicio de la última corrida que terminó bien (su último paso, el avance, quedó OK).</summary>
+        private async Task<DateTime?> UltimaExitosaAsync()
         {
             try
             {
                 using var scope = _scopeFactory.CreateScope();
                 var db = scope.ServiceProvider.GetRequiredService<PortalGerencialDbContext>();
-                var hoy = _time.GetLocalNow().Date;
-                return await db.LogExtracciones.AnyAsync(l =>
-                    l.Fuente == FuentesLog.CalcAvance && l.Estado == EstadosLog.Ok && l.Inicio >= hoy);
+                return await db.LogExtracciones
+                    .Where(l => l.Fuente == FuentesLog.CalcAvance && l.Estado == EstadosLog.Ok)
+                    .MaxAsync(l => (DateTime?)l.Inicio);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "No se pudo consultar la bitácora al arrancar.");
-                return true; // ante la duda, esperar a la hora programada
+                _logger.LogError(ex, "No se pudo consultar la bitácora.");
+                return null;
             }
         }
 
-        private async Task<TimeSpan> TiempoHastaProximaCorridaAsync()
+        private async Task<TimeSpan> LeerHoraAsync(TimeSpan actual)
         {
-            var hora = new TimeSpan(5, 0, 0);
             try
             {
                 using var scope = _scopeFactory.CreateScope();
                 var db = scope.ServiceProvider.GetRequiredService<PortalGerencialDbContext>();
-                hora = (await ParametrosPortal.CargarAsync(db)).Hora(ClavesParametro.HoraCorridaDiaria, hora);
+                return (await ParametrosPortal.CargarAsync(db)).Hora(ClavesParametro.HoraCorridaDiaria, actual);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "No se pudo leer la hora de corrida; se usa {Hora}.", hora);
+                _logger.LogError(ex, "No se pudo leer la hora de corrida; se usa {Hora}.", actual);
+                return actual;
             }
-
-            var ahora = _time.GetLocalNow().DateTime;
-            return ProximaCorrida(ahora, hora) - ahora;
         }
 
         /// <summary>Próxima vez que toca la corrida diaria a la hora <paramref name="hora"/>.</summary>

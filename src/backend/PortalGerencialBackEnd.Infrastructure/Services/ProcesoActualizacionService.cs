@@ -55,7 +55,10 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
         public async Task<CorridaDto> EjecutarAsync(string origen, DateTime? desdeForzado = null, CancellationToken ct = default)
         {
             var corridaId = Guid.NewGuid().ToString();
-            var origenLog = $"{origen}:{_modo}";
+            // LOG_EXTRACCION_PGPM.ORIGEN es de 20: "PROGRAMADA:PRODUCTION" no cabía y la corrida de las
+            // 05:00 fallaba al registrar su primer paso (10/10/2026). En producción se anota "SAP".
+            var origenLog = $"{origen}:{(_modo == "PRODUCTION" ? "SAP" : _modo)}";
+            if (origenLog.Length > 20) origenLog = origenLog[..20];
             var parametros = await ParametrosPortal.CargarAsync(_db);
             var cargaInicial = parametros.Fecha(ClavesParametro.FechaCargaInicial, new DateTime(Ahora.Year, 1, 1));
 

@@ -55,4 +55,18 @@ public class MonitoreoTests
         Assert.Equal(new DateTime(anio, mes, dia, hh, mm, 0),
             ActualizacionProgramadaService.ProximaCorrida(ahora, new TimeSpan(5, 0, 0)));
     }
+
+    [Theory]
+    [InlineData(4, 59, null, false)]            // antes de la hora
+    [InlineData(5, 0, null, true)]              // a la hora, sin intento
+    [InlineData(14, 0, null, true)]             // el servidor arrancó tarde: corre igual
+    [InlineData(5, 30, "2026-10-02 05:00", false)] // falló a las 5: espera la hora
+    [InlineData(6, 0, "2026-10-02 05:00", true)]   // reintento una hora después
+    [InlineData(5, 0, "2026-10-01 05:00", true)]   // el intento de ayer no cuenta
+    public void Toca_intentar_la_corrida_diaria(int h, int m, string? ultimoIntento, bool esperado)
+    {
+        var ahora = new DateTime(2026, 10, 2, h, m, 0);
+        DateTime? intento = ultimoIntento == null ? null : DateTime.Parse(ultimoIntento, System.Globalization.CultureInfo.InvariantCulture);
+        Assert.Equal(esperado, ActualizacionProgramadaService.TocaIntentar(ahora, new TimeSpan(5, 0, 0), intento));
+    }
 }
