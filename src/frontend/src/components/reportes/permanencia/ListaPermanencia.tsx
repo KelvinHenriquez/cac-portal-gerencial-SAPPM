@@ -49,18 +49,29 @@ export default function ListaPermanencia({
             key={f.codigo}
             sx={{
               display: "grid",
-              gridTemplateColumns: { xs: "1fr", md: "minmax(180px, 26%) 1fr 150px" },
+              gridTemplateColumns: { xs: "1fr", md: "minmax(180px, 26%) 1fr 190px" },
               gap: { xs: 0.5, md: 2 },
               alignItems: "center",
             }}
           >
-            <Button
-              variant="text"
-              onClick={() => onElegir(f)}
-              sx={{ justifyContent: "flex-start", textAlign: "left", p: 0, minWidth: 0, fontWeight: 600, lineHeight: 1.3 }}
-            >
-              {nombre(f)}
-            </Button>
+            <Stack direction="row" alignItems="baseline" spacing={1} sx={{ minWidth: 0 }}>
+              <Button
+                variant="text"
+                onClick={() => onElegir(f)}
+                sx={{ justifyContent: "flex-start", textAlign: "left", p: 0, minWidth: 0, fontWeight: 600, lineHeight: 1.3 }}
+              >
+                {nombre(f)}
+              </Button>
+              <Typography
+                component="span"
+                variant="caption"
+                color="text.secondary"
+                title="MTBF: tiempo medio entre fallas"
+                sx={{ whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}
+              >
+                MTBF {dias(f.mtbfHoras)} d
+              </Typography>
+            </Stack>
             {f.ordenes > 0 ? (
               <BarraPasos pasos={f.pasos} escala={escala} />
             ) : (
@@ -72,7 +83,7 @@ export default function ListaPermanencia({
               <span title="MTTR: tiempo medio de restauración"><b>{dias(f.promedioHoras)} d</b></span>
               <Typography component="span" variant="caption" color="text.secondary">
                 {" "}
-                · MTBF {dias(f.mtbfHoras)} d · {f.ordenes} órd.{f.ordenesEnCurso > 0 ? ` · ${f.ordenesEnCurso} en curso` : ""}
+                · {f.ordenes} órd.{f.ordenesEnCurso > 0 ? ` · ${f.ordenesEnCurso} en curso` : ""}
               </Typography>
             </Typography>
           </Box>
