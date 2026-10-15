@@ -198,7 +198,7 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
             string Ficha(StgSapOrden o) => o.EquipoSapId != null && mapeo.ClavePorEquipoSap.TryGetValue(o.EquipoSapId, out var l) ? l : "";
 
             var actividades = ordenes
-                .SelectMany(o => o.Operaciones.Select(op => (Orden: o, Op: op, Terminada: ReglasPortal.Terminada(op, reglas))))
+                .SelectMany(o => ReglasPortal.Actividades(o).Select(op => (Orden: o, Op: op, Terminada: ReglasPortal.Terminada(op, reglas))))
                 .Where(x => EnSemana(x.Terminada))
                 .Select(x => new ActividadDto
                 {
@@ -266,7 +266,7 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
                 return fila;
             }
 
-            var todas = ordenes.SelectMany(o => o.Operaciones).ToList();
+            var todas = ordenes.SelectMany(ReglasPortal.Actividades).ToList();
             return new AnalisisAvanceDto
             {
                 FamiliaCodigo = familiaCodigo,
@@ -285,7 +285,7 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
                             Estado = o.EstadoOrden,
                             FechaRealInicio = o.FechaInicioReal,
                             FechaRealFin = o.FechaCierre ?? o.FechaFinReal
-                        }, o.Operaciones.ToList());
+                        }, ReglasPortal.Actividades(o).ToList());
                     })
                     .OrderBy(e => e.Ficha)
                     .ToList(),

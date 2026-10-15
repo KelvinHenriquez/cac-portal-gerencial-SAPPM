@@ -212,6 +212,19 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
 
         /// <summary>Actividad terminada = con horas reales; cuenta en la fecha en que se confirmaron.</summary>
         /// <summary>
+        /// Actividades de la orden que cuentan en el avance: si una operación tiene suboperaciones
+        /// ("0010/0005"), la operación madre ("0010") no es una actividad más. El importador ya la
+        /// descarta cuando llega junto con sus suboperaciones, pero un delta puede traer solo la madre
+        /// (visto el 15/10/2026: 77 actividades en vez de 76). Las no notificables ya vienen filtradas.
+        /// </summary>
+        public static IEnumerable<StgSapOperacion> Actividades(StgSapOrden orden)
+        {
+            var madres = orden.Operaciones.Where(o => o.Operacion.Contains('/'))
+                .Select(o => o.Operacion[..o.Operacion.IndexOf('/')]).ToHashSet();
+            return orden.Operaciones.Where(o => o.Operacion.Contains('/') || !madres.Contains(o.Operacion));
+        }
+
+        /// <summary>
         /// Fecha en que la actividad quedó terminada, o null: tiene horas reales y, si así lo dice
         /// AVANCE.ACTIVIDAD_TERMINADA, la confirmación final. Cuenta en la semana de la última confirmación.
         /// </summary>

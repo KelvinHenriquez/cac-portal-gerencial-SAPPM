@@ -100,4 +100,14 @@ public class ReglasPortalTests
         Assert.Equal(new DateTime(2026, 8, 25, 11, 4, 0), ReglasPortal.OrdenTerminada(orden, Reglas(false)));
         Assert.Null(ReglasPortal.OrdenTerminada(abierta, Reglas(true)));   // sin cerrar no cuenta
     }
+
+    [Fact]
+    public void La_operacion_madre_no_cuenta_como_actividad_si_tiene_suboperaciones()
+    {
+        var orden = new PortalGerencialBackEnd.Core.Entities.Sap.StgSapOrden { OrdenSapId = "230000000208" };
+        foreach (var op in new[] { "0010", "0010/0005", "0010/0010", "0020" })
+            orden.Operaciones.Add(new PortalGerencialBackEnd.Core.Entities.Sap.StgSapOperacion { OrdenSapId = orden.OrdenSapId, Operacion = op });
+
+        Assert.Equal(new[] { "0010/0005", "0010/0010", "0020" }, ReglasPortal.Actividades(orden).Select(o => o.Operacion).OrderBy(o => o));
+    }
 }

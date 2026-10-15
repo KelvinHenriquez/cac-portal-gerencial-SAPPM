@@ -182,5 +182,22 @@ public class SapWebServiceTests
         Assert.Equal(new[] { "0010/0005", "0010/0010", "0020" }, ops.Select(o => o.Operacion).OrderBy(o => o));
         Assert.Equal(new DateTime(2026, 7, 20), ops.Single(o => o.Operacion == "0010/0005").FechaUltimaConf);
         Assert.Null(ops.Single(o => o.Operacion == "0010/0010").FechaUltimaConf);
+        Assert.All(ops, o => Assert.Null(o.Notificable)); // sin STEUS en la respuesta no se sabe: cuentan
+    }
+
+    /// <summary>STEUS agregado por el ABAP el 15/10/2026: vacío = no notificable (captura de IW32 del Taller).</summary>
+    [Fact]
+    public async Task Clave_de_control_vacia_marca_la_actividad_como_no_notificable()
+    {
+        var (cliente, sap) = Crear();
+        string Op(string uvorn, string steus) =>
+            $"<AUFNR>000230000000164</AUFNR><VORNR>0010</VORNR><UVORN>{uvorn}</UVORN><LTXA1>Act {uvorn}</LTXA1><STEUS>{steus}</STEUS>" +
+            "<ISMNW_TOTAL>1.0</ISMNW_TOTAL><ISMNE>H</ISMNE><FECHA_ULTIMA_CONF>2026-07-20</FECHA_ULTIMA_CONF><CONF_FINAL>X</CONF_FINAL>";
+        sap.Responder = m => (HttpStatusCode.OK, Respuesta(m, "ZT_OPERACIONES_O", Op("0005", "PM01"), Op("0010", "")));
+
+        var ops = await cliente.GetOperacionesModificadasDesdeAsync(new DateTime(2026, 7, 1));
+
+        Assert.True(ops.Single(o => o.Operacion == "0010/0005").Notificable);
+        Assert.False(ops.Single(o => o.Operacion == "0010/0010").Notificable);
     }
 }
