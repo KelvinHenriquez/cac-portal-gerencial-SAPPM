@@ -19,6 +19,10 @@ server {
 
     client_max_body_size 1m;
 
+    # Solo el propio portal y SAP Fiori (mosaico del Launchpad) pueden mostrarlo dentro de un
+    # iframe; cualquier otra página queda bloqueada (clickjacking). FIORI_ORIGEN viene del compose.
+    add_header Content-Security-Policy "frame-ancestors 'self' ${FIORI_ORIGEN}" always;
+
     # "Actualizar ahora" espera la corrida completa (SAP + recálculo): la primera carga o una
     # recarga desde una fecha pasan de varios minutos. Mismo tope que el frontend (30 min).
     location = /api/sistema/corridas {

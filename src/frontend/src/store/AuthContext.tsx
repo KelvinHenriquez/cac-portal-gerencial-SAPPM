@@ -1,9 +1,8 @@
 "use client";
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
-import Cookies from "js-cookie";
 import { useRouter } from "next/navigation";
 import { authService } from "@/services/auth/authService";
-import { ACCESS_TOKEN_COOKIE } from "@/services/axios";
+import { tokenSesion } from "@/services/axios";
 import { LoginResponse, Permisos, RolUsuario } from "@/types";
 
 const USER_STORAGE_KEY = "portalgerencial_user";
@@ -26,7 +25,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 function guardarSesion(response: LoginResponse) {
   const expires = new Date(response.expiresAt);
-  Cookies.set(ACCESS_TOKEN_COOKIE, response.accessToken, { expires, sameSite: "lax" });
+  tokenSesion.guardar(response.accessToken, expires);
   const sesion: SesionUsuario = {
     usuario: response.usuario,
     roles: response.roles,
@@ -43,7 +42,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const router = useRouter();
 
   useEffect(() => {
-    const token = Cookies.get(ACCESS_TOKEN_COOKIE);
+    const token = tokenSesion.leer();
     const raw = typeof window !== "undefined" ? localStorage.getItem(USER_STORAGE_KEY) : null;
     if (token && raw) {
       try {
@@ -51,7 +50,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Sesión de antes de los roles (10/10/2026): sin permisos, hay que volver a entrar.
         if (sesion?.permisos?.areas) setUsuario(sesion);
         else {
-          Cookies.remove(ACCESS_TOKEN_COOKIE);
+          tokenSesion.borrar();
           localStorage.removeItem(USER_STORAGE_KEY);
         }
       } catch {
@@ -69,7 +68,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const logout = useCallback(() => {
-    Cookies.remove(ACCESS_TOKEN_COOKIE);
+    tokenSesion.borrar();
     localStorage.removeItem(USER_STORAGE_KEY);
     setUsuario(null);
     router.push("/auth/login");

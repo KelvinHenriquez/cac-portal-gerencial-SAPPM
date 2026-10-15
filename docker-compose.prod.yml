@@ -68,6 +68,9 @@ services:
     # (8443 por defecto). La plantilla recibe el puerto para que la redirección http→https lo conserve.
     environment:
       PUERTO_HTTPS: ${PUERTO_HTTPS:-8443}
+      # SAP Fiori Launchpad que muestra el portal en un iframe (Content-Security-Policy
+      # frame-ancestors): desarrollo, calidad y producción, separados por espacio.
+      FIORI_ORIGEN: ${FIORI_ORIGEN:-https://vhazcwc1wd01.sap.cac.com:44380 https://vhazcwc1wd01.sap.cac.com:44381 https://vhazcwc3wd01.sap.cac.com:44380}
     ports:
       - "${PUERTO_HTTP:-8081}:80"
       - "${PUERTO_HTTPS:-8443}:443"
