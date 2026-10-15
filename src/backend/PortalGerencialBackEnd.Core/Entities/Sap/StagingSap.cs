@@ -102,6 +102,12 @@ namespace PortalGerencialBackEnd.Core.Entities.Sap
 
         public bool ConfFinal { get; set; }
 
+        /// <summary>
+        /// False = no notificable (sin clave de control, STEUS vacío en SAP): no cuenta en el avance.
+        /// Null = SAP no informó la clave de control (el servicio todavía no la trae): cuenta.
+        /// </summary>
+        public bool? Notificable { get; set; }
+
         /// <summary>True = del plan original de la orden; false = agregada en la reparación (Real No Programado).</summary>
         public bool Programada { get; set; } = true;
 

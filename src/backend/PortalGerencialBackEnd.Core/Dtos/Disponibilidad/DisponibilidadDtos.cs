@@ -124,6 +124,11 @@ namespace PortalGerencialBackEnd.Core.Dtos.Disponibilidad
 
         public string EstadoActual { get; set; } = default!;
         public string? Observacion { get; set; }
+        public string? AvisoSapId { get; set; }
+        /// <summary>Del aviso: true = se marcó que la máquina quedó parada; false = puede seguir trabajando; null = sin aviso.</summary>
+        public bool? AvisoParada { get; set; }
+        public DateTime? InicioAveria { get; set; }
+        public DateTime? FinAveria { get; set; }
     }
 
     public class HoraDisponibilidadDto

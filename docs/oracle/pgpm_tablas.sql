@@ -1219,3 +1219,47 @@ END;
 
 /
 
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "EF_MIGRACIONES_PGPM" WHERE "MigrationId" = N'20261015184112_ActividadFinalYNotificable';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'ALTER TABLE "STG_SAP_OPERACION_PGPM" ADD "NOTIFICABLE" NUMBER(1)'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "EF_MIGRACIONES_PGPM" WHERE "MigrationId" = N'20261015184112_ActividadFinalYNotificable';
+IF v_Count = 0 THEN
+
+    BEGIN
+    INSERT INTO "PARAMETRO_PGPM" ("CLAVE", "ACTUALIZADO_EN", "ACTUALIZADO_POR", "DESCRIPCION", "VALOR")
+    VALUES ('AVANCE.ACTIVIDAD_TERMINADA', TO_DATE('2026-10-01 00:00:00', 'YYYY-MM-DD HH24:MI:SS'), NULL, 'Avance por actividades: una actividad cuenta como terminada con horas reales Y la confirmación final de SAP (CONFIRMACION_FINAL, decisión del 15/10/2026) o con cualquier hora confirmada (HORAS). Cuenta en la semana de su última confirmación.', 'CONFIRMACION_FINAL');
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "EF_MIGRACIONES_PGPM" WHERE "MigrationId" = N'20261015184112_ActividadFinalYNotificable';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "EF_MIGRACIONES_PGPM" ("MigrationId", "ProductVersion")
+    VALUES (N''20261015184112_ActividadFinalYNotificable'', N''8.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+

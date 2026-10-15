@@ -25,6 +25,7 @@ import { disponibilidadService } from "@/services/disponibilidad/disponibilidadS
 import { ApiError, DetalleSemanaDto, DiaDetalleDto, HoraDisponibilidadDto, OrdenDetalleDto } from "@/types";
 import { fechaConDia, fechaCorta, fechaHora, fechaLarga } from "@/utils/formato";
 import { COLOR_TEXTO, num, Pct, TIPO_ORDEN } from "./comunes";
+import AvisoParada from "./AvisoParada";
 
 export interface SeleccionSemana {
   asignacionId: number;
@@ -230,7 +231,14 @@ export default function DialogoDisponibilidadSemanal({
                         onClick={() => setOrden(o)}
                         sx={{ cursor: "pointer" }}
                       >
-                        <TableCell sx={{ fontVariantNumeric: "tabular-nums" }}>{o.ordenSapId}</TableCell>
+                        <TableCell sx={{ fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>
+                          {o.ordenSapId}
+                          {o.avisoParada && (
+                            <Typography component="span" variant="caption" color="error.main" fontWeight={700} sx={{ ml: 0.75 }} title="El aviso marcó la máquina parada">
+                              ● parada
+                            </Typography>
+                          )}
+                        </TableCell>
                         <TableCell>{TIPO_ORDEN[o.tipo] ?? o.tipo}</TableCell>
                         <TableCell sx={{ whiteSpace: "nowrap" }}>{fechaHora(o.desde)}</TableCell>
                         <TableCell sx={{ whiteSpace: "nowrap" }}>{o.hasta ? fechaHora(o.hasta) : "Abierta"}</TableCell>
@@ -254,6 +262,7 @@ export default function DialogoDisponibilidadSemanal({
                     OBS. — {orden.ordenSapId} · {orden.equipoDescripcion ?? orden.ficha} · desde {fechaCorta(orden.desde)}
                   </Typography>
                   <Typography variant="body2">{orden.observacion ?? "—"}</Typography>
+                  <AvisoParada parada={orden.avisoParada} inicio={orden.inicioAveria} fin={orden.finAveria} conFechas />
                 </Paper>
               )}
             </Grid>

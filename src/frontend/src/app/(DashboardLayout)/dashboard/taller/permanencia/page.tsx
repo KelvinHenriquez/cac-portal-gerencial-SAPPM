@@ -7,6 +7,7 @@ import {
   Breadcrumbs,
   Grid2 as Grid,
   Link,
+  MenuItem,
   Paper,
   Stack,
   TextField,
@@ -43,12 +44,33 @@ function guardarPreferencias(p: { area: string; vista: VistaPermanencia }) {
 
 const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 
-function periodoPorDefecto(): PeriodoPermanencia {
+// Rangos rápidos (pedido del Taller, 14/10/2026): días hacia atrás desde hoy; 0 = todo lo que hay.
+const RANGOS = [
+  { dias: 7, nombre: "Últimos 7 días" },
+  { dias: 28, nombre: "Últimos 28 días" },
+  { dias: 90, nombre: "Últimos 90 días" },
+  { dias: 365, nombre: "Últimos 365 días" },
+  { dias: 0, nombre: "Todo" },
+];
+const DESDE_TODO = "2000-01-01";
+
+function periodoDeRango(diasAtras: number): PeriodoPermanencia {
   const hasta = new Date();
+  if (diasAtras === 0) return { desde: DESDE_TODO, hasta: iso(hasta) };
   const desde = new Date(hasta);
-  desde.setMonth(desde.getMonth() - 3);
-  desde.setDate(desde.getDate() + 1);
+  desde.setDate(desde.getDate() - diasAtras + 1);
   return { desde: iso(desde), hasta: iso(hasta) };
+}
+
+const periodoPorDefecto = () => periodoDeRango(90);
+
+/** El rango rápido que corresponde al período, o "" si las fechas se eligieron a mano. */
+function rangoDe(p: PeriodoPermanencia): string {
+  const r = RANGOS.find((x) => {
+    const q = periodoDeRango(x.dias);
+    return q.desde === p.desde && q.hasta === p.hasta;
+  });
+  return r ? String(r.dias) : "";
 }
 
 function Indicador({ titulo, valor, detalle }: { titulo: string; valor: string; detalle?: string }) {
@@ -185,6 +207,21 @@ function Permanencia() {
             ))}
           </ToggleButtonGroup>
           <Stack direction="row" spacing={1}>
+            <TextField
+              select
+              size="small"
+              label="Rango"
+              value={rangoDe(periodo)}
+              onChange={(e) => e.target.value !== "" && setPeriodo(periodoDeRango(Number(e.target.value)))}
+              sx={{ minWidth: 170 }}
+              slotProps={{ select: { displayEmpty: true, renderValue: (v) => RANGOS.find((r) => String(r.dias) === v)?.nombre ?? "Personalizado" } }}
+            >
+              {RANGOS.map((r) => (
+                <MenuItem key={r.dias} value={String(r.dias)}>
+                  {r.nombre}
+                </MenuItem>
+              ))}
+            </TextField>
             <TextField
               size="small"
               type="date"

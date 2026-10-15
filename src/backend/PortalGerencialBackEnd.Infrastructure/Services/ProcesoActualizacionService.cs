@@ -248,6 +248,7 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
                     o.FechaPrimeraConf = dto.FechaPrimeraConf;
                     o.FechaUltimaConf = dto.FechaUltimaConf;
                     o.ConfFinal = dto.ConfFinal;
+                    o.Notificable = dto.Notificable;
                     o.Programada = dto.Programada;
                     o.UsuarioCreacion = dto.UsuarioCreacion;
                     o.ActualizadoEn = ahora;
@@ -568,7 +569,8 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
             var clases = c.ClasesAvance.ToList();
             var ordenes = await _db.StgSapOrdenes.AsNoTracking()
                 .Where(o => o.EquipoSapId != null && clases.Contains(o.ClaseOrden))
-                .Include(o => o.Operaciones)
+                // Las no notificables (sin clave de control en SAP) no son trabajo que se confirme.
+                .Include(o => o.Operaciones.Where(op => op.Notificable != false))
                 .ToListAsync();
             ReglasPortal.AplicarHojaRuta(ordenes, c.UsuariosHojaRuta);
 
@@ -583,7 +585,7 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
                     var delPrograma = ordenes.Where(o => ReglasPortal.EsDelPrograma(o, c.Equipos, reporte, equiposPrograma, c.Reglas)).ToList();
                     var ordenesAvance = delPrograma.Select(o => new OrdenAvance(o.OrdenSapId, ReglasPortal.OrdenTerminada(o, c.Reglas))).ToList();
                     var actividades = delPrograma.SelectMany(o => o.Operaciones)
-                        .Select(op => new ActividadAvance(ReglasPortal.PesoActividad(op, c.Reglas), ReglasPortal.Terminada(op), op.Programada))
+                        .Select(op => new ActividadAvance(ReglasPortal.PesoActividad(op, c.Reglas), ReglasPortal.Terminada(op, c.Reglas), op.Programada))
                         .ToList();
 
                     var filas = CalculadoraAvance.Calcular(reporte.ReporteId, familia.FamiliaCodigo, ReglasPortal.PlanEnCalendario(reporte, familia), c.BasePlan, ordenesAvance, actividades);

@@ -65,6 +65,10 @@ namespace PortalGerencialBackEnd.Core.Dtos.Permanencia
         public string ClaseOrden { get; set; } = default!;
         public string? Descripcion { get; set; }
         public string? AvisoSapId { get; set; }
+        /// <summary>Del aviso: true = se marcó que la máquina quedó parada; false = puede seguir trabajando; null = sin aviso.</summary>
+        public bool? AvisoParada { get; set; }
+        public DateTime? InicioAveria { get; set; }
+        public DateTime? FinAveria { get; set; }
         public bool Terminada { get; set; }
         public DateTime Inicio { get; set; }
         public DateTime? FechaAviso { get; set; }

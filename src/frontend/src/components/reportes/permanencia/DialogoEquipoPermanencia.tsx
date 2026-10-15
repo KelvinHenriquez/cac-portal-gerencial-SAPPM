@@ -28,6 +28,7 @@ import { permanenciaService, PeriodoPermanencia } from "@/services/permanencia/p
 import { ApiError, EquipoPermanenciaDto, OrdenPermanenciaDto } from "@/types";
 import { fechaHora } from "@/utils/formato";
 import { BarraPasos, dias, duracion, LeyendaPasos } from "./comunesPermanencia";
+import AvisoParada from "../AvisoParada";
 
 /** Los hitos de una orden, en orden, con el tiempo que tomó llegar a cada uno. */
 function PasosOrden({ orden, esperaConfigurada }: { orden: OrdenPermanenciaDto; esperaConfigurada: boolean }) {
@@ -161,6 +162,7 @@ export default function DialogoEquipoPermanencia({
                           <Typography variant="caption" color="text.secondary" display="block">
                             {o.descripcion}
                           </Typography>
+                          <AvisoParada parada={o.avisoParada} />
                         </TableCell>
                         <TableCell sx={{ whiteSpace: "nowrap" }}>{fechaHora(o.inicio)}</TableCell>
                         <TableCell sx={{ whiteSpace: "nowrap" }}>
@@ -176,6 +178,11 @@ export default function DialogoEquipoPermanencia({
                       <TableRow>
                         <TableCell colSpan={6} sx={{ p: 0, borderBottom: abierta === o.ordenSapId ? undefined : "none" }}>
                           <Collapse in={abierta === o.ordenSapId} unmountOnExit>
+                            {o.avisoParada != null && (
+                              <Box sx={{ px: 2, pt: 1.5 }}>
+                                <AvisoParada parada={o.avisoParada} inicio={o.inicioAveria} fin={o.finAveria} conFechas />
+                              </Box>
+                            )}
                             <PasosOrden orden={o} esperaConfigurada={esperaConfigurada} />
                           </Collapse>
                         </TableCell>

@@ -57,6 +57,9 @@ namespace PortalGerencialBackEnd.Core.Dtos.Sap
         public DateTime? FechaPrimeraConf { get; set; }
         public DateTime? FechaUltimaConf { get; set; }
         public bool ConfFinal { get; set; }
+
+        /// <summary>False = no notificable (STEUS vacío); null = SAP no informó la clave de control.</summary>
+        public bool? Notificable { get; set; }
         public bool Programada { get; set; } = true;
         public string? UsuarioCreacion { get; set; }
         public DateTime FechaModificacion { get; set; }

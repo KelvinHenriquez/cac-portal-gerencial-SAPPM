@@ -326,12 +326,12 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
             }
 
             var avisoIds = ordenes.Values.Select(o => o.AvisoId).OfType<string>().Distinct().ToList();
-            var avisos = new Dictionary<string, string?>();
+            var avisos = new Dictionary<string, (string? Texto, bool Parada, DateTime? Inicio, DateTime? Fin)>();
             foreach (var lote in avisoIds.Chunk(TamanoLote))
             {
                 foreach (var a in await _db.StgSapAvisos.AsNoTracking().Where(a => lote.Contains(a.AvisoSapId))
-                             .Select(a => new { a.AvisoSapId, a.Texto }).ToListAsync())
-                    avisos[a.AvisoSapId] = a.Texto;
+                             .Select(a => new { a.AvisoSapId, a.Texto, a.Parada, a.InicioAveria, a.FinAveria }).ToListAsync())
+                    avisos[a.AvisoSapId] = (a.Texto, a.Parada, a.InicioAveria, a.FinAveria);
             }
 
             return ventanas
@@ -339,7 +339,8 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
                 .Select(v =>
                 {
                     var o = ordenes.GetValueOrDefault(v.OrdenSapId);
-                    var avisoTexto = o.AvisoId != null ? avisos.GetValueOrDefault(o.AvisoId) : null;
+                    var aviso = o.AvisoId != null && avisos.TryGetValue(o.AvisoId, out var av) ? av : ((string? Texto, bool Parada, DateTime? Inicio, DateTime? Fin)?)null;
+                    var avisoTexto = aviso?.Texto;
                     return new OrdenDetalleDto
                     {
                         OrdenSapId = v.OrdenSapId,
@@ -350,7 +351,11 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
                         Desde = v.Desde,
                         Hasta = v.Hasta >= referencia ? null : v.Hasta,
                         EstadoActual = o.Estado ?? "",
-                        Observacion = avisoTexto != null ? $"{o.Desc} (aviso {o.AvisoId}: {avisoTexto})" : o.Desc
+                        Observacion = avisoTexto != null ? $"{o.Desc} (aviso {o.AvisoId}: {avisoTexto})" : o.Desc,
+                        AvisoSapId = o.AvisoId,
+                        AvisoParada = aviso?.Parada,
+                        InicioAveria = aviso?.Inicio,
+                        FinAveria = aviso?.Fin
                     };
                 })
                 .ToList();

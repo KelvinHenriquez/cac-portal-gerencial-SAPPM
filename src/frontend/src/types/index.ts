@@ -169,6 +169,11 @@ export interface OrdenDetalleDto {
   hasta: string | null;
   estadoActual: string;
   observacion: string | null;
+  avisoSapId: string | null;
+  /** Del aviso: true = máquina parada; false = puede seguir trabajando; null = sin aviso. */
+  avisoParada: boolean | null;
+  inicioAveria: string | null;
+  finAveria: string | null;
 }
 
 export interface DetalleSemanaDto {
@@ -392,6 +397,10 @@ export interface OrdenPermanenciaDto {
   claseOrden: string;
   descripcion: string | null;
   avisoSapId: string | null;
+  /** Del aviso: true = máquina parada; false = puede seguir trabajando; null = sin aviso. */
+  avisoParada: boolean | null;
+  inicioAveria: string | null;
+  finAveria: string | null;
   terminada: boolean;
   inicio: string;
   fechaAviso: string | null;

@@ -1161,6 +1161,13 @@ namespace PortalGerencialBackEnd.Infrastructure.Persistence.Migrations
                         },
                         new
                         {
+                            Clave = "AVANCE.ACTIVIDAD_TERMINADA",
+                            ActualizadoEn = new DateTime(2026, 10, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Descripcion = "Avance por actividades: una actividad cuenta como terminada con horas reales Y la confirmación final de SAP (CONFIRMACION_FINAL, decisión del 15/10/2026) o con cualquier hora confirmada (HORAS). Cuenta en la semana de su última confirmación.",
+                            Valor = "CONFIRMACION_FINAL"
+                        },
+                        new
+                        {
                             Clave = "AVANCE.FECHA_ORDEN_TERMINADA",
                             ActualizadoEn = new DateTime(2026, 10, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             Descripcion = "Avance por órdenes: una orden cerrada cuenta en la semana de su FIN_REAL (cuando terminó el trabajo) o de su CIERRE_TECNICO en SAP (decisión del 06/10/2026: fin real).",
@@ -1443,6 +1450,10 @@ namespace PortalGerencialBackEnd.Infrastructure.Persistence.Migrations
                     b.Property<DateTime?>("FechaUltimaConf")
                         .HasColumnType("DATE")
                         .HasColumnName("FECHA_ULTIMA_CONF");
+
+                    b.Property<bool?>("Notificable")
+                        .HasColumnType("NUMBER(1)")
+                        .HasColumnName("NOTIFICABLE");
 
                     b.Property<bool>("Programada")
                         .HasColumnType("NUMBER(1)")

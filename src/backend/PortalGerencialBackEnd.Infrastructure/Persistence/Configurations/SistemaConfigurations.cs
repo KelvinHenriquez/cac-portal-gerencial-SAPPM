@@ -89,6 +89,8 @@ namespace PortalGerencialBackEnd.Infrastructure.Persistence.Configurations
                     "Código del estado de usuario 'en espera de repuestos' (p. ej. E0004). \"-\" = todavía no existe en SAP: el tiempo de espera queda dentro de la ejecución."),
                 P(ClavesParametro.PesoActividadAvance, "CANTIDAD",
                     "Avance por actividades: cuánto vale cada actividad terminada. CANTIDAD = 1 cada una, como Oracle; HORAS_PLAN = su trabajo planificado; DIAS = duración entre sus fechas plan (en SAP suelen ser iguales: daría 0) (07/10/2026)."),
+                P(ClavesParametro.ActividadTerminadaAvance, "CONFIRMACION_FINAL",
+                    "Avance por actividades: una actividad cuenta como terminada con horas reales Y la confirmación final de SAP (CONFIRMACION_FINAL, decisión del 15/10/2026) o con cualquier hora confirmada (HORAS). Cuenta en la semana de su última confirmación."),
                 P(ClavesParametro.FechaOrdenTerminadaAvance, "FIN_REAL",
                     "Avance por órdenes: una orden cerrada cuenta en la semana de su FIN_REAL (cuando terminó el trabajo) o de su CIERRE_TECNICO en SAP (decisión del 06/10/2026: fin real)."),
                 P(ClavesParametro.BasePlanAvance, "DIAS",

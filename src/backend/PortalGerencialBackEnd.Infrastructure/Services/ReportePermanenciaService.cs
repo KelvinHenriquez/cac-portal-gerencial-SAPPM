@@ -89,6 +89,11 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
                 .ToList();
             if (filas.Count == 0)
                 throw new NotFoundException($"El equipo '{equipoSapId}' no tiene órdenes correctivas.");
+            // Del aviso de cada orden: si la máquina quedó parada (14/10/2026, pedido del Taller).
+            var avisoIds = filas.Select(f => f.AvisoSapId).OfType<string>().Distinct().ToList();
+            var avisos = (await _db.StgSapAvisos.AsNoTracking().Where(a => avisoIds.Contains(a.AvisoSapId))
+                    .Select(a => new { a.AvisoSapId, a.Parada, a.InicioAveria, a.FinAveria }).ToListAsync())
+                .ToDictionary(a => a.AvisoSapId);
             var equipo = Indicador(equipoSapId, filas[0].EquipoDescripcion ?? equipoSapId, filas, d, h);
             equipo.Clave = filas[0].ClaveEquipo;
             return new EquipoPermanenciaDto
@@ -104,6 +109,9 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
                         ClaseOrden = f.ClaseOrden,
                         Descripcion = f.Descripcion,
                         AvisoSapId = f.AvisoSapId,
+                        AvisoParada = f.AvisoSapId != null && avisos.TryGetValue(f.AvisoSapId, out var av) ? av.Parada : null,
+                        InicioAveria = f.AvisoSapId != null && avisos.TryGetValue(f.AvisoSapId, out var av2) ? av2.InicioAveria : null,
+                        FinAveria = f.AvisoSapId != null && avisos.TryGetValue(f.AvisoSapId, out var av3) ? av3.FinAveria : null,
                         Terminada = f.Terminada,
                         Inicio = f.Inicio,
                         FechaAviso = f.FechaAviso,

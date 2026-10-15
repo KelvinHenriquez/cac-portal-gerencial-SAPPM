@@ -14,7 +14,8 @@ namespace PortalGerencialBackEnd.Core.Calculo
         IReadOnlyDictionary<string, string> TipoPorClase,
         bool BaseEquipos = false,
         bool AvancePorFinReal = true,
-        string PesoActividad = "CANTIDAD")
+        string PesoActividad = "CANTIDAD",
+        bool ActividadConConfirmacionFinal = true)
     {
         public string Tipo(string claseOrden) =>
             TipoPorClase.TryGetValue(claseOrden, out var t) ? t : TiposOrden.Planificada;

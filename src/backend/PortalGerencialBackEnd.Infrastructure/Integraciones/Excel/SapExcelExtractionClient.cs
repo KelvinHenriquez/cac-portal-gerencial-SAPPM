@@ -73,6 +73,8 @@ namespace PortalGerencialBackEnd.Infrastructure.Integraciones.Excel
         private static readonly string[] Suboperacion = { "UVORN", "Suboperación" };
         private static readonly string[] HojaRuta = { "VPLNR", "Grupo hoja de ruta" };
         private static readonly string[] OrigenOperacion = { "ORIGEN_OPERACION" };
+        /// <summary>Clave de control: vacía = operación no notificable (captura de IW32 del 15/10/2026).</summary>
+        private static readonly string[] ClaveControl = { "STEUS", "Clave de control", "Clave control", "ClCt" };
         private static readonly string[] Sistema = { "SISTEMA" };
         private static readonly string[] Subsistema = { "SUBSISTEMA" };
         private static readonly string[] Componente = { "COMPONENTE" };
@@ -394,6 +396,8 @@ namespace PortalGerencialBackEnd.Infrastructure.Integraciones.Excel
             // En las órdenes de reparación (ZC03) cada actividad es una SUBOPERACIÓN de la operación 0010
             // (~190 por orden): la actividad es "0010/0005". La operación madre no cuenta aparte.
             var filasOp = tablas.SelectMany(t => t.Filas).ToList();
+            // Filas de tablas que traen la clave de control: ahí, vacía = no notificable.
+            var filasConClave = tablas.Where(t => t.Tiene(ClaveControl)).SelectMany(t => t.Filas).ToHashSet();
             var conSubops = filasOp.Where(f => ClaveActividad(f)?.Contains('/') == true)
                 .Select(f => (EstadosSap.Id(f.Texto(Orden)), NormalizarOperacion(f.Texto(Operacion))))
                 .ToHashSet();
@@ -442,6 +446,8 @@ namespace PortalGerencialBackEnd.Infrastructure.Integraciones.Excel
                     FechaPrimeraConf = primera,
                     FechaUltimaConf = ultima,
                     ConfFinal = final,
+                    // Solo si la tabla trae la columna: sin ella no se sabe, y todas cuentan.
+                    Notificable = filasConClave.Contains(f) ? !string.IsNullOrWhiteSpace(f.Texto(ClaveControl)) : null,
                     UsuarioCreacion = Recortar(f.Texto(CreadoPor), 12),
                     Programada = EsDeHojaRuta(f, tablas),
                     FechaModificacion = ultima ?? ahora

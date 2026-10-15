@@ -167,7 +167,7 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
             {
                 ordenes.AddRange(await _db.StgSapOrdenes.AsNoTracking()
                     .Where(o => o.EquipoSapId != null && lote.Contains(o.EquipoSapId) && clases.Contains(o.ClaseOrden))
-                    .Include(o => o.Operaciones)
+                    .Include(o => o.Operaciones.Where(op => op.Notificable != false))
                     .ToListAsync());
             }
 
@@ -198,7 +198,7 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
             string Ficha(StgSapOrden o) => o.EquipoSapId != null && mapeo.ClavePorEquipoSap.TryGetValue(o.EquipoSapId, out var l) ? l : "";
 
             var actividades = ordenes
-                .SelectMany(o => o.Operaciones.Select(op => (Orden: o, Op: op, Terminada: ReglasPortal.Terminada(op))))
+                .SelectMany(o => o.Operaciones.Select(op => (Orden: o, Op: op, Terminada: ReglasPortal.Terminada(op, reglas))))
                 .Where(x => EnSemana(x.Terminada))
                 .Select(x => new ActividadDto
                 {
@@ -255,7 +255,7 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
 
             T Fila<T>(T fila, IReadOnlyCollection<StgSapOperacion> ops) where T : AnalisisFilaDto
             {
-                var terminadas = ops.Where(o => ReglasPortal.Terminada(o) != null).ToList();
+                var terminadas = ops.Where(o => ReglasPortal.Terminada(o, reglas) != null).ToList();
                 fila.ActTotal = ops.Count;
                 fila.ActTerminadas = terminadas.Count;
                 fila.DiasActProg = Math.Round(ops.Sum(ReglasPortal.DiasActividad), 2);

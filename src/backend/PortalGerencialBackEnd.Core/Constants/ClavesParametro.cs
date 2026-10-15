@@ -70,6 +70,8 @@ namespace PortalGerencialBackEnd.Core.Constants
         /// que DIAS daría 0 (07/10/2026).
         /// </summary>
         public const string PesoActividadAvance = "AVANCE.PESO_ACTIVIDAD";
+        /// <summary>CONFIRMACION_FINAL (decisión del 15/10/2026) u HORAS: cuándo una actividad cuenta como terminada.</summary>
+        public const string ActividadTerminadaAvance = "AVANCE.ACTIVIDAD_TERMINADA";
 
         /// <summary>Clases de orden que cuentan para Avance de Reparación.</summary>
         public const string ClasesOrdenAvance = "AVANCE.CLASES_ORDEN";

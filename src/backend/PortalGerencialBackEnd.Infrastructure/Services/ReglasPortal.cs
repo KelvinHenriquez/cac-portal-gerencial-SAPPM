@@ -85,7 +85,8 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
                 TipoPorClase: tipoPorClase,
                 BaseEquipos: string.Equals(p.Texto(ClavesParametro.BasePorcentajeDisponibilidad, "REQUERIDOS"), "EQUIPOS", StringComparison.OrdinalIgnoreCase),
                 AvancePorFinReal: !string.Equals(p.Texto(ClavesParametro.FechaOrdenTerminadaAvance, "FIN_REAL"), "CIERRE_TECNICO", StringComparison.OrdinalIgnoreCase),
-                PesoActividad: p.Texto(ClavesParametro.PesoActividadAvance, "CANTIDAD").ToUpperInvariant());
+                PesoActividad: p.Texto(ClavesParametro.PesoActividadAvance, "CANTIDAD").ToUpperInvariant(),
+                ActividadConConfirmacionFinal: !string.Equals(p.Texto(ClavesParametro.ActividadTerminadaAvance, "CONFIRMACION_FINAL"), "HORAS", StringComparison.OrdinalIgnoreCase));
         }
 
         public static HashSet<string> ClasesAvance(ParametrosPortal p) => p.Lista(ClavesParametro.ClasesOrdenAvance, "ZC03");
@@ -210,8 +211,14 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
             : o.FechaCierre ?? o.FechaFinReal;
 
         /// <summary>Actividad terminada = con horas reales; cuenta en la fecha en que se confirmaron.</summary>
-        public static DateTime? Terminada(StgSapOperacion op) =>
-            op.TrabajoRealHh > 0 ? op.FechaUltimaConf ?? op.FechaPrimeraConf : null;
+        /// <summary>
+        /// Fecha en que la actividad quedó terminada, o null: tiene horas reales y, si así lo dice
+        /// AVANCE.ACTIVIDAD_TERMINADA, la confirmación final. Cuenta en la semana de la última confirmación.
+        /// </summary>
+        public static DateTime? Terminada(StgSapOperacion op, ReglasVentana reglas) =>
+            op.TrabajoRealHh > 0 && (op.ConfFinal || !reglas.ActividadConConfirmacionFinal)
+                ? op.FechaUltimaConf ?? op.FechaPrimeraConf
+                : null;
 
         /// <summary>Lo que vale una actividad en el avance real (parámetro AVANCE.PESO_ACTIVIDAD).</summary>
         public static decimal PesoActividad(StgSapOperacion op, ReglasVentana reglas) => reglas.PesoActividad switch
