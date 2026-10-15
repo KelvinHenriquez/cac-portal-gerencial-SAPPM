@@ -41,6 +41,8 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
                 ?? throw new NotFoundException($"El área '{area}' no está configurada (PERMANENCIA.AREAS).");
             var (d, h) = Periodo(desde, hasta);
             var filas = await FilasAsync(q => q.Where(p => p.Area == area.ToUpper()));
+            var poblacion = await PoblacionAsync(area);
+            var carga = CargaInicial(parametros);
 
             return new ResumenPermanenciaDto
             {
@@ -50,9 +52,9 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
                 Hasta = h,
                 FechaCalculo = filas.Count == 0 ? null : filas.Max(f => f.GeneradoEn),
                 EsperaRepuestosConfigurada = ReglasPortal.EstadosPermanencia(parametros).EsperaRepuestos != null,
-                Total = Indicador(area.ToUpperInvariant(), nombreArea, filas, d, h),
+                Total = Confiable(Indicador(area.ToUpperInvariant(), nombreArea, filas, d, h), filas, poblacion.Total, d, h, carga),
                 Familias = filas.GroupBy(f => f.TipoEquipo)
-                    .Select(g => Indicador(g.Key, g.First().TipoEquipoDesc ?? g.Key, g.ToList(), d, h))
+                    .Select(g => Confiable(Indicador(g.Key, g.First().TipoEquipoDesc ?? g.Key, g.ToList(), d, h), g.ToList(), poblacion.PorTipo.GetValueOrDefault(g.Key), d, h, carga))
                     .Where(i => i.Ordenes + i.OrdenesEnCurso > 0)
                     .OrderByDescending(i => i.PromedioHoras).ThenBy(i => i.Nombre)
                     .ToList()
@@ -65,13 +67,15 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
             var filas = await FilasAsync(q => q.Where(p => p.Area == area.ToUpper() && p.TipoEquipo == tipoEquipo));
             if (filas.Count == 0)
                 throw new NotFoundException($"No hay órdenes correctivas del tipo de equipo '{tipoEquipo}' en el área {area}.");
+            var poblacion = await PoblacionAsync(area);
+            var carga = CargaInicial(await ParametrosPortal.CargarAsync(_db));
             return new FamiliaPermanenciaDto
             {
-                Familia = Indicador(tipoEquipo, filas[0].TipoEquipoDesc ?? tipoEquipo, filas, d, h),
+                Familia = Confiable(Indicador(tipoEquipo, filas[0].TipoEquipoDesc ?? tipoEquipo, filas, d, h), filas, poblacion.PorTipo.GetValueOrDefault(tipoEquipo), d, h, carga),
                 Equipos = filas.GroupBy(f => f.EquipoSapId)
                     .Select(g =>
                     {
-                        var i = Indicador(g.Key, g.First().EquipoDescripcion ?? g.Key, g.ToList(), d, h);
+                        var i = Confiable(Indicador(g.Key, g.First().EquipoDescripcion ?? g.Key, g.ToList(), d, h), g.ToList(), 1, d, h, carga);
                         i.Clave = g.First().ClaveEquipo;
                         return i;
                     })
@@ -94,7 +98,8 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
             var avisos = (await _db.StgSapAvisos.AsNoTracking().Where(a => avisoIds.Contains(a.AvisoSapId))
                     .Select(a => new { a.AvisoSapId, a.Parada, a.InicioAveria, a.FinAveria }).ToListAsync())
                 .ToDictionary(a => a.AvisoSapId);
-            var equipo = Indicador(equipoSapId, filas[0].EquipoDescripcion ?? equipoSapId, filas, d, h);
+            var equipo = Confiable(Indicador(equipoSapId, filas[0].EquipoDescripcion ?? equipoSapId, filas, d, h), filas, 1, d, h,
+                CargaInicial(await ParametrosPortal.CargarAsync(_db)));
             equipo.Clave = filas[0].ClaveEquipo;
             return new EquipoPermanenciaDto
             {
@@ -136,6 +141,34 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
         }
 
         // ------------------------------------------------------------ apoyo
+
+        /// <summary>
+        /// Agrega MTBF al indicador (el MTTR es su promedio). El período empieza como muy temprano
+        /// cuando SAP salió en vivo: antes no hay datos y el MTBF saldría inflado.
+        /// </summary>
+        private IndicadorPermanenciaDto Confiable(IndicadorPermanenciaDto i, IReadOnlyCollection<CalcPermanencia> filas, int poblacion, DateTime d, DateTime h, DateTime carga)
+        {
+            var equipos = Math.Max(poblacion, filas.Select(f => f.EquipoSapId).Distinct().Count());
+            var fallas = filas.Select(f => new FallaEquipo(f.Inicio, f.Terminada ? f.FechaFinalizada : null, f.HorasPermanencia)).ToList();
+            var c = CalculadoraConfiabilidad.Calcular(fallas, equipos, d < carga ? carga : d, h.AddDays(1), _time.GetLocalNow().DateTime);
+            i.MtbfHoras = c.MtbfHoras;
+            i.Fallas = c.Fallas;
+            i.EquiposPoblacion = c.Equipos;
+            return i;
+        }
+
+        /// <summary>Equipos activos del área en SAP, por tipo de equipo: el MTBF cuenta también los que no fallaron.</summary>
+        private async Task<(Dictionary<string, int> PorTipo, int Total)> PoblacionAsync(string area)
+        {
+            var codigo = area.ToUpperInvariant();
+            var tipos = await _db.StgSapEquipos.AsNoTracking()
+                .Where(e => !e.Inactivo && e.GrupoPlanificacion != null && e.GrupoPlanificacion.ToUpper() == codigo)
+                .Select(e => e.TipoEquipo)
+                .ToListAsync();
+            return (tipos.GroupBy(t => t ?? "SIN_TIPO").ToDictionary(g => g.Key, g => g.Count()), tipos.Count);
+        }
+
+        private static DateTime CargaInicial(ParametrosPortal p) => p.Fecha(ClavesParametro.FechaCargaInicial, new DateTime(2026, 6, 1));
 
         private async Task<List<CalcPermanencia>> FilasAsync(Func<IQueryable<CalcPermanencia>, IQueryable<CalcPermanencia>> filtro) =>
             await filtro(_db.CalcPermanencias.AsNoTracking()).ToListAsync();

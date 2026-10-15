@@ -1,5 +1,5 @@
 import axiosInstance from "@/services/axios";
-import { DetalleSemanaDto, EquiposAsignacionDto, HoraDisponibilidadDto, ReporteDisponibilidadDto } from "@/types";
+import { DetalleSemanaDto, ConfiabilidadReporteDto, EquiposAsignacionDto, HoraDisponibilidadDto, ReporteDisponibilidadDto } from "@/types";
 
 const base = (reporteId: number) => `/disponibilidad/${reporteId}`;
 
@@ -22,8 +22,15 @@ export const disponibilidadService = {
     return data;
   },
 
-  getEquipos: async (reporteId: number, asignacionId: number): Promise<EquiposAsignacionDto> => {
-    const { data } = await axiosInstance.get<EquiposAsignacionDto>(`${base(reporteId)}/asignaciones/${asignacionId}/equipos`);
+  /** desde/hasta (yyyy-MM-dd): período del MTTR/MTBF de cada equipo. */
+  getEquipos: async (reporteId: number, asignacionId: number, periodo?: { desde: string; hasta: string }): Promise<EquiposAsignacionDto> => {
+    const { data } = await axiosInstance.get<EquiposAsignacionDto>(`${base(reporteId)}/asignaciones/${asignacionId}/equipos`, { params: periodo });
+    return data;
+  },
+
+  /** MTTR y MTBF por asignación entre esas fechas (yyyy-MM-dd). */
+  getConfiabilidad: async (reporteId: number, desde: string, hasta: string): Promise<ConfiabilidadReporteDto> => {
+    const { data } = await axiosInstance.get<ConfiabilidadReporteDto>(`${base(reporteId)}/confiabilidad`, { params: { desde, hasta } });
     return data;
   },
 };

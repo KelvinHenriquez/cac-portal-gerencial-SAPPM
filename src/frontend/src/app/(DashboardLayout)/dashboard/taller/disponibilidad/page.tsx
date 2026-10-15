@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Alert,
   Box,
@@ -22,11 +22,12 @@ import {
 import { estructuraService } from "@/services/estructura/estructuraService";
 import { disponibilidadService } from "@/services/disponibilidad/disponibilidadService";
 import { useGlobalLoading } from "@/store/LoadingContext";
-import { ApiError, CeldaSemanaDto, FilaDisponibilidadDto, ReporteDisponibilidadDto, ReporteResumenDto, SemanaColumnaDto } from "@/types";
+import { ApiError, CeldaSemanaDto, ConfiabilidadReporteDto, FilaDisponibilidadDto, ReporteDisponibilidadDto, ReporteResumenDto, SemanaColumnaDto } from "@/types";
 import { fechaCorta, fechaHora, porcentaje } from "@/utils/formato";
 import { celdaFija, COLOR_TEXTO, FONDO_SEMANA_ACTUAL, num, Pct } from "@/components/reportes/comunes";
 import DialogoDisponibilidadSemanal, { SeleccionSemana } from "@/components/reportes/DialogoDisponibilidadSemanal";
 import DialogoEquiposAsignacion from "@/components/reportes/DialogoEquiposAsignacion";
+import { dias } from "@/components/reportes/permanencia/comunesPermanencia";
 
 const CLAVE_PREFERENCIAS = "portalgerencial_disponibilidad";
 
@@ -72,6 +73,7 @@ export default function DisponibilidadPage() {
   const [error, setError] = useState<string | null>(null);
   const [semanaAbierta, setSemanaAbierta] = useState<SeleccionSemana | null>(null);
   const [asignacionAbierta, setAsignacionAbierta] = useState<number | null>(null);
+  const [confiabilidad, setConfiabilidad] = useState<ConfiabilidadReporteDto | null>(null);
   const tablaRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -103,6 +105,26 @@ export default function DisponibilidadPage() {
   useEffect(() => {
     cargar();
   }, [cargar]);
+
+  // MTTR y MTBF en el período del reporte hasta hoy (aparte: no demora la tabla).
+  const periodo = useMemo(() => {
+    if (!reporte || reporte.semanas.length === 0) return null;
+    const hoy = new Date().toISOString().slice(0, 10);
+    const fin = reporte.semanas[reporte.semanas.length - 1].fechaFin.slice(0, 10);
+    return { desde: reporte.semanas[0].fechaInicio.slice(0, 10), hasta: fin < hoy ? fin : hoy };
+  }, [reporte]);
+
+  useEffect(() => {
+    setConfiabilidad(null);
+    if (!periodo || reporteId === "") return;
+    disponibilidadService
+      .getConfiabilidad(reporteId, periodo.desde, periodo.hasta)
+      .then(setConfiabilidad)
+      .catch(() => setConfiabilidad(null));
+  }, [periodo, reporteId]);
+
+  const confiabilidadDe = (f: FilaDisponibilidadDto, esTodas: boolean) =>
+    esTodas ? confiabilidad?.todas : confiabilidad?.filas.find((c) => c.asignacionId === f.asignacionId);
 
   // El calendario del reporte puede tener ~30 semanas: se abre en la semana actual.
   useEffect(() => {
@@ -176,6 +198,12 @@ export default function DisponibilidadPage() {
       <TableCell align="right" sx={{ fontVariantNumeric: "tabular-nums" }}>
         {num(f.potencialPct)}
       </TableCell>
+      <TableCell align="right" sx={{ fontVariantNumeric: "tabular-nums" }} title={confiabilidadDe(f, esTodas) ? `${confiabilidadDe(f, esTodas)!.fallas} fallas en el período` : undefined}>
+        {dias(confiabilidadDe(f, esTodas)?.mtbfHoras)}
+      </TableCell>
+      <TableCell align="right" sx={{ fontVariantNumeric: "tabular-nums" }}>
+        {dias(confiabilidadDe(f, esTodas)?.mttrHoras)}
+      </TableCell>
       {reporte!.semanas.map((s, i) => (
         <TableCell
           key={s.noSemana}
@@ -230,6 +258,12 @@ export default function DisponibilidadPage() {
                   <TableCell align="right">Eq. Disponible</TableCell>
                   <TableCell align="right">Disponibilidad %</TableCell>
                   <TableCell align="right">Potencial %</TableCell>
+                  <TableCell align="right" title="Tiempo medio entre fallas, en días, desde el inicio del reporte hasta hoy">
+                    MTBF (d)
+                  </TableCell>
+                  <TableCell align="right" title="Tiempo medio de restauración (del aviso a la orden finalizada), en días">
+                    MTTR (d)
+                  </TableCell>
                   {reporte.semanas.map((s) => (
                     <TableCell
                       key={s.noSemana}
@@ -273,6 +307,8 @@ export default function DisponibilidadPage() {
               {reporte.baseEquipos
                 ? "total disponible / total de equipos."
                 : "total disponible / total requerido, sin que lo que sobra en una asignación compense lo que falta en otra."}{" "}
+              MTBF = tiempo medio entre fallas y MTTR = tiempo medio de restauración (del aviso a la orden finalizada), con las
+              correctivas de los equipos de cada fila desde el inicio del reporte hasta hoy.
               Una fila cuyos equipos ya están todos en un grupo se muestra, pero en &quot;Todas&quot; solo cuenta el grupo. Las
               reglas se cambian en Sistema → Parámetros.
             </Typography>
@@ -283,7 +319,12 @@ export default function DisponibilidadPage() {
       {reporteId !== "" && (
         <>
           <DialogoDisponibilidadSemanal reporteId={reporteId} seleccion={semanaAbierta} onClose={() => setSemanaAbierta(null)} />
-          <DialogoEquiposAsignacion reporteId={reporteId} asignacionId={asignacionAbierta} onClose={() => setAsignacionAbierta(null)} />
+          <DialogoEquiposAsignacion
+            reporteId={reporteId}
+            asignacionId={asignacionAbierta}
+            periodo={periodo}
+            onClose={() => setAsignacionAbierta(null)}
+          />
         </>
       )}
     </Stack>

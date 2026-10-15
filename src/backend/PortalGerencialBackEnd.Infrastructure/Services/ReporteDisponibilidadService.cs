@@ -1,3 +1,4 @@
+using PortalGerencialBackEnd.Core.Constants;
 using Microsoft.EntityFrameworkCore;
 using PortalGerencialBackEnd.Core.Calculo;
 using PortalGerencialBackEnd.Core.Dtos.Disponibilidad;
@@ -268,7 +269,7 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
                 .ToList();
         }
 
-        public async Task<EquiposAsignacionDto> GetEquiposAsync(int reporteId, int asignacionId)
+        public async Task<EquiposAsignacionDto> GetEquiposAsync(int reporteId, int asignacionId, DateTime? desde = null, DateTime? hasta = null)
         {
             var b = await CargarBaseAsync(reporteId);
             var asignacion = b.Asignacion(asignacionId);
@@ -304,6 +305,17 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
             .ThenBy(e => e.Ficha)
             .ToList();
 
+            // MTTR y MTBF de cada equipo en el período (14/10/2026).
+            var (d, h) = PeriodoConfiabilidad(desde, hasta, await CargaInicialAsync());
+            var fallas = await FallasAsync(equipos.Select(e => e.EquipoSapId).OfType<string>());
+            foreach (var e in equipos.Where(e => e.EquipoSapId != null))
+            {
+                var c = CalculadoraConfiabilidad.Calcular(fallas[e.EquipoSapId!].ToList(), 1, d, h, Ahora);
+                e.Fallas = c.Fallas;
+                e.MttrHoras = c.MttrHoras;
+                e.MtbfHoras = c.MtbfHoras;
+            }
+
             return new EquiposAsignacionDto
             {
                 Asignacion = asignacion.Nombre,
@@ -311,6 +323,63 @@ namespace PortalGerencialBackEnd.Infrastructure.Services
                 CantRequerida = asignacion.CantRequerida,
                 Equipos = equipos
             };
+        }
+
+        public async Task<ConfiabilidadReporteDto> GetConfiabilidadAsync(int reporteId, DateTime desde, DateTime hasta)
+        {
+            var b = await CargarBaseAsync(reporteId);
+            var (d, h) = PeriodoConfiabilidad(desde, hasta, await CargaInicialAsync());
+            var miembros = ReglasPortal.MiembrosDeGrupos(b.Config.Asignaciones).Keys.ToHashSet();
+
+            // Equipos SAP de cada asignación (los mismos que cuentan en la disponibilidad).
+            List<string> EquiposSap(AsignacionDto a) => a.Equipos
+                .Where(b.Mapeo.CuentaParaDisponibilidad)
+                .Select(legado => b.Mapeo.EquipoSapPorClave.TryGetValue(legado, out var sap) ? sap : null)
+                .OfType<string>()
+                .Distinct()
+                .ToList();
+            var porAsignacion = b.Config.Asignaciones.ToDictionary(a => a.AsignacionId, EquiposSap);
+            var fallas = await FallasAsync(porAsignacion.Values.SelectMany(x => x));
+
+            ConfiabilidadFilaDto Fila(int asignacionId, IReadOnlyCollection<string> equipos)
+            {
+                var c = CalculadoraConfiabilidad.Calcular(equipos.SelectMany(e => fallas[e]).ToList(), equipos.Count, d, h, Ahora);
+                return new ConfiabilidadFilaDto { AsignacionId = asignacionId, Equipos = c.Equipos, Fallas = c.Fallas, MttrHoras = c.MttrHoras, MtbfHoras = c.MtbfHoras };
+            }
+
+            var todas = b.Config.Asignaciones.Where(a => !miembros.Contains(a.AsignacionId))
+                .SelectMany(a => porAsignacion[a.AsignacionId]).Distinct().ToList();
+            return new ConfiabilidadReporteDto
+            {
+                Desde = d,
+                Hasta = h.AddDays(-1),
+                Filas = porAsignacion.Select(x => Fila(x.Key, x.Value)).ToList(),
+                Todas = Fila(0, todas)
+            };
+        }
+
+        /// <summary>Período del MTTR/MTBF: por defecto los últimos 90 días; nunca antes de que SAP saliera en vivo. Hasta exclusivo.</summary>
+        private (DateTime Desde, DateTime Hasta) PeriodoConfiabilidad(DateTime? desde, DateTime? hasta, DateTime carga)
+        {
+            var h = (hasta ?? Ahora).Date.AddDays(1);
+            var d = (desde ?? h.AddDays(-90)).Date;
+            if (d < carga) d = carga;
+            if (d >= h) throw new BadRequestException("La fecha desde no puede ser posterior a la fecha hasta.");
+            return (d, h);
+        }
+
+        private async Task<DateTime> CargaInicialAsync() =>
+            (await ParametrosPortal.CargarAsync(_db)).Fecha(ClavesParametro.FechaCargaInicial, new DateTime(2026, 6, 1));
+
+        /// <summary>Correctivas (las del reporte de Permanencia) de esos equipos, como fallas.</summary>
+        private async Task<ILookup<string, FallaEquipo>> FallasAsync(IEnumerable<string> equiposSap)
+        {
+            var filas = new List<(string Equipo, FallaEquipo Falla)>();
+            foreach (var lote in equiposSap.Distinct().Chunk(TamanoLote))
+                foreach (var p in await _db.CalcPermanencias.AsNoTracking().Where(p => lote.Contains(p.EquipoSapId))
+                             .Select(p => new { p.EquipoSapId, p.Inicio, p.Terminada, p.FechaFinalizada, p.HorasPermanencia }).ToListAsync())
+                    filas.Add((p.EquipoSapId, new FallaEquipo(p.Inicio, p.Terminada ? p.FechaFinalizada : null, p.HorasPermanencia)));
+            return filas.ToLookup(x => x.Equipo, x => x.Falla);
         }
 
         /// <summary>Completa las ventanas con los datos de la orden y del aviso para mostrarlas.</summary>

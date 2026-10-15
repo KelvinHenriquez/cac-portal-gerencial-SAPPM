@@ -164,5 +164,29 @@ namespace PortalGerencialBackEnd.Core.Dtos.Disponibilidad
         public string Estado { get; set; } = default!;
 
         public List<OrdenDetalleDto> Ordenes { get; set; } = new();
+
+        /// <summary>Confiabilidad del equipo en el período pedido (MTTR y MTBF, en horas).</summary>
+        public int Fallas { get; set; }
+        public decimal? MttrHoras { get; set; }
+        public decimal? MtbfHoras { get; set; }
+    }
+
+    /// <summary>MTTR y MTBF de una asignación (o de "Todas") en las semanas que se ven en pantalla.</summary>
+    public class ConfiabilidadFilaDto
+    {
+        /// <summary>0 = "Todas".</summary>
+        public int AsignacionId { get; set; }
+        public int Equipos { get; set; }
+        public int Fallas { get; set; }
+        public decimal? MttrHoras { get; set; }
+        public decimal? MtbfHoras { get; set; }
+    }
+
+    public class ConfiabilidadReporteDto
+    {
+        public DateTime Desde { get; set; }
+        public DateTime Hasta { get; set; }
+        public List<ConfiabilidadFilaDto> Filas { get; set; } = new();
+        public ConfiabilidadFilaDto? Todas { get; set; }
     }
 }

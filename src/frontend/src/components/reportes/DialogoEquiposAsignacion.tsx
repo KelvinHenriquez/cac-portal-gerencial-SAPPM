@@ -23,6 +23,7 @@ import {
   useMediaQuery,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
+import { dias } from "./permanencia/comunesPermanencia";
 import { disponibilidadService } from "@/services/disponibilidad/disponibilidadService";
 import { ApiError, EquiposAsignacionDto, EstadoEquipo } from "@/types";
 import { fechaHora } from "@/utils/formato";
@@ -34,10 +35,13 @@ const ORDEN_ESTADOS: EstadoEquipo[] = ["FUERA_SERVICIO", "SIN_SAP", "DISPONIBLE"
 export default function DialogoEquiposAsignacion({
   reporteId,
   asignacionId,
+  periodo,
   onClose,
 }: {
   reporteId: number;
   asignacionId: number | null;
+  /** Período del MTTR/MTBF de cada equipo (el del reporte hasta hoy). */
+  periodo: { desde: string; hasta: string } | null;
   onClose: () => void;
 }) {
   const theme = useTheme();
@@ -52,10 +56,10 @@ export default function DialogoEquiposAsignacion({
     setError(null);
     setSoloFuera(false);
     disponibilidadService
-      .getEquipos(reporteId, asignacionId)
+      .getEquipos(reporteId, asignacionId, periodo ?? undefined)
       .then(setDatos)
       .catch((e: ApiError) => setError(e?.errorMessage || "No se pudo cargar el detalle."));
-  }, [reporteId, asignacionId]);
+  }, [reporteId, asignacionId, periodo]);
 
   const conteo = useMemo(() => {
     const c: Partial<Record<EstadoEquipo, number>> = {};
@@ -109,6 +113,8 @@ export default function DialogoEquiposAsignacion({
                     <TableCell>Equipo SAP</TableCell>
                     <TableCell>Descripción</TableCell>
                     <TableCell>Estado</TableCell>
+                    <TableCell align="right" title="Tiempo medio entre fallas">MTBF (d)</TableCell>
+                    <TableCell align="right" title="Tiempo medio de restauración">MTTR (d)</TableCell>
                     <TableCell>Órdenes que lo detienen</TableCell>
                   </TableRow>
                 </TableHead>
@@ -121,6 +127,12 @@ export default function DialogoEquiposAsignacion({
                       <TableCell>{e.descripcion}</TableCell>
                       <TableCell>
                         <ChipEstadoEquipo estado={e.estado} />
+                      </TableCell>
+                      <TableCell align="right" sx={{ fontVariantNumeric: "tabular-nums" }} title={`${e.fallas} fallas en el período`}>
+                        {dias(e.mtbfHoras)}
+                      </TableCell>
+                      <TableCell align="right" sx={{ fontVariantNumeric: "tabular-nums" }}>
+                        {dias(e.mttrHoras)}
                       </TableCell>
                       <TableCell>
                         {e.ordenes.length === 0
@@ -140,7 +152,7 @@ export default function DialogoEquiposAsignacion({
                   ))}
                   {equipos.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={6} align="center" sx={{ color: "text.secondary", py: 4 }}>
+                      <TableCell colSpan={8} align="center" sx={{ color: "text.secondary", py: 4 }}>
                         Ningún equipo fuera de servicio.
                       </TableCell>
                     </TableRow>

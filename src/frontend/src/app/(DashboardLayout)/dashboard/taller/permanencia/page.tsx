@@ -270,16 +270,16 @@ function Permanencia() {
           <Grid container spacing={2}>
             <Grid size={{ xs: 6, md: 3 }}>
               <Indicador
-                titulo="Permanencia promedio"
+                titulo="MTTR · tiempo medio de restauración"
                 valor={nivel.ordenes ? `${dias(nivel.promedioHoras)} días` : "—"}
-                detalle="Del aviso a la orden finalizada"
+                detalle={nivel.ordenes ? `Del aviso a la orden finalizada · máximo ${dias(nivel.maximoHoras)} días` : "Del aviso a la orden finalizada"}
               />
             </Grid>
             <Grid size={{ xs: 6, md: 3 }}>
               <Indicador
-                titulo="Mediana"
-                valor={nivel.ordenes ? `${dias(nivel.medianaHoras)} días` : "—"}
-                detalle={nivel.ordenes ? `Máximo ${dias(nivel.maximoHoras)} días` : undefined}
+                titulo="MTBF · tiempo medio entre fallas"
+                valor={nivel.mtbfHoras != null ? `${dias(nivel.mtbfHoras)} días` : "—"}
+                detalle={`${nivel.fallas} fallas en el período · ${nivel.equiposPoblacion} equipos`}
               />
             </Grid>
             <Grid size={{ xs: 6, md: 3 }}>
@@ -324,8 +324,10 @@ function Permanencia() {
                 Solo órdenes correctivas. Permanencia = desde que se abre el aviso (o se crea la orden, si no tiene aviso) hasta que
                 la orden queda finalizada (estado de usuario FINL; si no, su fin real). Pasos:{" "}
                 {PASOS.map((p) => `${p.nombre.toLowerCase()} (${p.detalle.toLowerCase()})`).join(", ")}. El cierre técnico se
-                muestra aparte porque a veces se hace días después. Los promedios usan las órdenes finalizadas en el período; las
-                abiertas se cuentan &quot;en curso&quot; con su antigüedad. Días de calendario.
+                muestra aparte porque a veces se hace días después. MTTR = promedio de las órdenes finalizadas en el período; las
+                abiertas se cuentan &quot;en curso&quot; con su antigüedad. MTBF = (equipos × días del período − días fuera de servicio
+                por correctivas) / correctivas que empezaron en el período; cuenta también los equipos activos que no fallaron, y el
+                período empieza como muy temprano cuando SAP salió en vivo. Días de calendario.
                 {!resumen.esperaRepuestosConfigurada &&
                   " La espera de repuestos todavía no se distingue: queda dentro de la ejecución hasta que exista un estado para ella en SAP."}
               </Typography>

@@ -130,8 +130,9 @@ export default function DialogoEquipoPermanencia({
         {datos && e && (
           <Stack spacing={2}>
             <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-              <Chip label={`Permanencia promedio ${dias(e.promedioHoras)} d`} color="primary" />
-              <Chip label={`Mediana ${dias(e.medianaHoras)} d`} variant="outlined" />
+              <Chip label={`MTTR ${dias(e.promedioHoras)} d`} color="primary" title="Tiempo medio de restauración" />
+              <Chip label={`MTBF ${dias(e.mtbfHoras)} d`} variant="outlined" title="Tiempo medio entre fallas" />
+              <Chip label={`${e.fallas} fallas en el período`} variant="outlined" />
               <Chip label={`${e.ordenes} terminadas en el período`} variant="outlined" />
               {e.ordenesEnCurso > 0 && <Chip label={`${e.ordenesEnCurso} en curso`} color="warning" variant="outlined" />}
             </Stack>

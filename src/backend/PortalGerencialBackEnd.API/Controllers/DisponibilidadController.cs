@@ -37,7 +37,12 @@ namespace PortalGerencialBackEnd.API.Controllers
 
         /// <summary>Equipos de la asignación y su estado en la última actualización.</summary>
         [HttpGet("asignaciones/{asignacionId:int}/equipos")]
-        public async Task<ActionResult<EquiposAsignacionDto>> GetEquipos(int reporteId, int asignacionId) =>
-            Ok(await _reporte.GetEquiposAsync(reporteId, asignacionId));
+        public async Task<ActionResult<EquiposAsignacionDto>> GetEquipos(int reporteId, int asignacionId, [FromQuery] DateTime? desde, [FromQuery] DateTime? hasta) =>
+            Ok(await _reporte.GetEquiposAsync(reporteId, asignacionId, desde, hasta));
+
+        /// <summary>MTTR y MTBF por asignación entre esas fechas (yyyy-MM-dd): las semanas visibles.</summary>
+        [HttpGet("confiabilidad")]
+        public async Task<ActionResult<ConfiabilidadReporteDto>> GetConfiabilidad(int reporteId, [FromQuery] DateTime desde, [FromQuery] DateTime hasta) =>
+            Ok(await _reporte.GetConfiabilidadAsync(reporteId, desde, hasta));
     }
 }

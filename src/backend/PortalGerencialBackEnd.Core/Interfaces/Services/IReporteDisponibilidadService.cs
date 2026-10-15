@@ -10,6 +10,9 @@ namespace PortalGerencialBackEnd.Core.Interfaces.Services
         Task<ReporteDisponibilidadDto> GetReporteAsync(int reporteId);
         Task<DetalleSemanaDto> GetDetalleSemanaAsync(int reporteId, int asignacionId, int noSemana);
         Task<List<HoraDisponibilidadDto>> GetHorasAsync(int reporteId, int asignacionId, DateTime fecha);
-        Task<EquiposAsignacionDto> GetEquiposAsync(int reporteId, int asignacionId);
+        /// <param name="desde">Período del MTTR/MTBF de cada equipo (por defecto, los últimos 90 días).</param>
+        Task<EquiposAsignacionDto> GetEquiposAsync(int reporteId, int asignacionId, DateTime? desde = null, DateTime? hasta = null);
+        /// <summary>MTTR y MTBF por asignación y de "Todas" entre esas fechas (las semanas visibles).</summary>
+        Task<ConfiabilidadReporteDto> GetConfiabilidadAsync(int reporteId, DateTime desde, DateTime hasta);
     }
 }

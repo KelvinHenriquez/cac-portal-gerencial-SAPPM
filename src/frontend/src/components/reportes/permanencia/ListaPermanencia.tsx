@@ -69,10 +69,10 @@ export default function ListaPermanencia({
               </Typography>
             )}
             <Typography variant="body2" sx={{ fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>
-              <b>{dias(f.promedioHoras)} d</b>
+              <span title="MTTR: tiempo medio de restauración"><b>{dias(f.promedioHoras)} d</b></span>
               <Typography component="span" variant="caption" color="text.secondary">
                 {" "}
-                · {f.ordenes} órd.{f.ordenesEnCurso > 0 ? ` · ${f.ordenesEnCurso} en curso` : ""}
+                · MTBF {dias(f.mtbfHoras)} d · {f.ordenes} órd.{f.ordenesEnCurso > 0 ? ` · ${f.ordenesEnCurso} en curso` : ""}
               </Typography>
             </Typography>
           </Box>
@@ -89,8 +89,9 @@ export default function ListaPermanencia({
             <TableCell>{nivel === "familia" ? "Tipo de equipo" : "Equipo"}</TableCell>
             <TableCell align="right">Órdenes</TableCell>
             {nivel === "familia" && <TableCell align="right">Equipos</TableCell>}
-            <TableCell align="right">Promedio (d)</TableCell>
-            <TableCell align="right">Mediana (d)</TableCell>
+            <TableCell align="right" title="Tiempo medio de restauración: del aviso a la orden finalizada">MTTR (d)</TableCell>
+            <TableCell align="right" title="Tiempo medio entre fallas">MTBF (d)</TableCell>
+            <TableCell align="right">Fallas</TableCell>
             <TableCell align="right">Máximo (d)</TableCell>
             {PASOS.map((p) => (
               <TableCell key={p.clave} align="right" title={p.detalle}>
@@ -112,7 +113,8 @@ export default function ListaPermanencia({
               <TableCell align="right" sx={{ fontWeight: 700 }}>
                 {f.ordenes ? dias(f.promedioHoras) : "—"}
               </TableCell>
-              <TableCell align="right">{f.ordenes ? dias(f.medianaHoras) : "—"}</TableCell>
+              <TableCell align="right">{dias(f.mtbfHoras)}</TableCell>
+              <TableCell align="right">{f.fallas}</TableCell>
               <TableCell align="right">{f.ordenes ? dias(f.maximoHoras) : "—"}</TableCell>
               {PASOS.map((p) => (
                 <TableCell key={p.clave} align="right">

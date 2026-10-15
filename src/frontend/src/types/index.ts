@@ -208,6 +208,25 @@ export interface EquipoDetalleDto {
   equipoSapId: string | null;
   estado: EstadoEquipo;
   ordenes: OrdenDetalleDto[];
+  fallas: number;
+  mttrHoras: number | null;
+  mtbfHoras: number | null;
+}
+
+/** MTTR y MTBF de una asignación (0 = Todas) en el período. */
+export interface ConfiabilidadFilaDto {
+  asignacionId: number;
+  equipos: number;
+  fallas: number;
+  mttrHoras: number | null;
+  mtbfHoras: number | null;
+}
+
+export interface ConfiabilidadReporteDto {
+  desde: string;
+  hasta: string;
+  filas: ConfiabilidadFilaDto[];
+  todas: ConfiabilidadFilaDto | null;
 }
 
 export interface EquiposAsignacionDto {
@@ -368,9 +387,14 @@ export interface IndicadorPermanenciaDto {
   clave: string | null;
   ordenes: number;
   equipos: number;
+  /** MTTR (tiempo medio de restauración). */
   promedioHoras: number;
   medianaHoras: number;
   maximoHoras: number;
+  /** MTBF (tiempo medio entre fallas); null si no hubo fallas. */
+  mtbfHoras: number | null;
+  fallas: number;
+  equiposPoblacion: number;
   pasos: PasosPermanenciaDto;
   ordenesEnCurso: number;
   antiguedadEnCursoHoras: number | null;

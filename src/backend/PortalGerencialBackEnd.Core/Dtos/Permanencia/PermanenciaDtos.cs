@@ -31,7 +31,17 @@ namespace PortalGerencialBackEnd.Core.Dtos.Permanencia
 
         public int Ordenes { get; set; }
         public int Equipos { get; set; }
+        /// <summary>MTTR: tiempo medio de restauración (aviso → orden finalizada) de las terminadas en el período.</summary>
         public decimal PromedioHoras { get; set; }
+
+        /// <summary>MTBF: tiempo medio entre fallas en el período; null si no hubo fallas.</summary>
+        public decimal? MtbfHoras { get; set; }
+
+        /// <summary>Correctivas que empezaron en el período (las fallas del MTBF).</summary>
+        public int Fallas { get; set; }
+
+        /// <summary>Equipos que cuenta el MTBF (incluye los que no fallaron).</summary>
+        public int EquiposPoblacion { get; set; }
         public decimal MedianaHoras { get; set; }
         public decimal MaximoHoras { get; set; }
         public PasosPermanenciaDto Pasos { get; set; } = new();
