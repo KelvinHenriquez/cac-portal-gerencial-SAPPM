@@ -116,6 +116,9 @@ namespace PortalGerencialBackEnd.Core.Entities.Estructura
         public string CodigoLegado { get; set; } = default!;
         public decimal CantActividad { get; set; }
         public decimal CantDias { get; set; }
+
+        /// <summary>Semana del calendario del reporte de la última actividad planificada (entrega programada).</summary>
+        public int? SemanaFin { get; set; }
     }
 
     /// <summary>"Semana Definida Por Familia": actividades y días planificados de cada semana.</summary>

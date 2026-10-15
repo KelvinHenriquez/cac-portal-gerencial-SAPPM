@@ -48,6 +48,8 @@ namespace PortalGerencialBackEnd.Infrastructure.Persistence.Context
         public DbSet<VwDispAsigEquipo> VwDispAsigEquipos => Set<VwDispAsigEquipo>();
         public DbSet<VwAvancePeriodo> VwAvancePeriodos => Set<VwAvancePeriodo>();
         public DbSet<CalcPermanencia> CalcPermanencias => Set<CalcPermanencia>();
+        public DbSet<ResumenAvanceFila> ResumenAvanceFilas => Set<ResumenAvanceFila>();
+        public DbSet<ResumenAvanceNota> ResumenAvanceNotas => Set<ResumenAvanceNota>();
         public DbSet<VwAvanceReporte> VwAvanceReportes => Set<VwAvanceReporte>();
         public DbSet<VwAvanceFamilia> VwAvanceFamilias => Set<VwAvanceFamilia>();
         public DbSet<VwAvanceOt> VwAvanceOts => Set<VwAvanceOt>();

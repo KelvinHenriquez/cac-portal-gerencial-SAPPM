@@ -20,6 +20,12 @@ namespace PortalGerencialBackEnd.Core.Dtos.Auth
         /// <summary>"Actualizar ahora" y "Actualizar desde": solo TI.</summary>
         public bool Actualizar { get; set; }
 
+        /// <summary>
+        /// Áreas cuyo "Resumen de avance" puede configurar y anotar: la de su rol de área (CDS / IND)
+        /// o todas para TI (decisión del 15/10/2026). La gerencia solo consulta.
+        /// </summary>
+        public List<string> AreasEditables { get; set; } = new();
+
         public bool VeArea(string area) => Areas.Contains(area, StringComparer.OrdinalIgnoreCase);
 
         public static PermisosDto De(IEnumerable<string> roles)
@@ -36,7 +42,9 @@ namespace PortalGerencialBackEnd.Core.Dtos.Auth
                 Areas = areas,
                 EditarParametros = admin || r.Contains(Roles.Parametros),
                 EditarParametrosTecnicos = admin,
-                Actualizar = admin
+                Actualizar = admin,
+                AreasEditables = new[] { (Rol: Roles.CentroServicios, Area: Constants.Areas.CentroServicios), (Rol: Roles.Industrial, Area: Constants.Areas.Industrial) }
+                    .Where(x => admin || r.Contains(x.Rol)).Select(x => x.Area).ToList()
             };
         }
     }

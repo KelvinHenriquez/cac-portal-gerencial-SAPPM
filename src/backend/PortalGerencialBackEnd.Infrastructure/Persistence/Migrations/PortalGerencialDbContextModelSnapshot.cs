@@ -651,6 +651,10 @@ namespace PortalGerencialBackEnd.Infrastructure.Persistence.Migrations
                         .HasColumnType("NUMBER(10)")
                         .HasColumnName("REPORTE_ID");
 
+                    b.Property<int?>("SemanaFin")
+                        .HasColumnType("NUMBER(10)")
+                        .HasColumnName("SEMANA_FIN");
+
                     b.ToTable((string)null);
 
                     b.ToView("VW_AVANCE_OT_PGPM", (string)null);
@@ -1201,6 +1205,103 @@ namespace PortalGerencialBackEnd.Infrastructure.Persistence.Migrations
                             Descripcion = "Horas sin una corrida exitosa a partir de las cuales se alerta (sección 11).",
                             Valor = "24"
                         });
+                });
+
+            modelBuilder.Entity("PortalGerencialBackEnd.Core.Entities.ResumenAvanceFila", b =>
+                {
+                    b.Property<string>("Area")
+                        .HasMaxLength(10)
+                        .IsUnicode(false)
+                        .HasColumnType("VARCHAR2(10)")
+                        .HasColumnName("AREA");
+
+                    b.Property<int>("ReporteId")
+                        .HasColumnType("NUMBER(10)")
+                        .HasColumnName("REPORTE_ID");
+
+                    b.Property<string>("FamiliaCodigo")
+                        .HasMaxLength(30)
+                        .IsUnicode(false)
+                        .HasColumnType("VARCHAR2(30)")
+                        .HasColumnName("FAMILIA_CODIGO");
+
+                    b.Property<DateTime>("ActualizadoEn")
+                        .HasColumnType("DATE")
+                        .HasColumnName("ACTUALIZADO_EN");
+
+                    b.Property<string>("ActualizadoPor")
+                        .HasMaxLength(60)
+                        .IsUnicode(false)
+                        .HasColumnType("VARCHAR2(60)")
+                        .HasColumnName("ACTUALIZADO_POR");
+
+                    b.Property<string>("Grupo")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .IsUnicode(false)
+                        .HasColumnType("VARCHAR2(100)")
+                        .HasColumnName("GRUPO");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .IsUnicode(false)
+                        .HasColumnType("VARCHAR2(100)")
+                        .HasColumnName("NOMBRE");
+
+                    b.Property<int>("Orden")
+                        .HasColumnType("NUMBER(10)")
+                        .HasColumnName("ORDEN");
+
+                    b.HasKey("Area", "ReporteId", "FamiliaCodigo")
+                        .HasName("PK_RESUMEN_AVANCE_FILA_PGPM");
+
+                    b.ToTable("RESUMEN_AVANCE_FILA_PGPM", (string)null);
+                });
+
+            modelBuilder.Entity("PortalGerencialBackEnd.Core.Entities.ResumenAvanceNota", b =>
+                {
+                    b.Property<string>("Area")
+                        .HasMaxLength(10)
+                        .IsUnicode(false)
+                        .HasColumnType("VARCHAR2(10)")
+                        .HasColumnName("AREA");
+
+                    b.Property<int>("ReporteId")
+                        .HasColumnType("NUMBER(10)")
+                        .HasColumnName("REPORTE_ID");
+
+                    b.Property<string>("FamiliaCodigo")
+                        .HasMaxLength(30)
+                        .IsUnicode(false)
+                        .HasColumnType("VARCHAR2(30)")
+                        .HasColumnName("FAMILIA_CODIGO");
+
+                    b.Property<DateTime>("SemanaFin")
+                        .HasColumnType("DATE")
+                        .HasColumnName("SEMANA_FIN");
+
+                    b.Property<DateTime>("ActualizadoEn")
+                        .HasColumnType("DATE")
+                        .HasColumnName("ACTUALIZADO_EN");
+
+                    b.Property<string>("ActualizadoPor")
+                        .HasMaxLength(60)
+                        .IsUnicode(false)
+                        .HasColumnType("VARCHAR2(60)")
+                        .HasColumnName("ACTUALIZADO_POR");
+
+                    b.Property<string>("Texto")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .IsUnicode(false)
+                        .HasColumnType("VARCHAR2(300)")
+                        .HasColumnName("TEXTO");
+
+                    b.HasKey("Area", "ReporteId", "FamiliaCodigo", "SemanaFin")
+                        .HasName("PK_RESUMEN_AVANCE_NOTA_PGPM");
+
+                    b.ToTable("RESUMEN_AVANCE_NOTA_PGPM", (string)null);
                 });
 
             modelBuilder.Entity("PortalGerencialBackEnd.Core.Entities.Sap.StgSapAviso", b =>

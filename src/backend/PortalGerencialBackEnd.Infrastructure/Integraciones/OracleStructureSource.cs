@@ -147,7 +147,8 @@ namespace PortalGerencialBackEnd.Infrastructure.Integraciones
                         NoOt = o.NoOt,
                         CodigoLegado = o.CodigoLegado.Trim(),
                         CantActividad = o.CantActividad,
-                        CantDias = o.CantDias
+                        CantDias = o.CantDias,
+                        SemanaFin = o.SemanaFin
                     }).ToList()
                 }).ToList()
             }).ToList();

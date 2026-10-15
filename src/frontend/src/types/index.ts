@@ -11,6 +11,8 @@ export interface Permisos {
   editarParametros: boolean;
   editarParametrosTecnicos: boolean;
   actualizar: boolean;
+  /** Áreas cuyo Resumen de avance puede configurar y anotar. */
+  areasEditables: string[];
 }
 
 export interface LoginRequest {
@@ -447,4 +449,72 @@ export interface EquipoPermanenciaDto {
 export interface ApiError {
   statusCode: number;
   errorMessage: string;
+}
+
+// ------------------------------------------------------------ Resumen de avance de reparación (14/10/2026)
+
+export interface SemanaResumenDto {
+  noSemana: number;
+  fechaInicio: string;
+  fechaFin: string;
+  momento: "PASADA" | "ACTUAL" | "FUTURA";
+}
+
+export interface FilaResumenDto {
+  reporteId: number;
+  familiaCodigo: string;
+  nombre: string;
+  cantidad: number;
+  progSemanaPct: number | null;
+  ejecSemanaPct: number | null;
+  progAcumPct: number;
+  ejecAcumPct: number;
+  diferenciaPct: number;
+  programadosEntregar: number;
+  entregados: number;
+  nota: string | null;
+  notaPor: string | null;
+  notaEn: string | null;
+}
+
+export interface GrupoResumenDto {
+  nombre: string;
+  filas: FilaResumenDto[];
+  general: FilaResumenDto;
+}
+
+export interface ResumenAvanceDto {
+  area: string;
+  medida: "ORDENES" | "ACTIVIDADES";
+  noSemana: number;
+  semanaInicio: string;
+  semanaFin: string;
+  fechaCorte: string | null;
+  periodo: string | null;
+  puedeEditar: boolean;
+  configuracionGuardada: boolean;
+  semanas: SemanaResumenDto[];
+  grupos: GrupoResumenDto[];
+}
+
+export interface FilaConfigResumenDto {
+  grupo: string;
+  nombre: string;
+  reporteId: number;
+  familiaCodigo: string;
+  orden: number;
+}
+
+export interface OpcionResumenDto {
+  reporteId: number;
+  reporteNombre: string;
+  familiaCodigo: string;
+  familiaNombre: string;
+  cantEquipo: number;
+}
+
+export interface ConfigResumenDto {
+  guardada: boolean;
+  filas: FilaConfigResumenDto[];
+  opciones: OpcionResumenDto[];
 }

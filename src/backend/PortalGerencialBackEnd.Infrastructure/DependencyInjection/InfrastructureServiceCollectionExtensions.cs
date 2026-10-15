@@ -84,6 +84,7 @@ namespace PortalGerencialBackEnd.Infrastructure.DependencyInjection
             services.AddScoped<IReporteDisponibilidadService, ReporteDisponibilidadService>();
             services.AddScoped<IReporteAvanceService, ReporteAvanceService>();
             services.AddScoped<IReportePermanenciaService, ReportePermanenciaService>();
+            services.AddScoped<IResumenAvanceService, ResumenAvanceService>();
             services.AddSingleton<LoginAttemptLimiter>();
 
             services.Configure<JwtSettings>(configuration.GetSection("Jwt"));

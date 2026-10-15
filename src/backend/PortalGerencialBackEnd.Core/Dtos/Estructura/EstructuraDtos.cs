@@ -100,6 +100,8 @@ namespace PortalGerencialBackEnd.Core.Dtos.Estructura
         public string CodigoLegado { get; set; } = default!;
         public decimal CantActividad { get; set; }
         public decimal CantDias { get; set; }
+        /// <summary>Semana (del calendario del reporte) de la última actividad planificada: cuándo se programa entregarlo.</summary>
+        public int? SemanaFin { get; set; }
     }
 
     public class SemanaPlanDto

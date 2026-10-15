@@ -83,7 +83,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 /** Permisos del usuario en sesión (todo en falso si no hay sesión). */
 export function usePermisos(): Permisos & { veArea: (area: string) => boolean } {
   const { usuario } = useAuth();
-  const p = usuario?.permisos ?? { areas: [], editarParametros: false, editarParametrosTecnicos: false, actualizar: false };
+  const p = usuario?.permisos ?? { areas: [], editarParametros: false, editarParametrosTecnicos: false, actualizar: false, areasEditables: [] };
   return { ...p, veArea: (area: string) => p.areas.includes(area.toUpperCase()) };
 }
 

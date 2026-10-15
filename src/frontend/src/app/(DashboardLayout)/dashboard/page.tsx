@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { Box, Card, CardActionArea, CardContent, Chip, Grid2 as Grid, Stack, Typography } from "@mui/material";
-import { IconTractor, IconProgressCheck, IconBuildingFactory2, IconClockHour4 } from "@tabler/icons-react";
+import { IconTractor, IconProgressCheck, IconBuildingFactory2, IconClockHour4, IconPresentation } from "@tabler/icons-react";
 import { useAuth, usePermisos } from "@/store/AuthContext";
 
 interface Tablero {
@@ -36,6 +36,12 @@ const AREAS: Area[] = [
         descripcion: "Programado vs. ejecutado de los programas de reparación, semana a semana, con pendientes.",
         href: "/dashboard/taller/avance",
         icon: IconProgressCheck,
+      },
+      {
+        titulo: "Resumen de avance de reparación",
+        descripcion: "La lámina semanal por familia: programa vs. ejecución, acumulado, maquinaria entregada y notas del taller.",
+        href: "/dashboard/taller/resumen-avance",
+        icon: IconPresentation,
       },
       {
         titulo: "Tiempo de Permanencia",

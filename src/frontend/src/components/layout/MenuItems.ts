@@ -5,6 +5,7 @@ import {
   IconRefresh,
   IconAdjustments,
   IconClockHour4,
+  IconPresentation,
 } from "@tabler/icons-react";
 
 export interface MenuItem {
@@ -45,6 +46,14 @@ export const MENU_ITEMS: MenuItem[] = [
     area: "CDS",
   },
   {
+    id: "resumen-avance",
+    title: "Resumen de avance de reparación",
+    icon: IconPresentation,
+    href: "/dashboard/taller/resumen-avance",
+    grupo: "Centro de Servicios",
+    area: "CDS",
+  },
+  {
     id: "permanencia-cds",
     title: "Tiempo de Permanencia",
     icon: IconClockHour4,
@@ -78,7 +87,12 @@ export const MENU_ITEMS: MenuItem[] = [
 
 /** Área que exige cada ruta (null = ninguna). Permanencia exige al menos un área. */
 export function areaRequerida(pathname: string): "CDS" | "ALGUNA" | null {
-  if (pathname.startsWith("/dashboard/taller/disponibilidad") || pathname.startsWith("/dashboard/taller/avance")) return "CDS";
+  if (
+    pathname.startsWith("/dashboard/taller/disponibilidad") ||
+    pathname.startsWith("/dashboard/taller/avance") ||
+    pathname.startsWith("/dashboard/taller/resumen-avance")
+  )
+    return "CDS";
   if (pathname.startsWith("/dashboard/taller/permanencia")) return "ALGUNA";
   return null;
 }
